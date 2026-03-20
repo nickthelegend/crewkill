@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#1a1f3d"/>
+      <stop offset="100%" stop-color="#080b1a"/>
+    </radialGradient>
+    <linearGradient id="red" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff5252"/>
+      <stop offset="100%" stop-color="#b71c1c"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f7fa"/>
+      <stop offset="100%" stop-color="#4dd0e1"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0b90b"/>
+      <stop offset="100%" stop-color="#fcd535"/>
+    </linearGradient>
+    <filter id="g">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="#1e3050" stroke-width="1.5"/>
+
+  <!-- Character centered -->
+  <g transform="translate(32, 16)">
+    <!-- Backpack -->
+    <rect x="-6" y="30" width="10" height="34" rx="5" fill="url(#red)" opacity="0.8"/>
+
+    <!-- Left leg -->
+    <rect x="11" y="84" width="16" height="20" rx="8" fill="url(#red)"/>
+    <!-- Right leg -->
+    <rect x="37" y="84" width="16" height="20" rx="8" fill="url(#red)"/>
+
+    <!-- Body -->
+    <rect x="4" y="12" width="56" height="76" rx="28" fill="url(#red)"/>
+
+    <!-- Visor -->
+    <rect x="36" y="26" width="32" height="26" rx="9" fill="url(#visor)"/>
+    <rect x="40" y="29" width="16" height="8" rx="4" fill="#fff" opacity="0.35"/>
+
+    <!-- AI antenna -->
+    <g filter="url(#g)">
+      <line x1="32" y1="13" x2="32" y2="0" stroke="#ff5252" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="32" cy="-4" r="5" fill="#080b1a"/>
+      <circle cx="32" cy="-4" r="4" fill="none" stroke="#ff5252" stroke-width="1.5"/>
+      <circle cx="32" cy="-4" r="2" fill="#ff5252"/>
+    </g>
+  </g>
+
+  <!-- BNB diamond accent -->
+  <g transform="translate(100, 100)" filter="url(#g)">
+    <path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="url(#gold)"/>
+  </g>
+</svg>

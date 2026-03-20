@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#1a1f3d"/>
+      <stop offset="100%" stop-color="#080b1a"/>
+    </radialGradient>
+
+    <!-- Cyan agent gradient -->
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00838f"/>
+    </linearGradient>
+
+    <!-- Red agent gradient -->
+    <linearGradient id="red" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff5252"/>
+      <stop offset="100%" stop-color="#b71c1c"/>
+    </linearGradient>
+
+    <!-- Visor gradient -->
+    <linearGradient id="visor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f7fa"/>
+      <stop offset="100%" stop-color="#4dd0e1"/>
+    </linearGradient>
+
+    <!-- Gold gradient -->
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0b90b"/>
+      <stop offset="100%" stop-color="#fcd535"/>
+    </linearGradient>
+
+    <!-- Text gold gradient (horizontal) -->
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f0b90b"/>
+      <stop offset="50%" stop-color="#fcd535"/>
+      <stop offset="100%" stop-color="#f0b90b"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-sm">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="text-glow">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Clip for circular badge -->
+    <clipPath id="circleClip">
+      <circle cx="256" cy="256" r="248"/>
+    </clipPath>
+  </defs>
+
+  <!-- === BACKGROUND === -->
+  <circle cx="256" cy="256" r="250" fill="url(#bg)"/>
+
+  <!-- Outer ring -->
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#1e3050" stroke-width="4"/>
+
+  <!-- Subtle grid pattern -->
+  <g clip-path="url(#circleClip)" opacity="0.04" stroke="#00e5ff" stroke-width="0.5">
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+    <line x1="128" y1="0" x2="128" y2="512"/>
+    <line x1="256" y1="0" x2="256" y2="512"/>
+    <line x1="384" y1="0" x2="384" y2="512"/>
+  </g>
+
+  <!-- Stars -->
+  <g fill="#fff">
+    <circle cx="72" cy="78" r="1.4" opacity="0.5"/>
+    <circle cx="440" cy="65" r="1" opacity="0.4"/>
+    <circle cx="48" cy="188" r="0.8" opacity="0.25"/>
+    <circle cx="462" cy="170" r="1.3" opacity="0.4"/>
+    <circle cx="88" cy="336" r="0.9" opacity="0.3"/>
+    <circle cx="424" cy="326" r="1" opacity="0.3"/>
+    <circle cx="152" cy="105" r="1" opacity="0.45"/>
+    <circle cx="360" cy="88" r="0.8" opacity="0.35"/>
+    <circle cx="256" cy="48" r="0.9" opacity="0.25"/>
+    <circle cx="470" cy="250" r="0.8" opacity="0.2"/>
+    <circle cx="42" cy="270" r="1" opacity="0.25"/>
+  </g>
+
+  <!-- ============================================ -->
+  <!--         CYAN CREWMATE (left, facing right)   -->
+  <!-- ============================================ -->
+  <g filter="url(#shadow)">
+    <!-- Shadow on ground -->
+    <ellipse cx="183" cy="305" rx="52" ry="8" fill="#000" opacity="0.3"/>
+
+    <!-- Backpack -->
+    <rect x="110" y="178" width="16" height="56" rx="8" fill="url(#cyan)" opacity="0.8"/>
+
+    <!-- Left leg -->
+    <rect x="143" y="272" width="24" height="34" rx="12" fill="url(#cyan)"/>
+    <!-- Right leg -->
+    <rect x="183" y="272" width="24" height="34" rx="12" fill="url(#cyan)"/>
+
+    <!-- Body (clean pill shape) -->
+    <rect x="126" y="130" width="80" height="150" rx="40" fill="url(#cyan)"/>
+
+    <!-- Body shading -->
+    <rect x="126" y="130" width="30" height="150" rx="15" fill="#000" opacity="0.06"/>
+
+    <!-- Visor -->
+    <rect x="170" y="155" width="55" height="45" rx="14" fill="url(#visor)"/>
+    <!-- Visor shine -->
+    <rect x="178" y="160" width="28" height="14" rx="7" fill="#fff" opacity="0.35"/>
+
+    <!-- AI antenna -->
+    <g filter="url(#glow-sm)">
+      <line x1="166" y1="132" x2="166" y2="108" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="166" cy="100" r="8" fill="#080b1a"/>
+      <circle cx="166" cy="100" r="7" fill="none" stroke="#00e5ff" stroke-width="2"/>
+      <circle cx="166" cy="100" r="3" fill="#00e5ff"/>
+    </g>
+  </g>
+
+  <!-- ============================================ -->
+  <!--         RED IMPOSTOR (right, facing left)    -->
+  <!-- ============================================ -->
+  <g filter="url(#shadow)">
+    <!-- Shadow on ground -->
+    <ellipse cx="339" cy="295" rx="52" ry="8" fill="#000" opacity="0.3"/>
+
+    <!-- Backpack -->
+    <rect x="384" y="168" width="16" height="56" rx="8" fill="url(#red)" opacity="0.8"/>
+
+    <!-- Left leg -->
+    <rect x="303" y="262" width="24" height="34" rx="12" fill="url(#red)"/>
+    <!-- Right leg -->
+    <rect x="343" y="262" width="24" height="34" rx="12" fill="url(#red)"/>
+
+    <!-- Body (clean pill shape) -->
+    <rect x="296" y="120" width="80" height="150" rx="40" fill="url(#red)"/>
+
+    <!-- Body shading -->
+    <rect x="346" y="120" width="30" height="150" rx="15" fill="#000" opacity="0.06"/>
+
+    <!-- Visor -->
+    <rect x="280" y="145" width="55" height="45" rx="14" fill="url(#visor)"/>
+    <!-- Visor shine -->
+    <rect x="288" y="150" width="28" height="14" rx="7" fill="#fff" opacity="0.35"/>
+
+    <!-- AI antenna -->
+    <g filter="url(#glow-sm)">
+      <line x1="336" y1="122" x2="336" y2="98" stroke="#ff5252" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="336" cy="90" r="8" fill="#080b1a"/>
+      <circle cx="336" cy="90" r="7" fill="none" stroke="#ff5252" stroke-width="2"/>
+      <circle cx="336" cy="90" r="3" fill="#ff5252"/>
+    </g>
+  </g>
+
+  <!-- ============================================ -->
+  <!--               CENTER ELEMENTS                -->
+  <!-- ============================================ -->
+
+  <!-- Connection line between agents -->
+  <g filter="url(#glow)" opacity="0.4">
+    <line x1="210" y1="210" x2="246" y2="210" stroke="#00e5ff" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="266" y1="210" x2="296" y2="210" stroke="#ff5252" stroke-width="1" stroke-dasharray="4 3"/>
+  </g>
+
+  <!-- BNB diamond center -->
+  <g transform="translate(256, 210)" filter="url(#glow)">
+    <path d="M0 -14 L14 0 L0 14 L-14 0 Z" fill="url(#gold)"/>
+    <path d="M0 -8 L8 0 L0 8 L-8 0 Z" fill="none" stroke="#fff" stroke-width="0.6" opacity="0.35"/>
+  </g>
+
+  <!-- ============================================ -->
+  <!--                TYPOGRAPHY                    -->
+  <!-- ============================================ -->
+
+  <!-- "AMONG" -->
+  <text x="256" y="370" text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', sans-serif" font-weight="900"
+    font-size="68" fill="#ffffff" letter-spacing="6"
+    filter="url(#text-glow)">AMONG</text>
+
+  <!-- "AGENTS" in gold -->
+  <text x="256" y="432" text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', sans-serif" font-weight="900"
+    font-size="68" fill="url(#goldText)" letter-spacing="6"
+    filter="url(#text-glow)">AGENTS</text>
+
+  <!-- Divider line -->
+  <line x1="160" y1="442" x2="352" y2="442" stroke="url(#goldText)" stroke-width="1" opacity="0.3"/>
+
+  <!-- Subtitle -->
+  <text x="256" y="462" text-anchor="middle"
+    font-family="'Courier New', 'SF Mono', monospace" font-size="13"
+    fill="#00e5ff" letter-spacing="6" opacity="0.7"
+    filter="url(#glow-sm)">AUTONOMOUS  ON-CHAIN  AI</text>
+
+  <!-- Inner decorative ring -->
+  <circle cx="256" cy="256" r="244" fill="none" stroke="#00e5ff" stroke-width="0.4" opacity="0.15"/>
+
+  <!-- Outer glow ring -->
+  <circle cx="256" cy="256" r="250" fill="none" stroke="#00e5ff" stroke-width="1" opacity="0.08"/>
+</svg>

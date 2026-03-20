@@ -1,0 +1,1422 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_creator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_wagerVault",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_config",
+        "type": "tuple",
+        "internalType": "struct GameConfig",
+        "components": [
+          {
+            "name": "minPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "maxPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "numImpostors",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "wagerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "actionTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "voteTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "discussionTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tasksPerPlayer",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "visualTasks",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "emergencyMeetings",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "killCooldown",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "advancePhase",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "commitAction",
+    "inputs": [
+      {
+        "name": "_hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "commitments",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "revealed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "config",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "minPlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "maxPlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "numImpostors",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "wagerAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "actionTimeout",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "voteTimeout",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "discussionTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "tasksPerPlayer",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "visualTasks",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "emergencyMeetings",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "killCooldown",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "currentVoteRound",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "deadBodies",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "victim",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "location",
+        "type": "uint8",
+        "internalType": "enum Location"
+      },
+      {
+        "name": "round",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reported",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "emergencyMeetingsUsed",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "factory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAdjacentRooms",
+    "inputs": [
+      {
+        "name": "_location",
+        "type": "uint8",
+        "internalType": "enum Location"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8[]",
+        "internalType": "enum Location[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAllPlayers",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDeadBodies",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct DeadBody[]",
+        "components": [
+          {
+            "name": "victim",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "location",
+            "type": "uint8",
+            "internalType": "enum Location"
+          },
+          {
+            "name": "round",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reported",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getImpostors",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMessages",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct DiscussionMessage[]",
+        "components": [
+          {
+            "name": "sender",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "msgType",
+            "type": "uint8",
+            "internalType": "enum MessageType"
+          },
+          {
+            "name": "target",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "reason",
+            "type": "uint8",
+            "internalType": "enum AccuseReason"
+          },
+          {
+            "name": "location",
+            "type": "uint8",
+            "internalType": "enum Location"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMyRole",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum Role"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPlayerCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPlayersAtLocation",
+    "inputs": [
+      {
+        "name": "_location",
+        "type": "uint8",
+        "internalType": "enum Location"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getResults",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "crewmatesWon",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "winners",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "prizePool",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasBodyAt",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum Location"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isGameEnded",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isPlayer",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "joinGame",
+    "inputs": [
+      {
+        "name": "_player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_colorId",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "lastKillRound",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "leaveGame",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "leaveGameFor",
+    "inputs": [
+      {
+        "name": "_player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "messages",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "msgType",
+        "type": "uint8",
+        "internalType": "enum MessageType"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "reason",
+        "type": "uint8",
+        "internalType": "enum AccuseReason"
+      },
+      {
+        "name": "location",
+        "type": "uint8",
+        "internalType": "enum Location"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "playerAddresses",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "players",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "addr",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "colorId",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "role",
+        "type": "uint8",
+        "internalType": "enum Role"
+      },
+      {
+        "name": "location",
+        "type": "uint8",
+        "internalType": "enum Location"
+      },
+      {
+        "name": "isAlive",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "tasksCompleted",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "totalTasks",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "wagerAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "hasVoted",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "lastActionRound",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "revealAction",
+    "inputs": [
+      {
+        "name": "_actionType",
+        "type": "uint8",
+        "internalType": "enum ActionType"
+      },
+      {
+        "name": "_target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_destination",
+        "type": "uint8",
+        "internalType": "enum Location"
+      },
+      {
+        "name": "_taskId",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "_sabotage",
+        "type": "uint8",
+        "internalType": "enum SabotageType"
+      },
+      {
+        "name": "_salt",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revealedActions",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "actionType",
+        "type": "uint8",
+        "internalType": "enum ActionType"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "destination",
+        "type": "uint8",
+        "internalType": "enum Location"
+      },
+      {
+        "name": "taskId",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "sabotage",
+        "type": "uint8",
+        "internalType": "enum SabotageType"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "startGame",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "state",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "phase",
+        "type": "uint8",
+        "internalType": "enum GamePhase"
+      },
+      {
+        "name": "round",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "phaseEndTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "alivePlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "aliveCrewmates",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "aliveImpostors",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "totalTasksCompleted",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "totalTasksRequired",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "activeSabotage",
+        "type": "uint8",
+        "internalType": "enum SabotageType"
+      },
+      {
+        "name": "sabotageEndTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "winner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "crewmatesWon",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "submitMessage",
+    "inputs": [
+      {
+        "name": "_msgType",
+        "type": "uint8",
+        "internalType": "enum MessageType"
+      },
+      {
+        "name": "_target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reason",
+        "type": "uint8",
+        "internalType": "enum AccuseReason"
+      },
+      {
+        "name": "_location",
+        "type": "uint8",
+        "internalType": "enum Location"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "submitVote",
+    "inputs": [
+      {
+        "name": "_suspect",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "taskCompleted",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "voteCount",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "votes",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "voter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "suspect",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "wagerVault",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "ActionCommitted",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "round",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ActionRevealed",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "actionType",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum ActionType"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BodyReported",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "reporter",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "victim",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameCreated",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "creator",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "wagerAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameEnded",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "crewmatesWon",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "prizePool",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameStarted",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MeetingCalled",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NoOneEjected",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PlayerEjected",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "wasImpostor",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PlayerJoined",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "colorId",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PlayerKilled",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "victim",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "location",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum Location"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PlayerLeft",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RolesAssigned",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SabotageFixed",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sabotageType",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum SabotageType"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SabotageStarted",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sabotageType",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum SabotageType"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TaskCompleted",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "taskId",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VoteCast",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "voter",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "WagerDeposited",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "WinningsDistributed",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  }
+]

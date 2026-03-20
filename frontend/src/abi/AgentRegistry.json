@@ -1,0 +1,602 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "INITIAL_RATING",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "K_FACTOR",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "LEADERBOARD_SIZE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "agentList",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "agents",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "agentAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "gamesPlayed",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gamesWon",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gamesAsCrewmate",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gamesAsImpostor",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "crewmateWins",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "impostorWins",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalKills",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "tasksCompleted",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "correctAccusations",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "timesEjected",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "rating",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "registeredAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "lastGameAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isActive",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "checkRegistered",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "factory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAgentRank",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAgentStats",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct AgentRegistry.AgentStats",
+        "components": [
+          {
+            "name": "agentAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "gamesPlayed",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "gamesWon",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "gamesAsCrewmate",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "gamesAsImpostor",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "crewmateWins",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "impostorWins",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalKills",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tasksCompleted",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "correctAccusations",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "timesEjected",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "rating",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "registeredAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastGameAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "isActive",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAllAgents",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getLeaderboard",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRating",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTopAgents",
+    "inputs": [
+      {
+        "name": "_count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTotalAgents",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getWinRate",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRegistered",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "leaderboard",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recordDetailedStats",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_wasImpostor",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "_won",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "_kills",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_tasksCompleted",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_correctAccusations",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_wasEjected",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "recordGameResult",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_won",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "registerAgent",
+    "inputs": [
+      {
+        "name": "_agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AgentRegistered",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameResultRecorded",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "won",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "newRating",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LeaderboardUpdated",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "rank",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RatingUpdated",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "oldRating",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newRating",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  }
+]

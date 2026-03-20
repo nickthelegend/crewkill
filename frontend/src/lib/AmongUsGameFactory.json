@@ -1,0 +1,897 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_feeRecipient",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_feePercentage",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "receive",
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "activeGameIds",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "activeGameIndex",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "agentRegistry",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract AgentRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "cancelGame",
+    "inputs": [
+      {
+        "name": "_gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createGame",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gameAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "createGameWithConfig",
+    "inputs": [
+      {
+        "name": "_config",
+        "type": "tuple",
+        "internalType": "struct GameConfig",
+        "components": [
+          {
+            "name": "minPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "maxPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "numImpostors",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "wagerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "actionTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "voteTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "discussionTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tasksPerPlayer",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "visualTasks",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "emergencyMeetings",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "killCooldown",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gameAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "defaultConfig",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "minPlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "maxPlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "numImpostors",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "wagerAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "actionTimeout",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "voteTimeout",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "discussionTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "tasksPerPlayer",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "visualTasks",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "emergencyMeetings",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "killCooldown",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gameConfigs",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "minPlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "maxPlayers",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "numImpostors",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "wagerAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "actionTimeout",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "voteTimeout",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "discussionTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "tasksPerPlayer",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "visualTasks",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "emergencyMeetings",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "killCooldown",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gameCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "games",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getActiveGameCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getActiveGames",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAgentRegistry",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAvailableGames",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "gameIds",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "playerCounts",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "wagerAmounts",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getGameDetails",
+    "inputs": [
+      {
+        "name": "_gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gameAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct GameConfig",
+        "components": [
+          {
+            "name": "minPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "maxPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "numImpostors",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "wagerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "actionTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "voteTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "discussionTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tasksPerPlayer",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "visualTasks",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "emergencyMeetings",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "killCooldown",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "state",
+        "type": "tuple",
+        "internalType": "struct GameState",
+        "components": [
+          {
+            "name": "gameId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "phase",
+            "type": "uint8",
+            "internalType": "enum GamePhase"
+          },
+          {
+            "name": "round",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "phaseEndTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "alivePlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "aliveCrewmates",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "aliveImpostors",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "totalTasksCompleted",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "totalTasksRequired",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "activeSabotage",
+            "type": "uint8",
+            "internalType": "enum SabotageType"
+          },
+          {
+            "name": "sabotageEndTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "winner",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "crewmatesWon",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      },
+      {
+        "name": "playerCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "pool",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getWagerVault",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isActiveGame",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "joinGame",
+    "inputs": [
+      {
+        "name": "_gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_colorId",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "leaveGame",
+    "inputs": [
+      {
+        "name": "_gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setDefaultConfig",
+    "inputs": [
+      {
+        "name": "_config",
+        "type": "tuple",
+        "internalType": "struct GameConfig",
+        "components": [
+          {
+            "name": "minPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "maxPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "numImpostors",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "wagerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "actionTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "voteTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "discussionTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tasksPerPlayer",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "visualTasks",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "emergencyMeetings",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "killCooldown",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setFeeSettings",
+    "inputs": [
+      {
+        "name": "_recipient",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_percentage",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settleGame",
+    "inputs": [
+      {
+        "name": "_gameId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "_newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "wagerVault",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract WagerVault"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "DefaultConfigUpdated",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct GameConfig",
+        "components": [
+          {
+            "name": "minPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "maxPlayers",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "numImpostors",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "wagerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "actionTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "voteTimeout",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "discussionTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tasksPerPlayer",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "visualTasks",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "emergencyMeetings",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "killCooldown",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameCreated",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "gameAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "creator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "wagerAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameEnded",
+    "inputs": [
+      {
+        "name": "gameId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "gameAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  }
+]
