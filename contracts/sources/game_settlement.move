@@ -13,12 +13,13 @@ use among_agents::agent_registry::{Self, AgentRegistry};
 // ======== Constants ========
 
 const PHASE_LOBBY: u8 = 0;
-const PHASE_ROLE_ASSIGNMENT: u8 = 1;
+const PHASE_STARTING: u8 = 1;
 const PHASE_ACTION_COMMIT: u8 = 2;
 const PHASE_ACTION_REVEAL: u8 = 3;
-const PHASE_VOTING: u8 = 4;
-const PHASE_WIN_CHECK: u8 = 5;
-const PHASE_ENDED: u8 = 6;
+const PHASE_DISCUSSION: u8 = 4;
+const PHASE_VOTING: u8 = 5;
+const PHASE_VOTE_RESULT: u8 = 6;
+const PHASE_ENDED: u8 = 7;
 
 const ROLE_CREWMATE: u8 = 1;
 const ROLE_IMPOSTOR: u8 = 2;
@@ -186,7 +187,7 @@ public entry fun join_game(
 
     vector::push_back(&mut game.players, player);
     table::add(&mut game.alive, player, true);
-    table::add(&mut game.locations, player, 2); // start in CAFETERIA (index 2)
+    table::add(&mut game.locations, player, 0); // start in CAFETERIA (index 0)
     table::add(&mut game.tasks_done, player, 0);
 
     let player_count = vector::length(&game.players);
@@ -259,16 +260,18 @@ public entry fun advance_phase(
     assert!(ctx.sender() == manager.admin, 13);
 
     let new_phase = if (game.phase == PHASE_LOBBY) {
-        PHASE_ROLE_ASSIGNMENT
-    } else if (game.phase == PHASE_ROLE_ASSIGNMENT) {
+        PHASE_STARTING
+    } else if (game.phase == PHASE_STARTING) {
         PHASE_ACTION_COMMIT
     } else if (game.phase == PHASE_ACTION_COMMIT) {
         PHASE_ACTION_REVEAL
     } else if (game.phase == PHASE_ACTION_REVEAL) {
+        PHASE_DISCUSSION
+    } else if (game.phase == PHASE_DISCUSSION) {
         PHASE_VOTING
     } else if (game.phase == PHASE_VOTING) {
-        PHASE_WIN_CHECK
-    } else if (game.phase == PHASE_WIN_CHECK) {
+        PHASE_VOTE_RESULT
+    } else if (game.phase == PHASE_VOTE_RESULT) {
         game.round = game.round + 1;
         PHASE_ACTION_COMMIT
     } else {
@@ -286,7 +289,7 @@ public entry fun assign_roles(
     ctx: &mut TxContext,
 ) {
     assert!(ctx.sender() == manager.admin, 13);
-    assert!(game.phase == PHASE_ROLE_ASSIGNMENT, 14);
+    assert!(game.phase == PHASE_STARTING, 14);
 
     let mut i = 0;
     let len = vector::length(&game.players);
