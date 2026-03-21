@@ -173,6 +173,7 @@ export interface ClientAuthenticateMessage {
 
 export interface ClientCreateRoomMessage {
   type: "client:create_room";
+  roomId?: string; // Optional - use this if room already exists on-chain
   maxPlayers?: number;
   impostorCount?: number;
   wagerAmount?: string; // in wei

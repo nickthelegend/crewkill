@@ -109,6 +109,14 @@ export class Agent {
     return gameId;
   }
 
+  async createWebSocketRoom(gameObjectId: string): Promise<void> {
+    if (!this.wsClient) return;
+    this.currentGameObjectId = gameObjectId;
+    await this.wsClient.connect();
+    this.wsClient.createRoom(gameObjectId);
+    this.logger.info(`Requested WebSocket room creation for ${gameObjectId}`);
+  }
+
   async placeWagerAndJoin(gameObjectId: string): Promise<void> {
     this.logger.info(`Joining game ${gameObjectId}...`);
     await this.submitter.placeWager(gameObjectId);
@@ -141,6 +149,11 @@ export class Agent {
     if (gameObjectId) {
         this.currentGameObjectId = gameObjectId;
         this.submitter.setGame(gameObjectId);
+    }
+    
+    if (this.wsClient && this.currentGameObjectId) {
+        await this.wsClient.connect();
+        this.wsClient.joinRoom(this.currentGameObjectId);
     }
     
     if (!this.currentGameObjectId) {

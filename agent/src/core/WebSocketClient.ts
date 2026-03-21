@@ -79,6 +79,13 @@ export class WebSocketClient extends EventEmitter {
     });
   }
 
+  createRoom(roomId: string): void {
+    this.send({
+      type: "client:create_room",
+      roomId,
+    });
+  }
+
   joinRoom(roomId: string, colorId?: number): void {
     this.send({
       type: "client:join_room",

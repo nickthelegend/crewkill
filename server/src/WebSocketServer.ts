@@ -203,6 +203,7 @@ export class WebSocketRelayServer {
           message.impostorCount,
           message.wagerAmount,
           message.aiAgentCount,
+          message.roomId,
         );
         break;
 
@@ -704,6 +705,7 @@ export class WebSocketRelayServer {
     impostorCount = 2,
     wagerAmount?: string,
     aiAgentCount?: number,
+    forcedRoomId?: string,
   ): RoomState | { error: string } {
     // Limit: one active room per creator
     if (creatorAddress) {
@@ -721,7 +723,7 @@ export class WebSocketRelayServer {
       }
     }
 
-    const roomId = `room-${uuidv4().slice(0, 6)}`;
+    const roomId = forcedRoomId || `room-${uuidv4().slice(0, 6)}`;
     const room: RoomState = {
       roomId,
       players: [],
@@ -773,6 +775,7 @@ export class WebSocketRelayServer {
     impostorCount = 2,
     wagerAmount?: string,
     aiAgentCount?: number,
+    roomId?: string,
   ): void {
     const result = this.createRoom(
       client.address,
@@ -780,6 +783,7 @@ export class WebSocketRelayServer {
       impostorCount,
       wagerAmount,
       aiAgentCount,
+      roomId,
     );
 
     if ("error" in result) {

@@ -10,8 +10,8 @@ export const CONTRACT_CONFIG = {
 };
 
 export const GAME_CONFIG = {
-  WAGER_AMOUNT_MIST:  100_000_000n, // 0.1 OCT
+  WAGER_AMOUNT_MIST:  1_000_000n, // 0.001 OCT
   TASKS_REQUIRED:     10,
   MAX_PLAYERS:        8,
-  MIN_BET_MIST:       10_000_000n,  // 0.01 OCT
+  MIN_BET_MIST:       100_000n,    // 0.0001 OCT
 };

@@ -88,6 +88,7 @@ async function runMatch() {
       {
         crewmateStyle: config.crewmateStyle,
         impostorStyle: config.impostorStyle,
+        wsServerUrl: 'ws://localhost:8082',
       }
     )
   );
@@ -112,6 +113,7 @@ async function runMatch() {
     // First agent creates the game
     console.log('\nAgent-Red creating game...');
     gameObjectId = await agents[0].createGame();
+    await agents[0].createWebSocketRoom(gameObjectId);
     console.log(`Game created: ${gameObjectId}\n`);
 
     // All agents place wager and join
