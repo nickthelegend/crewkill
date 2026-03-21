@@ -799,6 +799,7 @@ function findPath(from: Location, to: Location): { x: number; y: number }[] {
   return [];
 }
 
+
 interface PlayerPosition {
   x: number;
   y: number;
@@ -817,43 +818,52 @@ export function ScrollableMap({
   onSpotlightPlayer,
 }: ScrollableMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const [playerPositions, setPlayerPositions] = useState<Record<string, PlayerPosition>>({});
   const [previousLocations, setPreviousLocations] = useState<Record<string, Location>>({});
-  const [zoom, setZoom] = useState(0.5); // 0.3 to 1.0 range
+  const [zoom, setZoom] = useState(0.4); 
+  const [pan, setPan] = useState({ x: 0, y: 0 });
 
-  // Initialize positions
+  // Sync player positions when players array changes
   useEffect(() => {
-    const positions: Record<string, PlayerPosition> = {};
-    const locations: Record<string, Location> = {};
+    setPlayerPositions(prev => {
+      const next = { ...prev };
+      let changed = false;
 
-    players.forEach((player, idx) => {
-      const room = ROOMS[player.location];
-      const offsetX = ((idx % 3) - 1) * 60;
-      const offsetY = (Math.floor(idx / 3)) * 50;
+      players.forEach((player, idx) => {
+        // Only if player is alive and NOT already tracked
+        if (player.isAlive && !next[player.address]) {
+          const room = ROOMS[player.location];
+          const offsetX = ((idx % 3) - 1) * 60;
+          const offsetY = (Math.floor(idx / 3)) * 50;
 
-      positions[player.address] = {
-        x: room.center.x + offsetX,
-        y: room.center.y + offsetY,
-        waypoints: [],
-        currentWaypointIndex: 0,
-        isMoving: false,
-        facingLeft: false,
-      };
-      locations[player.address] = player.location;
+          next[player.address] = {
+            x: room.center.x + offsetX,
+            y: room.center.y + offsetY,
+            waypoints: [],
+            currentWaypointIndex: 0,
+            isMoving: false,
+            facingLeft: false,
+          };
+          changed = true;
+        }
+      });
+
+      // Cleanup dead players from positions (they move to deadBodies layer)
+      players.forEach(player => {
+        if (!player.isAlive && next[player.address]) {
+          delete next[player.address];
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
     });
 
-    if (Object.keys(playerPositions).length === 0) {
-      setPlayerPositions(positions);
-      setPreviousLocations(locations);
-    }
-  }, []);
+    // Handle room changes for movement
+    players.forEach((player, idx) => {
+      if (!player.isAlive) return;
 
-  // Handle room changes and clean up dead players
-  useEffect(() => {
-    // Only process alive players
-    const alivePlayers = players.filter(p => p.isAlive);
-
-    alivePlayers.forEach((player, idx) => {
       const prevLoc = previousLocations[player.address];
       const currLoc = player.location;
 
@@ -863,45 +873,35 @@ export function ScrollableMap({
         const offsetX = ((idx % 3) - 1) * 60;
         const offsetY = (Math.floor(idx / 3)) * 50;
 
-        // Add final position in room
         path.push({ x: room.center.x + offsetX, y: room.center.y + offsetY });
 
-        setPlayerPositions(prev => ({
-          ...prev,
-          [player.address]: {
-            ...prev[player.address],
-            waypoints: path,
-            currentWaypointIndex: 0,
-            isMoving: true,
-          },
-        }));
+        setPlayerPositions(prev => {
+          if (!prev[player.address]) return prev;
+          return {
+            ...prev,
+            [player.address]: {
+              ...prev[player.address],
+              waypoints: path,
+              currentWaypointIndex: 0,
+              isMoving: true,
+            },
+          };
+        });
       }
     });
 
-    // Clean up positions for dead players
-    const deadPlayers = players.filter(p => !p.isAlive);
-    if (deadPlayers.length > 0) {
-      setPlayerPositions(prev => {
-        const next = { ...prev };
-        deadPlayers.forEach(dp => {
-          delete next[dp.address];
-        });
-        return next;
-      });
-    }
-
     const newLocs: Record<string, Location> = {};
-    alivePlayers.forEach(p => newLocs[p.address] = p.location);
+    players.forEach(p => { if(p.isAlive) newLocs[p.address] = p.location; });
     setPreviousLocations(newLocs);
   }, [players]);
 
   // Animation loop
   useEffect(() => {
-    const speed = 5;
-
+    const speed = 6;
     const interval = setInterval(() => {
       setPlayerPositions(prev => {
         const next = { ...prev };
+        let hasChanges = false;
 
         Object.keys(next).forEach(addr => {
           const pos = next[addr];
@@ -910,6 +910,7 @@ export function ScrollableMap({
           const target = pos.waypoints[pos.currentWaypointIndex];
           if (!target) {
             next[addr] = { ...pos, isMoving: false, waypoints: [] };
+            hasChanges = true;
             return;
           }
 
@@ -917,6 +918,7 @@ export function ScrollableMap({
           const dy = target.y - pos.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
+          hasChanges = true;
           if (dist < speed) {
             if (pos.currentWaypointIndex >= pos.waypoints.length - 1) {
               next[addr] = { ...pos, x: target.x, y: target.y, isMoving: false, waypoints: [] };
@@ -933,46 +935,45 @@ export function ScrollableMap({
           }
         });
 
-        return next;
+        return hasChanges ? next : prev;
       });
     }, 16);
-
     return () => clearInterval(interval);
   }, []);
 
-  // Camera
+  // Center camera on spotlighted/followed player
   const currentPlayerData = players.find(p => p.address === currentPlayer);
   const followedPlayer = spotlightedPlayer
     ? players.find(p => p.address === spotlightedPlayer)
     : currentPlayerData;
 
+  // Auto-pan to followed player
   useEffect(() => {
-    if (!containerRef.current || !followedPlayer) return;
+    if (!followedPlayer || !containerRef.current) return;
     const pos = playerPositions[followedPlayer.address];
     if (!pos) return;
 
-    const c = containerRef.current;
-    c.scrollTo({
-      left: Math.max(0, Math.min(pos.x - c.clientWidth / 2, MAP_WIDTH - c.clientWidth)),
-      top: Math.max(0, Math.min(pos.y - c.clientHeight / 2, MAP_HEIGHT - c.clientHeight)),
-      behavior: 'smooth',
-    });
-  }, [followedPlayer?.location, spotlightedPlayer]);
+    // Center point in map coordinates
+    const targetX = -pos.x * zoom + containerRef.current.clientWidth / 2;
+    const targetY = -pos.y * zoom + containerRef.current.clientHeight / 2;
+    
+    setPan({ x: targetX, y: targetY });
+  }, [followedPlayer?.location, spotlightedPlayer, zoom]);
 
+  // Continuous smooth follow
   useEffect(() => {
     if (!spotlightedPlayer) return;
     const interval = setInterval(() => {
       const pos = playerPositions[spotlightedPlayer];
       if (pos?.isMoving && containerRef.current) {
-        const c = containerRef.current;
-        c.scrollTo({
-          left: Math.max(0, Math.min(pos.x - c.clientWidth / 2, MAP_WIDTH - c.clientWidth)),
-          top: Math.max(0, Math.min(pos.y - c.clientHeight / 2, MAP_HEIGHT - c.clientHeight)),
-        });
+        setPan(prev => ({
+          x: -pos.x * zoom + containerRef.current!.clientWidth / 2,
+          y: -pos.y * zoom + containerRef.current!.clientHeight / 2,
+        }));
       }
     }, 30);
     return () => clearInterval(interval);
-  }, [spotlightedPlayer, playerPositions]);
+  }, [spotlightedPlayer, playerPositions, zoom]);
 
   const handleRoomClick = (loc: Location) => {
     if (onPlayerMove && loc !== currentPlayerData?.location) {
@@ -980,22 +981,45 @@ export function ScrollableMap({
     }
   };
 
-  // Zoom controls
-  const handleZoom = (delta: number) => {
-    setZoom(prev => Math.min(Math.max(prev + delta, 0.3), 1.2));
+  const handleZoom = (delta: number, centerX?: number, centerY?: number) => {
+    setZoom(prev => {
+      const newZoom = Math.min(Math.max(prev + delta, 0.15), 1.5);
+      
+      // If we have center coordinates, adjust pan to zoom towards mouse/center
+      if (centerX !== undefined && centerY !== undefined && containerRef.current) {
+        setPan(prevPan => {
+          const ratio = newZoom / prev;
+          return {
+            x: centerX - (centerX - prevPan.x) * ratio,
+            y: centerY - (centerY - prevPan.y) * ratio,
+          };
+        });
+      }
+      return newZoom;
+    });
   };
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
-      handleZoom(e.deltaY > 0 ? -0.05 : 0.05);
+      handleZoom(e.deltaY > 0 ? -0.05 : 0.05, e.clientX, e.clientY);
+    } else {
+      // Normal panning with wheel
+      setPan(prev => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY,
+      }));
     }
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#0a0a12]">
-      {/* Zoom Controls */}
-      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+    <div 
+      ref={containerRef}
+      className="fixed inset-0 overflow-hidden bg-[#050510] cursor-grab active:cursor-grabbing"
+      onWheel={handleWheel}
+    >
+      {/* Zoom Controls Overlay */}
+      <div className="absolute top-24 left-6 z-50 flex flex-col gap-2 pointer-events-auto">
         <button
           onClick={() => handleZoom(0.1)}
           className="w-10 h-10 bg-gray-800/90 hover:bg-gray-700 border-2 border-gray-600 rounded-lg flex items-center justify-center text-white font-bold transition-colors"
@@ -1013,20 +1037,29 @@ export function ScrollableMap({
         <div className="text-xs text-white/50 text-center font-mono">{Math.round(zoom * 100)}%</div>
       </div>
 
-      <div
-        ref={containerRef}
-        className="w-full h-full overflow-auto"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: '#4a5568 #1a202c' }}
-        onWheel={handleWheel}
+
+      <motion.div
+        drag
+        dragMomentum={true}
+        dragTransition={{ power: 0.3, timeConstant: 200 }}
+        dragElastic={0.05}
+        onDrag={(e, info) => {
+          setPan(prev => ({
+            x: prev.x + info.delta.x,
+            y: prev.y + info.delta.y
+          }));
+        }}
+        className="relative pointer-events-auto"
+        style={{
+          width: MAP_WIDTH,
+          height: MAP_HEIGHT,
+          x: pan.x,
+          y: pan.y,
+          scale: zoom,
+          transformOrigin: '0 0',
+          cursor: 'inherit',
+        }}
       >
-        <div
-          className="relative origin-top-left transition-transform duration-200"
-          style={{
-            width: MAP_WIDTH,
-            height: MAP_HEIGHT,
-            transform: `scale(${zoom})`,
-          }}
-        >
           {/* Background */}
           <div
             className="absolute inset-0"
@@ -1326,8 +1359,7 @@ export function ScrollableMap({
               </motion.div>
             );
           })}
-        </div>
-      </div>
+      </motion.div>
 
       {/* Mini-map */}
       <div className="fixed bottom-4 right-4 w-64 h-52 bg-gradient-to-b from-gray-900 to-black rounded-xl border-2 border-gray-600 p-2 z-50" style={{

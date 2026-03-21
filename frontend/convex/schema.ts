@@ -76,6 +76,11 @@ export default defineSchema({
     endedAt: v.optional(v.number()),
     scheduledAt: v.optional(v.number()),
     bettingEndsAt: v.optional(v.number()),
+    players: v.optional(v.array(v.object({
+      address: v.string(),
+      name: v.string(),
+      colorId: v.number(),
+    }))),
     createdAt: v.number(),
     settlementTxHash: v.optional(v.string()),
   }).index("by_roomId", ["roomId"])

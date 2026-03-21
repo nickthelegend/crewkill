@@ -213,6 +213,29 @@ export const listGames = query({
   },
 });
 
+export const updateGamePlayers = mutation({
+  args: {
+    roomId: v.string(),
+    players: v.array(v.object({
+      address: v.string(),
+      name: v.string(),
+      colorId: v.number(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .unique();
+    if (!game) return null;
+
+    await ctx.db.patch(game._id, {
+      players: args.players,
+    });
+    return game;
+  },
+});
+
 export const getBettingStatus = query({
   args: { roomId: v.string() },
   handler: async (ctx, args) => {

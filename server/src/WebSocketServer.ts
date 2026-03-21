@@ -438,6 +438,26 @@ export class WebSocketRelayServer {
     this.handleAuthenticate(client, undefined, name);
   }
 
+  private updateConvexPlayers(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const playersWithNames = room.players.map((p) => {
+      const client = Array.from(this.clients.values()).find(
+        (c) => c.address?.toLowerCase() === p.address.toLowerCase()
+      );
+      return {
+        address: p.address,
+        name: client?.name || p.address.slice(0, 8),
+        colorId: p.colorId,
+      };
+    });
+
+    databaseService.updateGamePlayers(roomId, playersWithNames).catch((err) => {
+      logger.error(`Error updating convex players for ${roomId}:`, err);
+    });
+  }
+
   private handleJoinRoom(
     client: Client,
     roomId: string,
@@ -550,6 +570,21 @@ export class WebSocketRelayServer {
 
     // Broadcast room list update
     this.broadcastRoomList();
+
+    // Sync to Convex
+    this.updateConvexPlayers(roomId);
+
+    // If game is in progress, send current game state to the joining client
+    if (room.phase !== "lobby") {
+      const gameState = this.gameStateManager.getGame(roomId);
+      if (gameState) {
+        this.send(client, {
+          type: "server:game_state",
+          gameId: roomId,
+          state: gameState,
+        });
+      }
+    }
   }
 
   /**
@@ -610,8 +645,8 @@ export class WebSocketRelayServer {
           player: playerState,
         });
 
-        // Send room state to joining client
-        this.send(client, { type: "server:room_update", room });
+        // Sync to Convex
+        this.updateConvexPlayers(roomId);
 
         // Trigger auto-start logic
         this.onPlayerJoinedRoom(roomId);
@@ -684,6 +719,11 @@ export class WebSocketRelayServer {
 
     client.roomId = undefined;
     logger.info(`Client ${client.name} left room ${roomId}`);
+
+    // Sync to Convex
+    if (this.rooms.has(roomId)) {
+      this.updateConvexPlayers(roomId);
+    }
 
     // Dynamic room cleanup: Delete room if it's empty in lobby or ended phase
     if (
@@ -2664,6 +2704,9 @@ export class WebSocketRelayServer {
       gameId: roomId,
       player: playerState,
     });
+
+    // Sync to Convex
+    this.updateConvexPlayers(roomId);
   }
 
   /**

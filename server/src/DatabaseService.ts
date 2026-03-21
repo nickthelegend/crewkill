@@ -148,6 +148,22 @@ export class DatabaseService {
     }
   }
 
+  async updateGamePlayers(roomId: string, players: Array<{
+    address: string;
+    name: string;
+    colorId: number;
+  }>) {
+    if (!this.enabled) return;
+    try {
+      await this.convex.mutation("crewkill:updateGamePlayers" as any, {
+        roomId,
+        players,
+      });
+    } catch (error) {
+      logger.error(`Failed to update game players for ${roomId} via Convex:`, error);
+    }
+  }
+
   async startGame(
     roomId: string,
     participants: Array<{
