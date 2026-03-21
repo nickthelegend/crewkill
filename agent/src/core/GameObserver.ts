@@ -51,12 +51,12 @@ export class GameObserver {
     const fields = (result.data?.content as any)?.fields;
     if (!fields) throw new Error('Game not found');
 
-    // roles is a Table — query via dynamic fields
     const roleField = await this.client.getDynamicFieldObject({
       parentId: fields.roles?.fields?.id?.id,
       name: { type: 'address', value: address },
     });
 
+    if (roleField.error) return Role.None;
     const role = (roleField.data?.content as any)?.fields?.value;
     return Number(role ?? 0) as Role;
   }
@@ -75,6 +75,7 @@ export class GameObserver {
         parentId: fields.alive?.fields?.id?.id,
         name: { type: 'address', value: address },
       });
+      if (aliveField.error) return false;
       const val = (aliveField.data?.content as any)?.fields?.value;
       return val === true;
     } catch {
@@ -89,16 +90,17 @@ export class GameObserver {
     });
 
     const fields = (result.data?.content as any)?.fields;
-    if (!fields) return 0;
+    if (!fields) return Location.Cafeteria;
 
     try {
       const locField = await this.client.getDynamicFieldObject({
         parentId: fields.locations?.fields?.id?.id,
         name: { type: 'address', value: address },
       });
+      if (locField.error) return Location.Cafeteria;
       return Number((locField.data?.content as any)?.fields?.value ?? 0) as Location;
     } catch {
-      return 0;
+      return Location.Cafeteria;
     }
   }
 
@@ -136,11 +138,11 @@ export class GameObserver {
     if (!fields?.commits?.fields?.id?.id) return false;
 
     try {
-      await this.client.getDynamicFieldObject({
+      const res = await this.client.getDynamicFieldObject({
         parentId: fields.commits.fields.id.id,
         name: { type: 'address', value: address },
       });
-      return true;
+      return !res.error;
     } catch {
       return false;
     }
@@ -156,11 +158,11 @@ export class GameObserver {
     if (!fields?.reveals?.fields?.id?.id) return false;
 
     try {
-      await this.client.getDynamicFieldObject({
+      const res = await this.client.getDynamicFieldObject({
         parentId: fields.reveals.fields.id.id,
         name: { type: 'address', value: address },
       });
-      return true;
+      return !res.error;
     } catch {
       return false;
     }
@@ -223,28 +225,33 @@ export class GameObserver {
       const fields = (result.data?.content as any)?.fields;
       if (!fields?.agents?.fields?.id?.id) return false;
 
-      await this.client.getDynamicFieldObject({
+      const res = await this.client.getDynamicFieldObject({
         parentId: fields.agents.fields.id.id,
         name: { type: 'address', value: address },
       });
-      return true;
+      return !res.error;
     } catch {
       return false;
     }
   }
 
   async getAgentStats(address: string): Promise<any> {
-    const result = await this.client.getObject({
-      id: CONTRACT_CONFIG.AGENT_REGISTRY_ID,
-      options: { showContent: true },
-    });
-    const fields = (result.data?.content as any)?.fields;
+    try {
+        const result = await this.client.getObject({
+            id: CONTRACT_CONFIG.AGENT_REGISTRY_ID,
+            options: { showContent: true },
+        });
+        const fields = (result.data?.content as any)?.fields;
 
-    const statsField = await this.client.getDynamicFieldObject({
-      parentId: fields.agents.fields.id.id,
-      name: { type: 'address', value: address },
-    });
+        const statsField = await this.client.getDynamicFieldObject({
+            parentId: fields.agents.fields.id.id,
+            name: { type: 'address', value: address },
+        });
 
-    return (statsField.data?.content as any)?.fields?.value?.fields;
+        if (statsField.error) return null;
+        return (statsField.data?.content as any)?.fields?.value?.fields;
+    } catch {
+        return null;
+    }
   }
 }

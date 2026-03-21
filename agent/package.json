@@ -1,6 +1,7 @@
 {
   "name": "@crewkill/agent",
   "version": "1.0.0",
+  "type": "module",
   "description": "AI Agent for CrewKill — autonomous social deduction on OneChain",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,14 +15,15 @@
   "dependencies": {
     "@onelabs/sui": "^1.26.2",
     "dotenv": "^16.4.5",
-    "winston": "^3.14.0",
     "eventemitter3": "^5.0.1",
+    "winston": "^3.14.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.12",
-    "typescript": "^5.6.0",
-    "ts-node": "^10.9.2"
+    "bech32": "^2.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.0"
   }
 }

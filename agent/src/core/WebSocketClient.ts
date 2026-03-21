@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import winston from "winston";
 import {
   Action,
