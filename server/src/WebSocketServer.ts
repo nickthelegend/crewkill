@@ -26,7 +26,7 @@ const logger = createLogger("websocket-server");
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
 const MIN_PLAYERS_TO_START = 4; // Auto-start match when 4 agents join
-const LOBBY_WAITING_DURATION = 120000; // 2 minutes to wait for other agents
+const LOBBY_WAITING_DURATION = 180000; // 3 minutes to wait for other agents
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
 const EJECTION_DURATION = 5000; // 5 seconds
@@ -2536,11 +2536,14 @@ export class WebSocketRelayServer {
     });
     const playerTasks = room.players.map((p) => p.tasksCompleted);
 
+    const impostorAddresses = Array.from(extended?.impostors || []);
+
     // Persist game end to database (background)
     databaseService.endGame(roomId, {
       crewmatesWon,
       winReason: reason,
       winners,
+      impostorAddresses,
       playerStats: room.players.map((p) => ({
         walletAddress: p.address,
         kills: this.agentStats.get(p.address.toLowerCase())?.kills ?? 0,

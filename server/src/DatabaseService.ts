@@ -198,10 +198,39 @@ export class DatabaseService {
         isAlive: boolean;
       }>;
       winningsPerPlayer: bigint;
+      impostorAddresses?: string[];
       settlementTxHash?: string;
     },
   ) {
-    // In progress - would call resolve mutations
+    if (!this.enabled) return;
+    try {
+      // 1. Resolve predictions if impostors known
+      if (result.impostorAddresses) {
+        await this.convex.mutation("bets:resolveBets" as any, {
+          gameId: roomId,
+          winnerSide: result.crewmatesWon ? 0 : 1,
+          impostorAddresses: result.impostorAddresses,
+        });
+      }
+      
+      // 2. Settlement log for the game itself
+      // In progress - could add more logs here
+    } catch (error) {
+      logger.error(`Failed to end game ${roomId} via Convex:`, error);
+    }
+  }
+
+  async resolveBets(gameId: string, winnerSide: number, impostorAddresses: string[]) {
+    if (!this.enabled) return;
+    try {
+      await this.convex.mutation("bets:resolveBets" as any, {
+        gameId,
+        winnerSide,
+        impostorAddresses,
+      });
+    } catch (error) {
+      logger.error(`Failed to resolve bets for ${gameId} via Convex:`, error);
+    }
   }
 
   async getGameByRoomId(roomId: string) {

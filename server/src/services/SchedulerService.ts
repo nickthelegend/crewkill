@@ -10,9 +10,9 @@ const logger = createLogger("scheduler");
  */
 export class SchedulerService {
   private convex: ConvexHttpClient;
-  private intervalMs: number = 30 * 60 * 1000; // 30 minutes
+  private intervalMs: number = 10 * 60 * 1000; // 10 minutes
   private intervalId: NodeJS.Timeout | null = null;
-  private bettingWindowMs: number = 27 * 60 * 1000; // 27 minutes (3 mins before start)
+  private bettingWindowMs: number = 3 * 60 * 1000; // 3 minutes betting window
 
   constructor(convexUrl: string) {
     this.convex = new ConvexHttpClient(convexUrl);
@@ -61,7 +61,7 @@ export class SchedulerService {
         logger.info(`Scheduling new game for slot: ${new Date(targetSlot).toISOString()}`);
         
         const roomId = `scheduled_${targetSlot}`;
-        const bettingEndsAt = targetSlot - (3 * 60 * 1000); // 3 mins before start
+        const bettingEndsAt = now + (3 * 60 * 1000); // Betting open for exactly 3 mins
 
         await this.convex.mutation("crewkill:createScheduledGame" as any, {
           roomId,

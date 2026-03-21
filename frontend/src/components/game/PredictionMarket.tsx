@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@onelabs/dapp-kit';
 import { Transaction } from '@onelabs/sui/transactions';
 import { suiClient, PACKAGE_ID, MARKET_REGISTRY_ID } from '@/lib/onechain';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+
+const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 
 interface Player {
   address: string;
@@ -55,6 +59,10 @@ export function PredictionMarket({
   const [txStatus, setTxStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [txMsg, setTxMsg] = useState('');
 
+  // Convex integration for offline mode
+  const convexBets = useQuery(api.bets.getBetsByGame, { gameId }) || [];
+  const placeConvexBet = useMutation(api.bets.placeBet);
+
   // Fetch market state from chain
   useEffect(() => {
     if (!marketObjectId || marketObjectId === '0x_FILL_AFTER_DEPLOY') return;
@@ -64,6 +72,37 @@ export function PredictionMarket({
   }, [marketObjectId, account?.address, gamePlayers]);
 
   async function fetchMarketState() {
+    if (IS_OFFLINE) {
+        // Use Convex data to build pool
+        const pot = convexBets.reduce((sum, b) => sum + b.amountMist, 0);
+        setTotalPot(pot);
+        setIsOpen(gamePhase < 2); // Open during lobby
+
+        const pools: SuspectPool[] = gamePlayers.map((p) => {
+          const amount = convexBets.filter(b => b.selection.toLowerCase() === p.address.toLowerCase())
+                                   .reduce((sum, b) => sum + b.amountMist, 0);
+          return {
+            address: p.address,
+            totalBet: amount,
+            percentage: pot > 0 ? Math.round((amount / pot) * 100) : 0,
+          };
+        });
+        setSuspectPools(pools);
+
+        if (account?.address) {
+          const myBet = convexBets.find(b => b.address.toLowerCase() === account.address.toLowerCase());
+          if (myBet) {
+            setUserBet({
+              suspect: myBet.selection,
+              amount: myBet.amountMist,
+              correct: myBet.status === "won",
+              claimed: myBet.status === "won", // Mock claimed if won in offline
+            });
+          }
+        }
+        return;
+    }
+
     try {
       const result = await suiClient.getObject({
         id: marketObjectId,
@@ -117,8 +156,8 @@ export function PredictionMarket({
   async function handlePlaceBet() {
     if (!account || !selectedSuspect || !betAmount) return;
 
-    const betMist = BigInt(Math.round(parseFloat(betAmount) * 1_000_000_000));
-    if (betMist < 10_000_000n) {
+    const betMist = Math.round(parseFloat(betAmount) * 1_000_000_000);
+    if (betMist < 10_000_000) {
       setTxMsg('Minimum bet is 0.01 OCT');
       setTxStatus('error');
       return;
@@ -126,6 +165,26 @@ export function PredictionMarket({
 
     setLoading(true);
     setTxStatus('idle');
+
+    if (IS_OFFLINE) {
+      try {
+        await placeConvexBet({
+          address: account.address,
+          gameId: gameId,
+          selection: selectedSuspect,
+          amountMist: betMist,
+          txDigest: `offline_${Date.now()}`,
+        });
+        setTxStatus('success');
+        setTxMsg(`Prediction locked via Neural Link (Offline)`);
+        setLoading(false);
+      } catch (e: any) {
+        setTxStatus('error');
+        setTxMsg(e.message || 'Failed to place prediction');
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       const tx = new Transaction();

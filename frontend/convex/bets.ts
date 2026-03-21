@@ -70,8 +70,8 @@ export const getBetsByUser = query({
 export const resolveBets = mutation({
   args: {
     gameId: v.string(),
-    winnerSide: v.number(),
-    winningAgentAddress: v.string(),
+    winnerSide: v.number(), // 0 = Crew, 1 = Impostor
+    impostorAddresses: v.array(v.string()), // Addresses of agents who were impostors
   },
   handler: async (ctx, args) => {
     const bets = await ctx.db
@@ -79,23 +79,79 @@ export const resolveBets = mutation({
       .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
       .collect();
 
+    if (bets.length === 0) return;
+
+    const normalizedImpostors = (args.impostorAddresses || []).map((a: string) => a.toLowerCase());
+
+    // 1. Calculate pools
+    let totalPool = 0;
+    let winningPool = 0;
+    
+    const winningBets = bets.filter(bet => {
+      const isImpostor = normalizedImpostors.includes(bet.selection.toLowerCase());
+      const selectedSide = isImpostor ? 1 : 0;
+      return selectedSide === args.winnerSide;
+    });
+
     for (const bet of bets) {
-      const isWin = bet.selection === args.winningAgentAddress;
+      totalPool += bet.amountMist;
+    }
+    
+    for (const bet of winningBets) {
+      winningPool += bet.amountMist;
+    }
+
+    const platformFeeMultiplier = 0.95; // 5% fee
+    const distributablePool = totalPool * platformFeeMultiplier;
+
+    // 2. Resolve each bet
+    for (const bet of bets) {
+      const isWinner = winningBets.some(wb => wb._id === bet._id);
+      
+      let payout = 0;
+      if (isWinner && winningPool > 0) {
+        // Individual winnings: (Your Bet / Win Pool) * Distributable Total
+        payout = (bet.amountMist / winningPool) * distributablePool;
+      }
+
       await ctx.db.patch(bet._id, {
-        status: isWin ? "won" : "lost",
-        payout: isWin ? bet.amountMist * 1.95 : 0, // Mock 5% fee
+        status: isWinner ? "won" : "lost",
+        payout: Math.floor(payout),
       });
 
-      // Update User wins
-      if (isWin) {
+      // Update User stats
+      if (isWinner) {
         const user = await ctx.db.get(bet.userId);
         if (user) {
           await ctx.db.patch(user._id, {
-            wins: user.wins + 1,
-            xp: user.xp + 100, // XP for winning a bet
+            wins: (user.wins || 0) + 1,
+            xp: (user.xp || 0) + 100, // Bonus for winning prediction
           });
         }
       }
     }
+    
+    // 3. Mark game as settled in Convex
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.gameId))
+      .unique();
+    if (game) {
+      await ctx.db.patch(game._id, {
+        status: "SETTLED",
+        endedAt: Date.now(),
+        crewmatesWon: args.winnerSide === 0,
+      });
+    }
+  },
+});
+
+export const getBetsByGame = query({
+  args: { gameId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("bets")
+      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
+      .collect();
   },
 });
