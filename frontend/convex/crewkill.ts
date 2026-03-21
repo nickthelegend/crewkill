@@ -129,6 +129,12 @@ export const updateAgentStats = mutation({
 export const createGame = mutation({
   args: { roomId: v.string() },
   handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .unique();
+    if (existing) return existing._id;
+
     const id = await ctx.db.insert("games", {
       roomId: args.roomId,
       status: "CREATED",
@@ -147,6 +153,12 @@ export const createScheduledGame = mutation({
     bettingEndsAt: v.number(),
   },
   handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .unique();
+    if (existing) return existing._id;
+
     const id = await ctx.db.insert("games", {
       roomId: args.roomId,
       status: "CREATED",
