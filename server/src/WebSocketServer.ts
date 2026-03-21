@@ -2730,11 +2730,13 @@ export class WebSocketRelayServer {
       return;
     }
 
-    // Only the room creator can add AI agents
+    // Temporarily allow anyone to add AI agents for testing
+    /*
     if (room.creator?.toLowerCase() !== client.address?.toLowerCase()) {
       this.sendError(client, "NOT_CREATOR", "Only the room creator can add AI agents");
       return;
     }
+    */
 
     if (room.phase !== "lobby" && room.phase !== "playing") {
       this.sendError(client, "INVALID_PHASE", "Cannot add AI agents in this phase");
@@ -2762,11 +2764,13 @@ export class WebSocketRelayServer {
       return;
     }
 
-    // Only the room creator can remove AI agents
+    // Temporarily allow anyone to remove AI agents for testing
+    /*
     if (room.creator?.toLowerCase() !== client.address?.toLowerCase()) {
       this.sendError(client, "NOT_CREATOR", "Only the room creator can remove AI agents");
       return;
     }
+    */
 
     if (room.phase !== "lobby") {
       this.sendError(client, "INVALID_PHASE", "Can only remove AI agents in lobby");

@@ -98,6 +98,49 @@ export function createApiServer(
     });
   });
 
+  // ============ OPERATORS ============
+  
+  // Register or update an operator key
+  app.post("/api/operators", async (req: Request, res: Response) => {
+    const { walletAddress, name } = req.body;
+    const operatorKey = extractBearerToken(req);
+
+    if (!walletAddress || !operatorKey) {
+      res.status(400).json({ error: "walletAddress and operatorKey (in Bearer token) required" });
+      return;
+    }
+
+    try {
+      const result = await databaseService.upsertOperator({
+        walletAddress: walletAddress.toLowerCase(),
+        operatorKey,
+        name: name || `Operator ${walletAddress.slice(0, 6)}`,
+      });
+
+      // Even if DB is disabled, we return success so frontend can continue locally
+      res.json({
+        success: true,
+        operatorKey: result?.operatorKey || operatorKey,
+        walletAddress: result?.walletAddress || walletAddress,
+      });
+    } catch (err) {
+      logger.error("Failed to register operator:", err);
+      res.status(500).json({ error: "Registration failed" });
+    }
+  });
+
+  // Validate current operator key
+  app.get("/api/operators/me", requireOperatorAuth, (req: AuthenticatedRequest, res: Response) => {
+    res.json({
+      success: true,
+      operator: {
+        id: req.operator?.id,
+        name: req.operator?.name,
+        walletAddress: req.operator?.walletAddress,
+      },
+    });
+  });
+
   // ============ SERVER INFO ============
 
   app.get("/api/server", (_req: Request, res: Response) => {
