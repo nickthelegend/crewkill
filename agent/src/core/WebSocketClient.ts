@@ -29,6 +29,10 @@ export class WebSocketClient extends EventEmitter {
   }
 
   async connect(): Promise<void> {
+    if (this.connected && this.ws?.readyState === WebSocket.OPEN) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.config.serverUrl);

@@ -20,6 +20,7 @@ export class GameMemory {
   private votes: VoteRecord[] = [];
   private seenLastRound: Map<string, Location> = new Map();
   private myActions: Map<bigint, Action> = new Map();
+  private taskLocations: number[] = [];
 
   constructor() {}
 
@@ -33,6 +34,15 @@ export class GameMemory {
     this.votes = [];
     this.seenLastRound.clear();
     this.myActions.clear();
+    this.taskLocations = [];
+  }
+
+  setTaskLocations(locations: number[]): void {
+    this.taskLocations = locations;
+  }
+
+  getTaskLocations(): number[] {
+    return this.taskLocations;
   }
 
   setCurrentRound(round: bigint): void {

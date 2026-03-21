@@ -15,6 +15,7 @@ import { CONTRACT_CONFIG, GAME_CONFIG } from './config.js';
 import { CrewmateStyle } from './strategies/CrewmateStrategy.js';
 import { ImpostorStyle } from './strategies/ImpostorStrategy.js';
 
+const DISABLE_WAGERS = process.env.DISABLE_WAGERS === 'true';
 const EXISTING_GAME_ID = process.env.GAME_OBJECT_ID || null;
 
 const AGENT_CONFIGS: {
@@ -93,10 +94,14 @@ async function runMatch() {
     )
   );
 
-  // Register all agents if not already registered
-  console.log('Checking agent registrations...');
-  for (const agent of agents) {
-    await agent.ensureRegistered();
+  // Register all agents if not already registered (skip if wagers disabled since no gas)
+  if (!DISABLE_WAGERS) {
+    console.log('Checking agent registrations...');
+    for (const agent of agents) {
+      await agent.ensureRegistered();
+    }
+  } else {
+    console.log('Wagers disabled in agent: skipping on-chain registration checks');
   }
 
   let gameObjectId: string;
@@ -106,20 +111,35 @@ async function runMatch() {
     gameObjectId = EXISTING_GAME_ID;
     console.log(`\nJoining existing game: ${gameObjectId}\n`);
     for (const agent of agents) {
-      console.log(`${agent.name} placing wager and joining...`);
-      await agent.placeWagerAndJoin(gameObjectId);
+      if (!DISABLE_WAGERS) {
+        console.log(`${agent.name} placing wager and joining...`);
+        await agent.placeWagerAndJoin(gameObjectId);
+      } else {
+        console.log(`${agent.name} joining via WebSocket only...`);
+      }
     }
   } else {
     // First agent creates the game
-    console.log('\nAgent-Red creating game...');
-    gameObjectId = await agents[0].createGame();
-    await agents[0].createWebSocketRoom(gameObjectId);
-    console.log(`Game created: ${gameObjectId}\n`);
+    if (!DISABLE_WAGERS) {
+        console.log('\nAgent-Red creating game on-chain...');
+        gameObjectId = await agents[0].createGame();
+        await agents[0].createWebSocketRoom(gameObjectId);
+        console.log(`Game created on-chain: ${gameObjectId}\n`);
+    } else {
+        // Use a persistent random ID for this session match
+        gameObjectId = `OFFLINE-${Math.random().toString(36).slice(2, 8)}`;
+        console.log(`\nStarting local/off-chain match with ID: ${gameObjectId}\n`);
+        await agents[0].createWebSocketRoom(gameObjectId);
+    }
 
-    // All agents place wager and join
+    // All agents join
     for (const agent of agents) {
-      console.log(`${agent.name} placing wager and joining...`);
-      await agent.placeWagerAndJoin(gameObjectId);
+      if (!DISABLE_WAGERS) {
+          console.log(`${agent.name} placing wager and joining...`);
+          await agent.placeWagerAndJoin(gameObjectId);
+      } else {
+          console.log(`${agent.name} joining lobby...`);
+      }
     }
   }
 

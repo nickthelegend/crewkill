@@ -53,28 +53,36 @@ export class CrewmateStrategy extends BaseStrategy {
   }
 
   private async taskFocusedAction(context: StrategyContext): Promise<Action> {
-    const { myPlayer } = context;
+    const { myPlayer, memory } = context;
     const myLocation = myPlayer.location;
+    const assignedTasks = memory.getTaskLocations();
 
-    // If at a task room and have tasks to do, do task
-    const taskRooms = [
-      Location.Admin,
-      Location.Storage,
-      Location.Electrical,
-      Location.MedBay,
-      Location.UpperEngine,
-      Location.LowerEngine,
-      Location.Reactor,
-    ];
-
-    if (taskRooms.includes(myLocation) && myPlayer.tasksCompleted < myPlayer.totalTasks) {
+    // If at an assigned task room and have tasks to do, do task
+    if (assignedTasks.includes(myLocation) && myPlayer.tasksCompleted < myPlayer.totalTasks) {
       const taskId = this.nextTaskId;
       this.nextTaskId = (this.nextTaskId + 1) % myPlayer.totalTasks;
       return { type: ActionType.DoTask, taskId };
     }
 
-    // Otherwise, move towards a task room
-    const destination = this.findNearestTaskRoom(myLocation, myPlayer.tasksCompleted);
+    // Otherwise, move towards next assigned task room
+    let destination = Location.Cafeteria;
+    if (assignedTasks.length > 0) {
+      // Pick next task in order or cycle
+      const nextTaskRoom = assignedTasks[myPlayer.tasksCompleted % assignedTasks.length] as Location;
+      
+      const adjacent = this.getAdjacentLocations(myLocation);
+      if (adjacent.includes(nextTaskRoom)) {
+        destination = nextTaskRoom;
+      } else {
+         // Simple movement towards task room - this is simplified, 
+         // but better than random move
+         destination = this.randomChoice(adjacent);
+      }
+    } else {
+        // Fallback to old behavior if no tasks assigned via WebSocket
+        destination = this.findNearestTaskRoom(myLocation, myPlayer.tasksCompleted);
+    }
+    
     return { type: ActionType.Move, destination };
   }
 

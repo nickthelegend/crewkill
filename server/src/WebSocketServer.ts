@@ -25,7 +25,7 @@ const logger = createLogger("websocket-server");
 
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
-const MIN_PLAYERS_TO_START = 1; // Changed from 2 to 1 for solo testing
+const MIN_PLAYERS_TO_START = 4; // Auto-start match when 4 agents join
 const LOBBY_WAITING_DURATION = 120000; // 2 minutes to wait for other agents
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
@@ -873,10 +873,10 @@ export class WebSocketRelayServer {
     const extended = this.extendedState.get(roomId);
     if (!room || !extended) return;
 
-    // If first player joins (and we're in lobby), start game immediately and begin lobby timer
-    if (room.players.length === 1 && room.phase === "lobby") {
+    // If first player joins (and we're in lobby), start session if reached min players
+    if (room.players.length >= MIN_PLAYERS_TO_START && room.phase === "lobby") {
       logger.info(
-        `First player joined room ${roomId}, starting game and opening lobby for ${LOBBY_WAITING_DURATION / 1000}s`,
+        `Reached minimum players (${room.players.length}/${MIN_PLAYERS_TO_START}) for room ${roomId}, starting game and opening lobby for ${LOBBY_WAITING_DURATION / 1000}s`,
       );
 
       // Start the game immediately so player can interact
@@ -895,6 +895,34 @@ export class WebSocketRelayServer {
       }, LOBBY_WAITING_DURATION);
 
       return;
+    }
+
+    // If game has ALREADY started but lobby is not locked, assign role to this late joiner
+    if (room.phase === "playing" && !extended.lobbyLocked) {
+        logger.info(`Player ${room.players[room.players.length-1].address} joined ACTIVE game ${roomId}, assigning role...`);
+        
+        // Late joiners are always crewmates for now to avoid rebalancing impostors
+        const player = room.players[room.players.length - 1];
+        const playerAddress = player.address.toLowerCase();
+        
+        // Send role (crewmate)
+        const client = this.findClientByAddress(player.address);
+        if (client) {
+            this.send(client, {
+                type: "server:role_assigned",
+                gameId: roomId,
+                role: "crewmate",
+            });
+            
+            // Send tasks
+            const taskLocations = this.generateTaskLocations(10);
+            this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
+            this.send(client, {
+                type: "server:tasks_assigned",
+                gameId: roomId,
+                taskLocations,
+            });
+        }
     }
 
     // Auto-start if reached max players (during lobby waiting period)

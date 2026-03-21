@@ -26,6 +26,8 @@ export interface AgentOptions {
   wsServerUrl?: string;
 }
 
+const DISABLE_WAGERS = process.env.DISABLE_WAGERS === 'true';
+
 export class Agent {
   private config: AgentConfig;
   private observer: GameObserver;
@@ -35,6 +37,7 @@ export class Agent {
   private wsClient: WebSocketClient | null = null;
 
   private currentGameObjectId: string | null = null;
+  private currentGameState: GameState | null = null;
   private myRole: Role = Role.None;
   private strategy: IStrategy | null = null;
   private pendingCommitment: ActionCommitment | null = null;
@@ -80,6 +83,42 @@ export class Agent {
         },
         this.logger
       );
+
+      // Listen for game state updates from server
+      this.wsClient.on('message', (message: any) => {
+        if (message.type === 'server:game_state') {
+          // Sync my role if it's there
+          if (message.state && message.state.players) {
+            const me = (message.state as any).players.find((p: any) => p.address === this.address);
+            if (me && me.role !== undefined && me.role !== Role.None) {
+                this.myRole = me.role;
+            }
+          }
+          
+          // Convert numeric fields to BigInt to match GameState type and avoid "Cannot mix BigInt and other types"
+          const state = { ...message.state };
+          state.round = BigInt(state.round || 0);
+          state.wagerAmount = BigInt(state.wagerAmount || 0);
+          this.currentGameState = state;
+        } else if (message.type === 'server:room_update') {
+           // We can also extract game state from room update
+           if (message.room && message.room.phase !== 'lobby') {
+               // If playing, we can handle it
+               this.logger.debug('Received room update in playing phase');
+           }
+        } else if (message.type === 'server:role_assigned') {
+            this.logger.info(`Role assigned via WebSocket: ${message.role.toUpperCase()}`);
+            this.myRole = message.role === 'impostor' ? Role.Impostor : Role.Crewmate;
+            if (this.myRole === Role.Impostor) {
+                this.strategy = new ImpostorStrategy(this.impostorStyle);
+            } else {
+                this.strategy = new CrewmateStrategy(this.crewmateStyle);
+            }
+        } else if (message.type === 'server:tasks_assigned') {
+            this.logger.info(`Tasks assigned via WebSocket: ${message.taskLocations.length} locations`);
+            this.memory.setTaskLocations(message.taskLocations);
+        }
+      });
     }
   }
 
@@ -130,6 +169,14 @@ export class Agent {
   }
 
   async getStats(): Promise<AgentStats | null> {
+    if (DISABLE_WAGERS) {
+        return {
+            wins: 0,
+            losses: 0,
+            kills: 0,
+            tasksCompleted: 0,
+        };
+    }
     try {
         const stats = await this.observer.getAgentStats(this.address);
         return {
@@ -164,7 +211,27 @@ export class Agent {
 
     while (true) {
       try {
-        const gameState = await this.observer.getGameState(this.currentGameObjectId);
+        let gameState: GameState | null = null;
+        
+        if (DISABLE_WAGERS) {
+          // STRICT OFFLINE: Only use state from WebSocket
+          if (this.currentGameState) {
+            gameState = this.currentGameState;
+          } else {
+            this.logger.debug('Waiting for WebSocket game state...');
+            await this.sleep(2000);
+            continue;
+          }
+        } else {
+          // On-Chain observer
+          gameState = await this.observer.getGameState(this.currentGameObjectId);
+        }
+
+        if (!gameState) {
+           await this.sleep(2000);
+           continue;
+        }
+
         this.memory.setCurrentRound(gameState.round);
 
         if (this.lastPhase !== gameState.phase) {
@@ -223,7 +290,7 @@ export class Agent {
   }
 
   private async handleActionCommit(gameState: GameState): Promise<void> {
-    const hasCommitted = await this.observer.hasCommitted(this.currentGameObjectId!, this.address);
+    const hasCommitted = !DISABLE_WAGERS ? await this.observer.hasCommitted(this.currentGameObjectId!, this.address) : false;
     if (hasCommitted) return;
 
     if (this.myRole === Role.None || !this.strategy) {
@@ -242,12 +309,34 @@ export class Agent {
 
     this.logger.info(`Decided action: ${JSON.stringify(action)}`);
 
-    this.pendingCommitment = await this.submitter.createActionCommitment(action);
-    await this.submitter.commitAction(this.currentGameObjectId!, this.pendingCommitment);
-    this.logger.info('Action committed');
+    if (DISABLE_WAGERS) {
+      // Send directly via WebSocket in offline mode
+      if (this.wsClient) {
+        if (action.type === ActionType.Move) {
+          this.wsClient.sendPositionUpdate(this.currentGameObjectId!, action.destination!, Number(gameState.round));
+        } else if (action.type === ActionType.Vote) {
+          this.wsClient.sendVote(this.currentGameObjectId!, action.target || null, Number(gameState.round));
+        } else if (action.type === ActionType.DoTask) {
+          this.wsClient.sendTaskComplete(this.currentGameObjectId!, 1, 5); // Mock progress
+        } else {
+          this.wsClient.sendActionResult(this.currentGameObjectId!, action, Number(gameState.round));
+        }
+      }
+      this.logger.info('Action sent via WebSocket (Offline mode)');
+    } else {
+      // On-Chain commit
+      this.pendingCommitment = await this.submitter.createActionCommitment(action);
+      await this.submitter.commitAction(this.currentGameObjectId!, this.pendingCommitment);
+      this.logger.info('Action committed on-chain');
+    }
   }
 
   private async handleActionReveal(gameState: GameState): Promise<void> {
+    if (DISABLE_WAGERS) {
+        // No reveal needed in offline mode
+        return;
+    }
+
     const hasRevealed = await this.observer.hasRevealed(this.currentGameObjectId!, this.address);
     if (hasRevealed) return;
 
@@ -271,6 +360,27 @@ export class Agent {
   }
 
   private async initializeRoleAndStrategy(): Promise<void> {
+    if (DISABLE_WAGERS) {
+      // In offline mode, we rely on server:role_assigned or server:game_state messages
+      // to have already set this.myRole. Strategy is initialized in the WebSocket listener.
+      if (this.myRole === Role.None) {
+        this.logger.debug('Waiting for role assignment via WebSocket...');
+        return;
+      }
+      
+      // If we have a role but no strategy yet, initialize it
+      if (!this.strategy) {
+        if (this.myRole === Role.Impostor) {
+          this.strategy = new ImpostorStrategy(this.impostorStyle);
+          this.logger.info('Role confirmed: IMPOSTOR');
+        } else {
+          this.strategy = new CrewmateStrategy(this.crewmateStyle);
+          this.logger.info('Role confirmed: CREWMATE');
+        }
+      }
+      return;
+    }
+
     const role = await this.observer.getPlayerRole(this.currentGameObjectId!, this.address);
     this.myRole = role;
 
@@ -284,27 +394,47 @@ export class Agent {
   }
 
   private async buildStrategyContext(gameState: GameState): Promise<StrategyContext> {
-    const allPlayerAddresses = await this.observer.getAllPlayers(this.currentGameObjectId!);
     const allPlayers: Player[] = [];
     const alivePlayers: Player[] = [];
 
-    for (const addr of allPlayerAddresses) {
-      const location = await this.observer.getPlayerLocation(this.currentGameObjectId!, addr);
-      const isAlive = await this.observer.isAlive(this.currentGameObjectId!, addr);
-      
-      const player: Player = {
-        address: addr,
-        colorId: 0, 
-        role: addr === this.address ? this.myRole : Role.None,
-        location,
-        isAlive,
-        tasksCompleted: 0,
-        totalTasks: GAME_CONFIG.TASKS_REQUIRED,
-        hasVoted: false,
-      };
-      
-      allPlayers.push(player);
-      if (isAlive) alivePlayers.push(player);
+    if (DISABLE_WAGERS && this.currentGameState) {
+        // Use state from WebSocket
+        const offlinePlayers = (this.currentGameState as any).players || [];
+        for (const p of offlinePlayers) {
+            const player: Player = {
+                address: typeof p === 'string' ? p : (p.address || ''),
+                colorId: p.colorId || 0,
+                role: (p.address === this.address) ? this.myRole : (p.role || Role.None),
+                location: p.location || 0,
+                isAlive: p.isAlive ?? true,
+                tasksCompleted: p.tasksCompleted || 0,
+                totalTasks: p.totalTasks || 5,
+                hasVoted: p.hasVoted || false,
+            };
+            allPlayers.push(player);
+            if (player.isAlive) alivePlayers.push(player);
+        }
+    } else {
+        // Use state from On-Chain observer
+        const allPlayerAddresses = await this.observer.getAllPlayers(this.currentGameObjectId!);
+        for (const addr of allPlayerAddresses) {
+            const location = await this.observer.getPlayerLocation(this.currentGameObjectId!, addr);
+            const isAlive = await this.observer.isAlive(this.currentGameObjectId!, addr);
+            
+            const player: Player = {
+                address: addr,
+                colorId: 0, 
+                role: addr === this.address ? this.myRole : Role.None,
+                location,
+                isAlive,
+                tasksCompleted: 0,
+                totalTasks: GAME_CONFIG.TASKS_REQUIRED,
+                hasVoted: false,
+            };
+            
+            allPlayers.push(player);
+            if (isAlive) alivePlayers.push(player);
+        }
     }
 
     return {
