@@ -248,6 +248,25 @@ export const updateGamePlayers = mutation({
   },
 });
 
+export const updateGameMarketId = mutation({
+  args: {
+    roomId: v.string(),
+    marketId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .first();
+    if (!game) return null;
+
+    await ctx.db.patch(game._id, {
+      marketId: args.marketId,
+    });
+    return game;
+  },
+});
+
 export const getBettingStatus = query({
   args: { roomId: v.string() },
   handler: async (ctx, args) => {

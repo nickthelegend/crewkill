@@ -82,6 +82,7 @@ export default defineSchema({
       colorId: v.number(),
     }))),
     createdAt: v.number(),
+    marketId: v.optional(v.string()),
     settlementTxHash: v.optional(v.string()),
   }).index("by_roomId", ["roomId"])
     .index("by_status", ["status"]),

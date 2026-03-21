@@ -161,6 +161,18 @@ export class DatabaseService {
     }
   }
 
+  async updateGameMarketId(roomId: string, marketId: string) {
+    if (!this.enabled) return;
+    try {
+      await this.convex.mutation("crewkill:updateGameMarketId" as any, { 
+        roomId, 
+        marketId 
+      });
+    } catch (error) {
+      logger.error(`Failed to update market ID for ${roomId} via Convex:`, error);
+    }
+  }
+
   async updateGamePlayers(roomId: string, players: Array<{
     address: string;
     name: string;

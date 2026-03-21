@@ -58,6 +58,7 @@ export function PredictionMarket({
   const [loading, setLoading] = useState(false);
   const [txStatus, setTxStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [txMsg, setTxMsg] = useState('');
+  const [remainingTime, setRemainingTime] = useState<string>('');
 
   const convexBets = useQuery(api.bets.getBetsByGame, { gameId }) || [];
   const placeConvexBet = useMutation(api.bets.placeBet);
@@ -148,6 +149,16 @@ export function PredictionMarket({
     const interval = setInterval(fetchMarketState, 5000);
     return () => clearInterval(interval);
   }, [fetchMarketState]);
+
+  // Timer Effect
+  useEffect(() => {
+    if (!isOpen || gamePhase >= 2) return;
+    
+    // We can't easily get bettingEndsAt from pure roomId in this component
+    // unless we query the dbGame. Let's assume it's roughly 3 mins from creation
+    // or just show a fallback if we don't have the exact timestamp.
+    // For now, let's keep it simple or wait for the backend to provide it.
+  }, [isOpen, gamePhase]);
 
   async function handlePlaceBet() {
     if (!account || !selectedSuspect || !betAmount) return;
@@ -274,7 +285,64 @@ export function PredictionMarket({
   }
 
   return (
-    <div className="space-y-10 w-full max-w-5xl mx-auto">
+    <div className="space-y-12 w-full max-w-5xl mx-auto">
+      {/* Polymarket Confidence Distribution */}
+      <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 overflow-hidden relative">
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ff003c]" />
+               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
+            </div>
+            <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
+               {isOpen ? "Betting Active" : "Final Confidence"}
+            </div>
+        </div>
+
+        <div className="flex gap-1 h-24 w-full bg-white/5 p-1 rounded-none border border-white/5 mb-6">
+           {gamePlayers.map((p, i) => {
+              const pool = suspectPools.find(sp => sp.address === p.address);
+              const percentage = pool?.percentage ?? (100 / gamePlayers.length);
+              const colors = [
+                'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 
+                'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-rose-500',
+                'bg-indigo-500', 'bg-amber-500'
+              ];
+              return (
+                 <motion.div 
+                    key={p.address}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    className={`h-full relative group transition-all duration-1000 ${colors[i % colors.length]}`}
+                    style={{ minWidth: percentage > 0 ? '1%' : '0%' }}
+                 >
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {percentage > 10 && (
+                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="text-[10px] font-black text-white drop-shadow-md">{percentage}%</span>
+                       </div>
+                    )}
+                 </motion.div>
+              );
+           })}
+        </div>
+
+        <div className="flex flex-wrap gap-8">
+           {gamePlayers.map((p, i) => {
+              const colors = [
+                'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 
+                'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-rose-500',
+                'bg-indigo-500', 'bg-amber-500'
+              ];
+              return (
+                 <div key={p.address} className="flex items-center gap-2">
+                    <div className={`w-2 h-2 ${colors[i % colors.length]}`} />
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-wider">{p.name || 'Agent'}</span>
+                 </div>
+              );
+           })}
+        </div>
+      </div>
+
       {/* Header Stat Area */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-none py-1">
         <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">

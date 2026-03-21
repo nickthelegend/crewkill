@@ -102,6 +102,38 @@ export class ContractService {
     } catch (error) { return false; }
   }
 
+  async createMarket(gameId: string, playerAddresses: string[]): Promise<string | null> {
+    if (!this.operatorKeypair) return null;
+    try {
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::create_market`,
+        arguments: [
+          tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
+          tx.pure.address(gameId),
+          tx.pure.vector('address', playerAddresses),
+        ],
+      });
+      const result = await this.client.signAndExecuteTransaction({ 
+        signer: this.operatorKeypair, 
+        transaction: tx,
+        options: { showEvents: true } 
+      });
+      
+      const event = result.events?.find(e => e.type.includes('::MarketCreated'));
+      const marketId = (event?.parsedJson as any)?.market_id;
+      
+      if (marketId) {
+        logger.info(`Prediction market created: ${marketId} for game ${gameId}`);
+        return marketId;
+      }
+      return null;
+    } catch (error) {
+      logger.error(`Failed to create market for game ${gameId}:`, error);
+      return null;
+    }
+  }
+
   async cancelGame(gameId: string): Promise<boolean> {
     if (!this.operatorKeypair) return false;
     try {

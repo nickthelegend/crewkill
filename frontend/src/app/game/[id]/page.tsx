@@ -200,7 +200,7 @@ export default function RoomDetailsPage() {
 
                   <PredictionMarket 
                     gameId={dbGame._id}
-                    marketObjectId={dbGame.roomId} // Using RoomId as a mock Market ID for offline/dev
+                    marketObjectId={dbGame.marketId || dbGame.roomId}
                     gamePlayers={(currentRoom?.players || []).map(p => ({
                       address: p.address,
                       name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : "Human"

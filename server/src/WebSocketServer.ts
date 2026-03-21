@@ -901,6 +901,15 @@ export class WebSocketRelayServer {
       // Persist scheduled game start to database (async)
       (databaseService as any).createScheduledGame(roomId, scheduledAt, bettingEndsAt);
 
+      // Create prediction market on-chain (async)
+      contractService.createMarket(roomId, room.players.map(p => p.address))
+        .then(marketId => {
+           if (marketId) {
+              (databaseService as any).updateGameMarketId(roomId, marketId);
+           }
+        })
+        .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
+
       // Start the game immediately so player can interact
       this.startGameInternal(roomId);
 
