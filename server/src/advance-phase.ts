@@ -4,8 +4,8 @@ import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 import 'dotenv/config';
 
 const RPC_URL = 'https://rpc-testnet.onelabs.cc:443';
-const PACKAGE_ID = '0xada4ae4117b0e7ab228e8828c5d658ca048379741bda051361dca52342c4d43a';
-const GAME_MANAGER_ID = '0x5c4deb1c8987531ebbfe43a2b1f2e2c528a7d411b8c5f964f25f9732225b43f7';
+const PACKAGE_ID = '0xf2f49ca2d13215c2f33274096544594a0d8d7cd2a84b46f4c76a46db18cce181';
+const GAME_MANAGER_ID = '0x3b27263b05400d61dcb41a56d19d7954cc1a10fe396e03f51bd0c52d0586e990';
 const GAME_ID = process.argv[2];
 
 if (!GAME_ID) {

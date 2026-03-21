@@ -5,6 +5,7 @@ use one::tx_context::{Self, TxContext};
 use one::transfer;
 use one::table::{Self, Table};
 use one::event;
+use one::address;
 use one::clock::{Self, Clock};
 use one::random::{Self, Random};
 use std::hash;
@@ -233,6 +234,7 @@ public entry fun reveal_action(
     let mut reveal_bytes = vector::empty<u8>();
     vector::push_back(&mut reveal_bytes, action_type);
     vector::append(&mut reveal_bytes, salt);
+    vector::append(&mut reveal_bytes, address::to_bytes(player));
 
     let computed_hash = hash::sha2_256(reveal_bytes);
     assert!(computed_hash == commitment, 12);
