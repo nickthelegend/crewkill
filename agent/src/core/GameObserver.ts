@@ -1,282 +1,250 @@
-import {
-  createPublicClient,
-  http,
-  type PublicClient,
-  type Address,
-  getContract,
-} from "viem";
-import { AmongUsGameABI, AmongUsGameFactoryABI } from "../abi/index.js";
+import { SuiClient } from '@onelabs/sui/client';
+import { CONTRACT_CONFIG, ONECHAIN_RPC } from '../config.js';
 import {
   GameState,
   GamePhase,
   Player,
-  DeadBody,
   Location,
   Role,
-  SabotageType,
-  GameConfig,
-  DiscussionMessage,
-} from "../types.js";
+} from '../types.js';
 
 export class GameObserver {
-  private client: PublicClient;
-  private factoryAddress: Address;
-  private gameAddress: Address | null = null;
-  private gameId: bigint | null = null;
+  private client: SuiClient;
 
-  constructor(rpcUrl: string, factoryAddress: Address) {
-    this.client = createPublicClient({
-      transport: http(rpcUrl),
-    });
-    this.factoryAddress = factoryAddress;
+  constructor() {
+    this.client = new SuiClient({ url: ONECHAIN_RPC });
   }
 
-  // ============ FACTORY QUERIES ============
+  // ============ GAME STATE ============
 
-  async getActiveGames(): Promise<bigint[]> {
-    const factory = getContract({
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI,
-      client: this.client,
+  async getGameState(gameObjectId: string): Promise<GameState> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
     });
 
-    const games = (await factory.read.getActiveGames()) as bigint[];
-    return games;
+    const fields = (result.data?.content as any)?.fields;
+    if (!fields) throw new Error(`Game object not found: ${gameObjectId}`);
+
+    return {
+      gameObjectId,
+      phase:          Number(fields.phase) as GamePhase,
+      round:          BigInt(fields.round ?? 0),
+      players:        fields.players ?? [],
+      ended:          fields.ended === true,
+      winner:         Number(fields.winner),
+      maxPlayers:     Number(fields.max_players),
+      wagerAmount:    BigInt(fields.wager_amount ?? 0),
+      tasksRequired:  Number(fields.tasks_required),
+      activeSabotage: Number(fields.active_sabotage ?? 0),
+    };
   }
 
-  async getAvailableGames(): Promise<
-    { gameId: bigint; playerCount: bigint; wagerAmount: bigint }[]
-  > {
-    const factory = getContract({
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI,
-      client: this.client,
+  // ============ PLAYER STATE ============
+
+  async getPlayerRole(gameObjectId: string, address: string): Promise<Role> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
     });
 
-    const [gameIds, playerCounts, wagerAmounts] =
-      (await factory.read.getAvailableGames()) as [bigint[], bigint[], bigint[]];
+    const fields = (result.data?.content as any)?.fields;
+    if (!fields) throw new Error('Game not found');
 
-    return gameIds.map((id, i) => ({
-      gameId: id,
-      playerCount: playerCounts[i],
-      wagerAmount: wagerAmounts[i],
-    }));
-  }
-
-  async getGameAddress(gameId: bigint): Promise<Address> {
-    const factory = getContract({
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI,
-      client: this.client,
+    // roles is a Table — query via dynamic fields
+    const roleField = await this.client.getDynamicFieldObject({
+      parentId: fields.roles?.fields?.id?.id,
+      name: { type: 'address', value: address },
     });
 
-    return (await factory.read.games([gameId])) as Address;
+    const role = (roleField.data?.content as any)?.fields?.value;
+    return Number(role ?? 0) as Role;
   }
 
-  // ============ GAME STATE QUERIES ============
+  async isAlive(gameObjectId: string, address: string): Promise<boolean> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
+    });
 
-  setGame(gameAddress: Address, gameId: bigint): void {
-    this.gameAddress = gameAddress;
-    this.gameId = gameId;
-  }
+    const fields = (result.data?.content as any)?.fields;
+    if (!fields) return false;
 
-  private getGameContract() {
-    if (!this.gameAddress) {
-      throw new Error("No game address set. Call setGame() first.");
+    try {
+      const aliveField = await this.client.getDynamicFieldObject({
+        parentId: fields.alive?.fields?.id?.id,
+        name: { type: 'address', value: address },
+      });
+      const val = (aliveField.data?.content as any)?.fields?.value;
+      return val === true;
+    } catch {
+      return false;
     }
-    return getContract({
-      address: this.gameAddress,
-      abi: AmongUsGameABI,
-      client: this.client,
+  }
+
+  async getPlayerLocation(gameObjectId: string, address: string): Promise<Location> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
     });
+
+    const fields = (result.data?.content as any)?.fields;
+    if (!fields) return 0;
+
+    try {
+      const locField = await this.client.getDynamicFieldObject({
+        parentId: fields.locations?.fields?.id?.id,
+        name: { type: 'address', value: address },
+      });
+      return Number((locField.data?.content as any)?.fields?.value ?? 0) as Location;
+    } catch {
+      return 0;
+    }
   }
 
-  async getGameState(): Promise<GameState> {
-    const game = this.getGameContract();
-    const state = (await game.read.state()) as any[];
-
-    return {
-      gameId: state[0] as bigint,
-      phase: Number(state[1]) as GamePhase,
-      round: state[2] as bigint,
-      phaseEndTime: state[3] as bigint,
-      alivePlayers: Number(state[4]),
-      aliveCrewmates: Number(state[5]),
-      aliveImpostors: Number(state[6]),
-      totalTasksCompleted: Number(state[7]),
-      totalTasksRequired: Number(state[8]),
-      activeSabotage: Number(state[9]) as SabotageType,
-      sabotageEndTime: state[10] as bigint,
-      winner: state[11] as Address,
-      crewmatesWon: state[12] as boolean,
-    };
+  async getAllPlayers(gameObjectId: string): Promise<string[]> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
+    });
+    const fields = (result.data?.content as any)?.fields;
+    return fields?.players ?? [];
   }
 
-  async getGameConfig(): Promise<GameConfig> {
-    const game = this.getGameContract();
-    const config = (await game.read.config()) as any[];
-
-    return {
-      minPlayers: Number(config[0]),
-      maxPlayers: Number(config[1]),
-      numImpostors: Number(config[2]),
-      wagerAmount: config[3] as bigint,
-      actionTimeout: config[4] as bigint,
-      voteTimeout: config[5] as bigint,
-      discussionTime: config[6] as bigint,
-      tasksPerPlayer: Number(config[7]),
-      visualTasks: config[8] as boolean,
-      emergencyMeetings: Number(config[9]),
-      killCooldown: config[10] as bigint,
-    };
-  }
-
-  async getPlayer(address: Address): Promise<Player> {
-    const game = this.getGameContract();
-    const player = (await game.read.players([address])) as any[];
-
-    return {
-      address: player[0] as Address,
-      colorId: Number(player[1]),
-      role: Number(player[2]) as Role,
-      location: Number(player[3]) as Location,
-      isAlive: player[4] as boolean,
-      tasksCompleted: Number(player[5]),
-      totalTasks: Number(player[6]),
-      wagerAmount: player[7] as bigint,
-      hasVoted: player[8] as boolean,
-      lastActionRound: player[9] as bigint,
-    };
-  }
-
-  async getAllPlayers(): Promise<Address[]> {
-    const game = this.getGameContract();
-    return (await game.read.getAllPlayers()) as Address[];
-  }
-
-  async getPlayersAtLocation(location: Location): Promise<Address[]> {
-    const game = this.getGameContract();
-    return (await game.read.getPlayersAtLocation([location])) as Address[];
-  }
-
-  async getMyRole(playerAddress: Address): Promise<Role> {
-    const game = this.getGameContract();
-    // This would need to be called from the player's account
-    // For now, return from player struct (which shows None until revealed)
-    const player = await this.getPlayer(playerAddress);
-    return player.role;
-  }
-
-  async getDeadBodies(): Promise<DeadBody[]> {
-    const game = this.getGameContract();
-    const bodies = (await game.read.getDeadBodies()) as any[];
-
-    return bodies.map((body: any) => ({
-      victim: body[0] as Address,
-      location: Number(body[1]) as Location,
-      round: body[2] as bigint,
-      reported: body[3] as boolean,
-    }));
-  }
-
-  async getAdjacentRooms(location: Location): Promise<Location[]> {
-    const game = this.getGameContract();
-    const rooms = (await game.read.getAdjacentRooms([location])) as number[];
-    return rooms.map((r) => r as Location);
-  }
-
-  async hasBodyAt(location: Location): Promise<boolean> {
-    const game = this.getGameContract();
-    return (await game.read.hasBodyAt([location])) as boolean;
-  }
-
-  async getDiscussionMessages(): Promise<DiscussionMessage[]> {
-    const game = this.getGameContract();
-    const messages = (await game.read.getMessages()) as any[];
-
-    return messages.map((msg: any) => ({
-      sender: msg[0] as Address,
-      msgType: Number(msg[1]),
-      target: msg[2] as Address,
-      reason: Number(msg[3]),
-      location: Number(msg[4]) as Location,
-      timestamp: msg[5] as bigint,
-    }));
-  }
-
-  async isGameEnded(): Promise<boolean> {
-    const game = this.getGameContract();
-    return (await game.read.isGameEnded()) as boolean;
-  }
-
-  async getPlayerCount(): Promise<number> {
-    const game = this.getGameContract();
-    return Number(await game.read.getPlayerCount());
-  }
-
-  // ============ COMMITMENT QUERIES ============
-
-  async getCommitment(
-    round: bigint,
-    player: Address
-  ): Promise<{ hash: `0x${string}`; timestamp: bigint; revealed: boolean }> {
-    const game = this.getGameContract();
-    const commitment = (await game.read.commitments([round, player])) as any[];
-
-    return {
-      hash: commitment[0] as `0x${string}`,
-      timestamp: commitment[1] as bigint,
-      revealed: commitment[2] as boolean,
-    };
-  }
-
-  async hasCommitted(round: bigint, player: Address): Promise<boolean> {
-    const commitment = await this.getCommitment(round, player);
-    return (
-      commitment.hash !==
-      "0x0000000000000000000000000000000000000000000000000000000000000000"
+  async getAlivePlayers(gameObjectId: string): Promise<string[]> {
+    const players = await this.getAllPlayers(gameObjectId);
+    if (!players) return [];
+    
+    const aliveChecks = await Promise.all(
+      players.map(async (p) => ({
+        address: p,
+        alive: await this.isAlive(gameObjectId, p),
+      }))
     );
+    return aliveChecks.filter(p => p.alive).map(p => p.address);
   }
 
-  async hasRevealed(round: bigint, player: Address): Promise<boolean> {
-    const commitment = await this.getCommitment(round, player);
-    return commitment.revealed;
-  }
+  // ============ COMMITMENT STATE ============
 
-  // ============ HELPER METHODS ============
+  async hasCommitted(gameObjectId: string, address: string): Promise<boolean> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
+    });
 
-  async getAlivePlayersInfo(): Promise<Player[]> {
-    const addresses = await this.getAllPlayers();
-    const players: Player[] = [];
+    const fields = (result.data?.content as any)?.fields;
+    if (!fields?.commits?.fields?.id?.id) return false;
 
-    for (const addr of addresses) {
-      const player = await this.getPlayer(addr);
-      if (player.isAlive) {
-        players.push(player);
-      }
+    try {
+      await this.client.getDynamicFieldObject({
+        parentId: fields.commits.fields.id.id,
+        name: { type: 'address', value: address },
+      });
+      return true;
+    } catch {
+      return false;
     }
-
-    return players;
   }
 
-  async getTimeRemaining(): Promise<number> {
-    const state = await this.getGameState();
-    const now = BigInt(Math.floor(Date.now() / 1000));
-    const remaining = state.phaseEndTime - now;
-    return remaining > 0n ? Number(remaining) : 0;
+  async hasRevealed(gameObjectId: string, address: string): Promise<boolean> {
+    const result = await this.client.getObject({
+      id: gameObjectId,
+      options: { showContent: true },
+    });
+
+    const fields = (result.data?.content as any)?.fields;
+    if (!fields?.reveals?.fields?.id?.id) return false;
+
+    try {
+      await this.client.getDynamicFieldObject({
+        parentId: fields.reveals.fields.id.id,
+        name: { type: 'address', value: address },
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  async waitForPhase(targetPhase: GamePhase, pollInterval = 2000): Promise<void> {
+  // ============ PHASE POLLING ============
+
+  async waitForPhase(
+    gameObjectId: string,
+    targetPhase: GamePhase,
+    pollIntervalMs = 2000
+  ): Promise<void> {
     return new Promise((resolve) => {
       const check = async () => {
-        const state = await this.getGameState();
-        if (state.phase === targetPhase) {
-          resolve();
-        } else {
-          setTimeout(check, pollInterval);
+        try {
+          const state = await this.getGameState(gameObjectId);
+          if (state.phase === targetPhase) {
+            resolve();
+          } else {
+            setTimeout(check, pollIntervalMs);
+          }
+        } catch {
+          setTimeout(check, pollIntervalMs);
         }
       };
       check();
     });
+  }
+
+  async waitForPhaseChange(
+    gameObjectId: string,
+    currentPhase: GamePhase,
+    pollIntervalMs = 2000
+  ): Promise<GamePhase> {
+    return new Promise((resolve) => {
+      const check = async () => {
+        try {
+          const state = await this.getGameState(gameObjectId);
+          if (state.phase !== currentPhase) {
+            resolve(state.phase);
+          } else {
+            setTimeout(check, pollIntervalMs);
+          }
+        } catch {
+          setTimeout(check, pollIntervalMs);
+        }
+      };
+      check();
+    });
+  }
+
+  // ============ REGISTRY ============
+
+  async isAgentRegistered(address: string): Promise<boolean> {
+    try {
+      const result = await this.client.getObject({
+        id: CONTRACT_CONFIG.AGENT_REGISTRY_ID,
+        options: { showContent: true },
+      });
+      const fields = (result.data?.content as any)?.fields;
+      if (!fields?.agents?.fields?.id?.id) return false;
+
+      await this.client.getDynamicFieldObject({
+        parentId: fields.agents.fields.id.id,
+        name: { type: 'address', value: address },
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAgentStats(address: string): Promise<any> {
+    const result = await this.client.getObject({
+      id: CONTRACT_CONFIG.AGENT_REGISTRY_ID,
+      options: { showContent: true },
+    });
+    const fields = (result.data?.content as any)?.fields;
+
+    const statsField = await this.client.getDynamicFieldObject({
+      parentId: fields.agents.fields.id.id,
+      name: { type: 'address', value: address },
+    });
+
+    return (statsField.data?.content as any)?.fields?.value?.fields;
   }
 }

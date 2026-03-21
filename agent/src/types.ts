@@ -1,10 +1,9 @@
-// ============ ENUMS (Mirror Solidity) ============
+// ============ ENUMS (Mirror OneChain Move) ============
 
 export enum Role {
   None = 0,
   Crewmate = 1,
   Impostor = 2,
-  Ghost = 3,
 }
 
 export enum Location {
@@ -34,15 +33,17 @@ export const LocationNames: Record<Location, string> = {
 export enum ActionType {
   None = 0,
   Move = 1,
-  DoTask = 2,
-  FakeTask = 3,
-  Kill = 4,
+  Task = 2,
+  DoTask = 2,   // Alias for Task
+  Kill = 3,
+  Sabotage = 4,
   Report = 5,
   CallMeeting = 6,
-  Vent = 7,
-  Sabotage = 8,
-  UseCams = 9,
-  Skip = 10,
+  Vote = 7,
+  // These are client-side or legacy, mapping them to something safe
+  FakeTask = 2, 
+  Vent = 1,      // Map to Move
+  Skip = 7,      // Map to Vote(null)
 }
 
 export enum SabotageType {
@@ -55,12 +56,12 @@ export enum SabotageType {
 
 export enum GamePhase {
   Lobby = 0,
-  Starting = 1,
+  RoleAssignment = 1,
   ActionCommit = 2,
   ActionReveal = 3,
   Discussion = 4,
   Voting = 5,
-  VoteResult = 6,
+  Resolution = 6,
   Ended = 7,
 }
 
@@ -84,118 +85,69 @@ export enum AccuseReason {
 // ============ INTERFACES ============
 
 export interface Player {
-  address: `0x${string}`;
+  address: string;
   colorId: number;
   role: Role;
   location: Location;
   isAlive: boolean;
   tasksCompleted: number;
   totalTasks: number;
-  wagerAmount: bigint;
   hasVoted: boolean;
-  lastActionRound: bigint;
 }
 
 export interface DeadBody {
-  victim: `0x${string}`;
+  victim: string;
   location: Location;
   round: bigint;
   reported: boolean;
 }
 
-export interface GameConfig {
-  minPlayers: number;
-  maxPlayers: number;
-  numImpostors: number;
-  wagerAmount: bigint;
-  actionTimeout: bigint;
-  voteTimeout: bigint;
-  discussionTime: bigint;
-  tasksPerPlayer: number;
-  visualTasks: boolean;
-  emergencyMeetings: number;
-  killCooldown: bigint;
-}
-
-export interface GameState {
-  gameId: bigint;
-  phase: GamePhase;
-  round: bigint;
-  phaseEndTime: bigint;
-  alivePlayers: number;
-  aliveCrewmates: number;
-  aliveImpostors: number;
-  totalTasksCompleted: number;
-  totalTasksRequired: number;
-  activeSabotage: SabotageType;
-  sabotageEndTime: bigint;
-  winner: `0x${string}`;
-  crewmatesWon: boolean;
-}
-
 export interface DiscussionMessage {
-  sender: `0x${string}`;
+  sender: string;
   msgType: MessageType;
-  target: `0x${string}`;
+  target: string;
   reason: AccuseReason;
   location: Location;
   timestamp: bigint;
 }
 
-export interface Vote {
-  voter: `0x${string}`;
-  suspect: `0x${string}`;
+export interface VoteRecord {
+  voter: string;
+  suspect: string;
   timestamp: bigint;
 }
 
-// ============ ACTION TYPES ============
+export interface GameState {
+  gameObjectId: string;
+  phase: GamePhase;
+  round: bigint;
+  players: string[];
+  ended: boolean;
+  winner: number;
+  maxPlayers: number;
+  wagerAmount: bigint;
+  tasksRequired: number;
+  activeSabotage: SabotageType;
+}
 
 export interface Action {
   type: ActionType;
-  target?: `0x${string}`;
+  target?: string;
   destination?: Location;
   taskId?: number;
   sabotage?: SabotageType;
 }
 
 export interface ActionCommitment {
-  hash: `0x${string}`;
+  commitment: number[];   // sha3_256 hash as byte array
   action: Action;
-  salt: `0x${string}`;
+  salt: Uint8Array;       // 32 random bytes
 }
 
-// ============ AGENT TYPES ============
-
-export interface AgentConfig {
-  privateKey: `0x${string}`;
-  rpcUrl: string;
-  factoryAddress: `0x${string}`;
-  agentName: string;
-  strategyType: "crewmate" | "impostor" | "adaptive";
-  riskTolerance: number; // 0-100
-  maxWagerPerGame: bigint;
-  minBankroll: bigint;
-}
-
-
-export interface AgentStats {
-  gamesPlayed: number;
-  gamesWon: number;
-  gamesAsCrewmate: number;
-  gamesAsImpostor: number;
-  crewmateWins: number;
-  impostorWins: number;
-  totalKills: number;
-  tasksCompleted: number;
-  correctAccusations: number;
-  timesEjected: number;
-  rating: number;
-  totalWagered: bigint;
-  totalWinnings: bigint;
-}
+// ============ MEMORY TYPES ============
 
 export interface SuspicionScore {
-  address: `0x${string}`;
+  address: string;
   score: number;
   reasons: SuspicionReason[];
 }
@@ -207,46 +159,18 @@ export interface SuspicionReason {
   details?: string;
 }
 
-// ============ MAP DATA ============
+// ============ AGENT TYPES ============
 
-export const AdjacentRooms: Record<Location, Location[]> = {
-  [Location.Cafeteria]: [Location.Admin, Location.MedBay, Location.UpperEngine],
-  [Location.Admin]: [Location.Cafeteria, Location.Storage],
-  [Location.Storage]: [Location.Admin, Location.Electrical, Location.LowerEngine],
-  [Location.Electrical]: [Location.Storage, Location.LowerEngine],
-  [Location.MedBay]: [Location.Cafeteria, Location.UpperEngine, Location.Security],
-  [Location.UpperEngine]: [Location.Cafeteria, Location.MedBay, Location.Reactor],
-  [Location.LowerEngine]: [Location.Storage, Location.Electrical, Location.Security],
-  [Location.Security]: [Location.MedBay, Location.LowerEngine, Location.Reactor],
-  [Location.Reactor]: [Location.UpperEngine, Location.Security],
-};
+export interface AgentConfig {
+  privateKey: string;
+  rpcUrl: string;
+  agentName: string;
+  strategyType: "crewmate" | "impostor" | "adaptive";
+}
 
-export const VentConnections: Record<Location, Location | null> = {
-  [Location.Cafeteria]: Location.Admin,
-  [Location.Admin]: Location.Cafeteria,
-  [Location.Storage]: null,
-  [Location.Electrical]: Location.MedBay,
-  [Location.MedBay]: Location.Electrical,
-  [Location.UpperEngine]: null,
-  [Location.LowerEngine]: null,
-  [Location.Security]: Location.Reactor,
-  [Location.Reactor]: Location.Security,
-};
-
-// Rooms with tasks
-export const TaskRooms: Location[] = [
-  Location.Admin,
-  Location.Storage,
-  Location.Electrical,
-  Location.MedBay,
-  Location.UpperEngine,
-  Location.LowerEngine,
-  Location.Reactor,
-];
-
-// Dangerous rooms (isolated, good for kills)
-export const DangerousRooms: Location[] = [
-  Location.Electrical,
-  Location.Reactor,
-  Location.Security,
-];
+export interface AgentStats {
+  gamesPlayed: number;
+  gamesWon: number;
+  totalKills: number;
+  tasksCompleted: number;
+}

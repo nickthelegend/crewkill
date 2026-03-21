@@ -1,0 +1,17 @@
+export const ONECHAIN_RPC = 'https://rpc-testnet.onelabs.cc:443';
+
+export const CONTRACT_CONFIG = {
+  PACKAGE_ID:         '0xe22cdc6673016f56c54a5882f5a0d731e3db5901b6ae095c1140ed5864753fa7',
+  GAME_MANAGER_ID:    '0xdd15d2dcae71aba6f050e395726c6312abcada8293a905f2f8ed5da636640a89',
+  WAGER_VAULT_ID:     '0xfd418d00196332070248600a7744d5277126a04b8ecb8fbc41c28301e45956d0',
+  AGENT_REGISTRY_ID:  '0x5cbfbdbcf37768d3d8f65a66c6daaf741959e5a57ed7db19efa79b3b696b28f0',
+  MARKET_REGISTRY_ID: '0x5b218edfc3ff0c3cc88d02f9f18c79ecc12b0f82164fe6c0bdbf3ecb5d9d4fdd',
+  CLOCK_ID:           '0x6',
+};
+
+export const GAME_CONFIG = {
+  WAGER_AMOUNT_MIST:  100_000_000n, // 0.1 OCT
+  TASKS_REQUIRED:     10,
+  MAX_PLAYERS:        8,
+  MIN_BET_MIST:       10_000_000n,  // 0.01 OCT
+};

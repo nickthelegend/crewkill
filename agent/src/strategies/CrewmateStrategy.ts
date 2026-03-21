@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+
 import {
   Action,
   ActionType,
@@ -102,7 +102,7 @@ export class CrewmateStrategy extends BaseStrategy {
     if (myLocation === Location.Security) {
       // Alternate between using cams and doing tasks
       if (Math.random() > 0.5 && myPlayer.tasksCompleted < myPlayer.totalTasks) {
-        return { type: ActionType.UseCams };
+        return { type: ActionType.None };
       }
     }
 
@@ -191,7 +191,7 @@ export class CrewmateStrategy extends BaseStrategy {
     return this.taskFocusedAction(context);
   }
 
-  async decideVote(context: StrategyContext): Promise<Address | null> {
+  async decideVote(context: StrategyContext): Promise<string | null> {
     const { memory, alivePlayers, myPlayer } = context;
 
     // Get suspicion scores
@@ -242,7 +242,7 @@ export class CrewmateStrategy extends BaseStrategy {
         messages.push({
           sender: myPlayer.address,
           msgType: MessageType.Info,
-          target: "0x0000000000000000000000000000000000000000" as Address,
+          target: "0x0000000000000000000000000000000000000000" as string,
           reason: AccuseReason.NearBody,
           location: recentBody.location,
           timestamp: BigInt(Date.now()),

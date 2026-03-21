@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+
 import {
   Action,
   GameState,
@@ -32,7 +32,7 @@ export interface IStrategy {
    * Decide who to vote for during voting phase
    * Returns null to skip vote
    */
-  decideVote(context: StrategyContext): Promise<Address | null>;
+  decideVote(context: StrategyContext): Promise<string | null>;
 
   /**
    * Generate discussion messages during discussion phase
@@ -57,7 +57,7 @@ export abstract class BaseStrategy implements IStrategy {
   }
 
   abstract decideAction(context: StrategyContext): Promise<Action>;
-  abstract decideVote(context: StrategyContext): Promise<Address | null>;
+  abstract decideVote(context: StrategyContext): Promise<string | null>;
   abstract generateMessages(context: StrategyContext): Promise<DiscussionMessage[]>;
 
   // ============ HELPER METHODS ============

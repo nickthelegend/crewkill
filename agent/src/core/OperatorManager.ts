@@ -4,12 +4,12 @@ import { baseSepolia } from "../chains.js";
 
 export interface OperatorConfig {
   operatorKey: string;
-  operatorAddress: `0x${string}`;
+  operatorAddress: string;
 }
 
 export interface WithdrawResult {
   success: boolean;
-  txHash?: `0x${string}`;
+  txHash?: string;
   error?: string;
 }
 
@@ -35,8 +35,8 @@ export class OperatorManager {
    */
   initialize(
     operatorKey: string,
-    operatorAddress: `0x${string}`,
-    agentPrivateKey: `0x${string}`,
+    operatorAddress: string,
+    agentPrivateKey: string,
     publicClient: PublicClient
   ): boolean {
     if (!isValidOperatorKey(operatorKey)) {
@@ -76,14 +76,14 @@ export class OperatorManager {
   /**
    * Get the configured operator address
    */
-  getOperatorAddress(): `0x${string}` | null {
+  getOperatorAddress(): string | null {
     return this.operatorConfig?.operatorAddress ?? null;
   }
 
   /**
    * Get the agent's wallet address
    */
-  getAgentAddress(): `0x${string}` | null {
+  getAgentAddress(): string | null {
     return this.account?.address ?? null;
   }
 

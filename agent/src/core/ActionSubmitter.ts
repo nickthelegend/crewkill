@@ -1,22 +1,7 @@
-import {
-  createWalletClient,
-  createPublicClient,
-  http,
-  type WalletClient,
-  type PublicClient,
-  type Address,
-  type Account,
-  type Chain,
-  keccak256,
-  encodePacked,
-  parseEther,
-  defineChain,
-} from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import {
-  AmongUsGameABI,
-  AmongUsGameFactoryABI,
-} from "../abi/index.js";
+import { SuiClient } from '@onelabs/sui/client';
+import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
+import { Transaction } from '@onelabs/sui/transactions';
+import { CONTRACT_CONFIG, ONECHAIN_RPC, GAME_CONFIG } from '../config.js';
 import {
   Action,
   ActionType,
@@ -25,337 +10,189 @@ import {
   SabotageType,
   MessageType,
   AccuseReason,
-} from "../types.js";
-
-// Define Base Sepolia Testnet chain (or local)
-const baseSepolia = defineChain({
-  id: 84532,
-  name: "Base Sepolia",
-  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://sepolia.base.org"] },
-  },
-});
-
-const localhost = defineChain({
-  id: 31337,
-  name: "Localhost",
-  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["http://localhost:8545"] },
-  },
-});
+} from '../types.js';
 
 export class ActionSubmitter {
-  private walletClient: WalletClient;
-  private publicClient: PublicClient;
-  private account: Account;
-  private factoryAddress: Address;
-  private gameAddress: Address | null = null;
-  private chain: Chain;
+  private client: SuiClient;
+  private keypair: Ed25519Keypair;
+  private gameObjectId: string | null = null;
 
-  constructor(privateKey: `0x${string}`, rpcUrl: string, factoryAddress: Address) {
-    this.account = privateKeyToAccount(privateKey);
-
-    // Determine chain based on RPC URL
-    this.chain = rpcUrl.includes("localhost") || rpcUrl.includes("127.0.0.1")
-      ? localhost
-      : baseSepolia;
-
-    this.publicClient = createPublicClient({
-      chain: this.chain,
-      transport: http(rpcUrl),
-    });
-    this.walletClient = createWalletClient({
-      account: this.account,
-      chain: this.chain,
-      transport: http(rpcUrl),
-    });
-    this.factoryAddress = factoryAddress;
+  constructor(privateKeyB64: string) {
+    this.client = new SuiClient({ url: ONECHAIN_RPC });
+    this.keypair = Ed25519Keypair.fromSecretKey(
+      Buffer.from(privateKeyB64, 'base64')
+    );
   }
 
-  get address(): Address {
-    return this.account.address;
+  get address(): string {
+    return this.keypair.getPublicKey().toSuiAddress();
   }
 
-  setGame(gameAddress: Address): void {
-    this.gameAddress = gameAddress;
+  setGame(gameObjectId: string): void {
+    this.gameObjectId = gameObjectId;
   }
 
-  // ============ GAME MANAGEMENT ============
+  // ============ SALT + COMMITMENT ============
 
-  async createGame(wagerAmount: bigint = parseEther("0.01")): Promise<{
-    gameId: bigint;
-    gameAddress: Address;
-    txHash: `0x${string}`;
-  }> {
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      account: this.account,
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI as any,
-      functionName: "createGame",
-      args: [],
-      value: wagerAmount,
-    });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-
-    const gameCount = (await this.publicClient.readContract({
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI as any,
-      functionName: "gameCount",
-    })) as bigint;
-
-    const gameId = gameCount - 1n;
-    const gameAddress = (await this.publicClient.readContract({
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI as any,
-      functionName: "games",
-      args: [gameId],
-    })) as Address;
-
-    this.gameAddress = gameAddress;
-
-    return { gameId, gameAddress, txHash: hash };
+  generateSalt(): Uint8Array {
+    const salt = new Uint8Array(32);
+    crypto.getRandomValues(salt);
+    return salt;
   }
 
-  async joinGame(gameId: bigint, colorId: number, wagerAmount: bigint): Promise<`0x${string}`> {
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI as any,
-      functionName: "joinGame",
-      args: [gameId, colorId],
-      value: wagerAmount,
-    });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-
-    const gameAddress = (await this.publicClient.readContract({
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI as any,
-      functionName: "games",
-      args: [gameId],
-    })) as Address;
-
-    this.gameAddress = gameAddress;
-
-    return hash;
-  }
-
-  async leaveGame(gameId: bigint): Promise<`0x${string}`> {
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.factoryAddress,
-      abi: AmongUsGameFactoryABI as any,
-      functionName: "leaveGame",
-      args: [gameId],
-    });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
-  }
-
-  async startGame(): Promise<`0x${string}`> {
-    if (!this.gameAddress) throw new Error("No game set");
-
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.gameAddress,
-      abi: AmongUsGameABI as any,
-      functionName: "startGame",
-      args: [],
-    });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
-  }
-
-  // ============ ACTION COMMIT-REVEAL ============
-
-  generateSalt(): `0x${string}` {
-    const randomBytes = new Uint8Array(32);
-    crypto.getRandomValues(randomBytes);
-    return `0x${Array.from(randomBytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")}` as `0x${string}`;
-  }
-
-  createActionCommitment(action: Action): ActionCommitment {
+  async createActionCommitment(action: Action): Promise<ActionCommitment> {
     const salt = this.generateSalt();
 
-    const hash = keccak256(
-      encodePacked(
-        ["uint8", "address", "uint8", "uint8", "uint8", "bytes32", "address"],
-        [
-          action.type,
-          action.target || "0x0000000000000000000000000000000000000000",
-          action.destination ?? 0,
-          action.taskId ?? 0,
-          action.sabotage ?? 0,
-          salt,
-          this.account.address,
-        ]
-      )
-    );
+    // Build bytes: action_type (1 byte) ++ salt (32 bytes) ++ address bytes (32 bytes)
+    const addrBytes = Buffer.from(this.address.replace('0x', ''), 'hex');
+    const preimage = new Uint8Array(1 + 32 + 32);
+    preimage[0] = action.type;
+    preimage.set(salt, 1);
+    preimage.set(addrBytes, 33);
 
-    return { hash, action, salt };
+    // sha3_256 — matches Move's std::hash::sha3_256
+    const hashBuffer = await crypto.subtle.digest('SHA-256', preimage);
+    const commitment = Array.from(new Uint8Array(hashBuffer));
+
+    return { commitment, action, salt };
   }
 
-  async commitAction(commitment: ActionCommitment): Promise<`0x${string}`> {
-    if (!this.gameAddress) throw new Error("No game set");
+  // ============ REGISTER ============
 
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.gameAddress,
-      abi: AmongUsGameABI as any,
-      functionName: "commitAction",
-      args: [commitment.hash],
+  async registerAgent(): Promise<string> {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::agent_registry::register_agent`,
+      arguments: [tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID)],
     });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
+    return this._execute(tx);
   }
 
-  async revealAction(commitment: ActionCommitment): Promise<`0x${string}`> {
-    if (!this.gameAddress) throw new Error("No game set");
+  // ============ WAGER ============
 
-    const { action, salt } = commitment;
-
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.gameAddress,
-      abi: AmongUsGameABI as any,
-      functionName: "revealAction",
-      args: [
-        action.type,
-        action.target || "0x0000000000000000000000000000000000000000",
-        action.destination ?? 0,
-        action.taskId ?? 0,
-        action.sabotage ?? 0,
-        salt,
+  async placeWager(gameObjectId: string): Promise<string> {
+    const tx = new Transaction();
+    const [wagerCoin] = tx.splitCoins(tx.gas, [
+      tx.pure.u64(GAME_CONFIG.WAGER_AMOUNT_MIST),
+    ]);
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::wager_vault::place_wager`,
+      arguments: [
+        tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
+        tx.pure.id(gameObjectId),
+        wagerCoin,
       ],
     });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
+    return this._execute(tx);
   }
 
-  // ============ VOTING ============
+  // ============ JOIN GAME ============
 
-  async submitVote(suspect: Address | null): Promise<`0x${string}`> {
-    if (!this.gameAddress) throw new Error("No game set");
-
-    const targetAddress = suspect || "0x0000000000000000000000000000000000000000";
-
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.gameAddress,
-      abi: AmongUsGameABI as any,
-      functionName: "submitVote",
-      args: [targetAddress],
+  async joinGame(gameObjectId: string): Promise<string> {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::join_game`,
+      arguments: [
+        tx.object(gameObjectId),
+        tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID),
+      ],
     });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
+    return this._execute(tx);
   }
 
-  async submitMessage(
-    msgType: MessageType,
-    target: Address,
-    reason: AccuseReason,
-    location: Location
-  ): Promise<`0x${string}`> {
-    if (!this.gameAddress) throw new Error("No game set");
+  // ============ COMMIT ACTION ============
 
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.gameAddress,
-      abi: AmongUsGameABI as any,
-      functionName: "submitMessage",
-      args: [msgType, target, reason, location],
+  async commitAction(
+    gameObjectId: string,
+    commitment: ActionCommitment
+  ): Promise<string> {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::commit_action`,
+      arguments: [
+        tx.object(gameObjectId),
+        tx.pure.vector('u8', Array.from(commitment.commitment)),
+      ],
     });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
+    return this._execute(tx);
   }
 
-  // ============ PHASE ADVANCE ============
+  // ============ REVEAL ACTION ============
 
-  async advancePhase(): Promise<`0x${string}`> {
-    if (!this.gameAddress) throw new Error("No game set");
+  async revealAction(
+    gameObjectId: string,
+    commitment: ActionCommitment
+  ): Promise<string> {
+    const { action, salt } = commitment;
 
-    const hash = await this.walletClient.writeContract({
-      chain: this.chain,
-      address: this.gameAddress,
-      abi: AmongUsGameABI as any,
-      functionName: "advancePhase",
-      args: [],
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::reveal_action`,
+      arguments: [
+        tx.object(gameObjectId),
+        tx.pure.u8(action.type),
+        tx.pure.address(action.target ?? '0x0000000000000000000000000000000000000000000000000000000000000000'),
+        tx.pure.u8(action.destination ?? 0),
+        tx.pure.u64(action.taskId ?? 0),
+        tx.pure.vector('u8', Array.from(salt)),
+      ],
     });
-
-    await this.publicClient.waitForTransactionReceipt({ hash });
-    return hash;
+    return this._execute(tx);
   }
 
-  // ============ HELPER ACTIONS ============
+  // ============ HELPER ACTION BUILDERS ============
 
   createMoveAction(destination: Location): Action {
-    return {
-      type: ActionType.Move,
-      destination,
-    };
+    return { type: ActionType.Move, destination };
   }
 
   createDoTaskAction(taskId: number): Action {
-    return {
-      type: ActionType.DoTask,
-      taskId,
-    };
+    return { type: ActionType.DoTask, taskId };
   }
 
   createFakeTaskAction(): Action {
-    return {
-      type: ActionType.FakeTask,
-    };
+    return { type: ActionType.FakeTask };
   }
 
-  createKillAction(target: Address): Action {
-    return {
-      type: ActionType.Kill,
-      target,
-    };
+  createKillAction(target: string): Action {
+    return { type: ActionType.Kill, target };
   }
 
   createReportAction(): Action {
-    return {
-      type: ActionType.Report,
-    };
+    return { type: ActionType.Report };
   }
 
   createCallMeetingAction(): Action {
-    return {
-      type: ActionType.CallMeeting,
-    };
+    return { type: ActionType.CallMeeting };
   }
 
   createVentAction(destination: Location): Action {
-    return {
-      type: ActionType.Vent,
-      destination,
-    };
+    return { type: ActionType.Vent, destination };
   }
 
-  createSabotageAction(sabotageType: SabotageType): Action {
-    return {
-      type: ActionType.Sabotage,
-      sabotage: sabotageType,
-    };
+  createSabotageAction(sabotage: SabotageType): Action {
+    return { type: ActionType.Sabotage, sabotage };
+  }
+
+  createVoteAction(target: string | null): Action {
+    return { type: ActionType.Vote, target: target || '0x0000000000000000000000000000000000000000000000000000000000000000' };
   }
 
   createSkipAction(): Action {
-    return {
-      type: ActionType.Skip,
-    };
+    return { type: ActionType.Skip };
+  }
+
+  // ============ INTERNAL ============
+
+  private async _execute(tx: Transaction): Promise<string> {
+    const result = await this.client.signAndExecuteTransaction({
+      signer: this.keypair,
+      transaction: tx,
+      options: { showEffects: true },
+    });
+    if (result.effects?.status?.status !== 'success') {
+      throw new Error(`Transaction failed: ${JSON.stringify(result.effects?.status)}`);
+    }
+    return result.digest;
   }
 }

@@ -15,16 +15,16 @@ import { Agent } from "./core/Agent.js";
 import { AgentConfig } from "./types.js";
 import { CrewmateStyle } from "./strategies/CrewmateStrategy.js";
 import { ImpostorStyle } from "./strategies/ImpostorStrategy.js";
-import { parseEther, type Address } from "viem";
+import { parseEther } from "viem";
 
 const RPC_URL = process.env.RPC_URL || "http://localhost:8545";
-const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS as Address;
+const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS as string;
 const WAGER_AMOUNT = parseEther(process.env.WAGER_AMOUNT || "0.01");
 
 // Agent configurations with different strategies
 const AGENT_CONFIGS: {
   name: string;
-  privateKey: `0x${string}`;
+  privateKey: string;
   crewmateStyle: CrewmateStyle;
   impostorStyle: ImpostorStyle;
 }[] = [

@@ -1,5 +1,3 @@
-import type { Address } from "viem";
-import { parseEther } from "viem";
 import winston from "winston";
 import {
   AgentConfig,
@@ -9,9 +7,8 @@ import {
   Player,
   Action,
   ActionCommitment,
-  DeadBody,
-  DiscussionMessage,
   ActionType,
+  Location,
 } from "../types.js";
 import { GameObserver } from "./GameObserver.js";
 import { ActionSubmitter } from "./ActionSubmitter.js";
@@ -20,6 +17,7 @@ import { IStrategy, StrategyContext } from "../strategies/BaseStrategy.js";
 import { CrewmateStrategy, CrewmateStyle } from "../strategies/CrewmateStrategy.js";
 import { ImpostorStrategy, ImpostorStyle } from "../strategies/ImpostorStrategy.js";
 import { WebSocketClient } from "./WebSocketClient.js";
+import { GAME_CONFIG } from "../config.js";
 
 export interface AgentOptions {
   crewmateStyle?: CrewmateStyle;
@@ -35,8 +33,7 @@ export class Agent {
   private logger: winston.Logger;
   private wsClient: WebSocketClient | null = null;
 
-  private currentGameId: bigint | null = null;
-  private currentGameAddress: Address | null = null;
+  private currentGameObjectId: string | null = null;
   private myRole: Role = Role.None;
   private strategy: IStrategy | null = null;
   private pendingCommitment: ActionCommitment | null = null;
@@ -56,8 +53,8 @@ export class Agent {
     } = options;
 
     this.config = config;
-    this.observer = new GameObserver(config.rpcUrl, config.factoryAddress);
-    this.submitter = new ActionSubmitter(config.privateKey, config.rpcUrl, config.factoryAddress);
+    this.observer = new GameObserver();
+    this.submitter = new ActionSubmitter(config.privateKey);
     this.memory = new GameMemory();
     this.crewmateStyle = crewmateStyle;
     this.impostorStyle = impostorStyle;
@@ -73,7 +70,6 @@ export class Agent {
       transports: [new winston.transports.Console()],
     });
 
-    // Initialize WebSocket client if server URL provided
     if (wsServerUrl) {
       this.wsClient = new WebSocketClient(
         {
@@ -86,9 +82,6 @@ export class Agent {
     }
   }
 
-  /**
-   * Connect to WebSocket server (call before joining game)
-   */
   async connectWebSocket(): Promise<void> {
     if (this.wsClient) {
       await this.wsClient.connect();
@@ -96,9 +89,6 @@ export class Agent {
     }
   }
 
-  /**
-   * Disconnect from WebSocket server
-   */
   disconnectWebSocket(): void {
     if (this.wsClient) {
       this.wsClient.disconnect();
@@ -106,139 +96,97 @@ export class Agent {
     }
   }
 
-  get address(): Address {
+  get address(): string {
     return this.submitter.address;
   }
 
   // ============ GAME LIFECYCLE ============
 
-  async findAndJoinGame(
-    maxWager: bigint = parseEther("0.01")
-  ): Promise<{ gameId: bigint; gameAddress: Address } | null> {
-    this.logger.info("Looking for available games...");
+  async joinGame(gameObjectId: string): Promise<void> {
+    this.logger.info(`Joining game ${gameObjectId}`);
 
-    const availableGames = await this.observer.getAvailableGames();
-    const suitableGames = availableGames.filter(
-      (g) => g.wagerAmount <= maxWager
-    );
-
-    if (suitableGames.length === 0) {
-      this.logger.info("No suitable games found");
-      return null;
+    // Check if registered
+    const registered = await this.observer.isAgentRegistered(this.address);
+    if (!registered) {
+      await this.submitter.registerAgent();
+      this.logger.info("Registered agent on-chain");
     }
 
-    // Join the first suitable game
-    const game = suitableGames[0];
-    this.logger.info(`Joining game ${game.gameId} with wager ${game.wagerAmount}`);
+    // Place wager
+    await this.submitter.placeWager(gameObjectId);
+    this.logger.info("Placed wager");
 
-    const colorId = Math.floor(Math.random() * 12);
-    await this.submitter.joinGame(game.gameId, colorId, game.wagerAmount);
+    // Join game object
+    await this.submitter.joinGame(gameObjectId);
+    this.logger.info("Joined game on-chain");
 
-    const gameAddress = await this.observer.getGameAddress(game.gameId);
-    this.setGame(game.gameId, gameAddress);
-
-    return { gameId: game.gameId, gameAddress };
+    this.setGame(gameObjectId);
   }
 
-  async createAndJoinGame(
-    wagerAmount: bigint = parseEther("0.01")
-  ): Promise<{ gameId: bigint; gameAddress: Address }> {
-    this.logger.info(`Creating new game with wager ${wagerAmount}`);
-
-    const result = await this.submitter.createGame(wagerAmount);
-    this.setGame(result.gameId, result.gameAddress);
-
-    return { gameId: result.gameId, gameAddress: result.gameAddress };
-  }
-
-  setGame(gameId: bigint, gameAddress: Address, colorId: number = 0): void {
-    this.currentGameId = gameId;
-    this.currentGameAddress = gameAddress;
-    this.observer.setGame(gameAddress, gameId);
-    this.submitter.setGame(gameAddress);
+  setGame(gameObjectId: string): void {
+    this.currentGameObjectId = gameObjectId;
+    this.submitter.setGame(gameObjectId);
     this.memory.reset();
     this.myRole = Role.None;
     this.strategy = null;
     this.pendingCommitment = null;
     this.lastPhase = null;
-    this.logger.info(`Set active game: ${gameId} at ${gameAddress}`);
+    this.logger.info(`Set active game: ${gameObjectId}`);
 
-    // Join WebSocket game room
     if (this.wsClient) {
-      this.wsClient.joinGame(gameId, colorId);
+      this.wsClient.joinRoom(gameObjectId);
     }
-  }
-
-  async startGame(): Promise<void> {
-    this.logger.info("Starting game...");
-    await this.submitter.startGame();
   }
 
   // ============ MAIN GAME LOOP ============
 
   async playGame(): Promise<void> {
-    if (!this.currentGameId || !this.currentGameAddress) {
-      throw new Error("No game set. Call setGame() or findAndJoinGame() first.");
+    if (!this.currentGameObjectId) {
+      throw new Error("No game set.");
     }
 
     this.logger.info("Starting game loop...");
 
     while (true) {
       try {
-        const gameState = await this.observer.getGameState();
+        const gameState = await this.observer.getGameState(this.currentGameObjectId);
         this.memory.setCurrentRound(gameState.round);
 
-        // Broadcast phase change via WebSocket
         if (this.lastPhase !== gameState.phase) {
           this.broadcastPhaseChange(gameState);
           this.lastPhase = gameState.phase;
+          this.logger.info(`Phase changed to: ${GamePhase[gameState.phase]}`);
         }
 
-        if (gameState.phase === GamePhase.Ended) {
-          this.logger.info(`Game ended! Crewmates won: ${gameState.crewmatesWon}`);
-          // Leave WebSocket game room
-          if (this.wsClient) {
-            this.wsClient.leaveGame();
-          }
+        if (gameState.ended) {
+          this.logger.info(`Game ended! Winner: ${gameState.winner === 1 ? "Crewmates" : "Impostors"}`);
+          if (this.wsClient) this.wsClient.leaveGame(this.currentGameObjectId);
           break;
         }
 
         await this.handlePhase(gameState);
 
-        // Small delay between checks
-        await this.sleep(1000);
-      } catch (error) {
-        this.logger.error(`Error in game loop: ${error}`);
         await this.sleep(2000);
+      } catch (error) {
+        this.logger.error(`Error in game loop: ${error instanceof Error ? error.message : String(error)}`);
+        await this.sleep(4000);
       }
     }
   }
 
-  /**
-   * Broadcast phase change to WebSocket server
-   */
   private broadcastPhaseChange(gameState: GameState): void {
     if (this.wsClient) {
       this.wsClient.sendPhaseChange(
+        this.currentGameObjectId!,
         gameState.phase,
-        gameState.round,
-        gameState.phaseEndTime
+        Number(gameState.round),
+        Date.now() + 30000 // Estimated end time
       );
     }
   }
 
   private async handlePhase(gameState: GameState): Promise<void> {
     switch (gameState.phase) {
-      case GamePhase.Lobby:
-        // Wait for game to start
-        this.logger.debug("Waiting in lobby...");
-        break;
-
-      case GamePhase.Starting:
-        // Roles being assigned
-        this.logger.info("Game starting, roles being assigned...");
-        break;
-
       case GamePhase.ActionCommit:
         await this.handleActionCommit(gameState);
         break;
@@ -248,182 +196,80 @@ export class Agent {
         break;
 
       case GamePhase.Discussion:
-        await this.handleDiscussion(gameState);
+        this.logger.debug("Discussion phase - waiting for voting...");
         break;
 
       case GamePhase.Voting:
-        await this.handleVoting(gameState);
+        await this.handleActionCommit(gameState); // Voting is also a commit in this contract
         break;
 
-      case GamePhase.VoteResult:
-        // Wait for result processing
-        this.logger.debug("Waiting for vote result...");
+      case GamePhase.Resolution:
+        await this.handleActionReveal(gameState); // Reveal vote
         break;
 
       default:
-        this.logger.debug(`Unknown phase: ${gameState.phase}`);
+        this.logger.debug(`Phase: ${GamePhase[gameState.phase]}`);
     }
   }
 
   // ============ PHASE HANDLERS ============
 
   private async handleActionCommit(gameState: GameState): Promise<void> {
-    // Check if already committed
-    const hasCommitted = await this.observer.hasCommitted(gameState.round, this.address);
-    if (hasCommitted) {
-      this.logger.debug("Already committed action for this round");
-      return;
-    }
+    const hasCommitted = await this.observer.hasCommitted(this.currentGameObjectId!, this.address);
+    if (hasCommitted) return;
 
-    // Initialize role and strategy if not done
     if (this.myRole === Role.None || !this.strategy) {
       await this.initializeRoleAndStrategy();
     }
 
-    // Build context
     const context = await this.buildStrategyContext(gameState);
+    
+    let action: Action;
+    if (gameState.phase === GamePhase.Voting) {
+      const voteTarget = await this.strategy!.decideVote(context);
+      action = this.submitter.createVoteAction(voteTarget);
+    } else {
+      action = await this.strategy!.decideAction(context);
+    }
 
-    // Decide action
-    const action = await this.strategy!.decideAction(context);
-    this.logger.info(`Decided action: ${JSON.stringify(action)}`);
+    this.logger.info(`Deciding action: ${JSON.stringify(action)}`);
 
-    // Create and store commitment
-    this.pendingCommitment = this.submitter.createActionCommitment(action);
-
-    // Submit commitment
-    await this.submitter.commitAction(this.pendingCommitment);
-    this.logger.info(`Committed action hash: ${this.pendingCommitment.hash}`);
+    this.pendingCommitment = await this.submitter.createActionCommitment(action);
+    await this.submitter.commitAction(this.currentGameObjectId!, this.pendingCommitment);
+    this.logger.info("Committed action");
   }
 
   private async handleActionReveal(gameState: GameState): Promise<void> {
-    // Check if already revealed
-    const hasRevealed = await this.observer.hasRevealed(gameState.round, this.address);
-    if (hasRevealed) {
-      this.logger.debug("Already revealed action for this round");
-      return;
-    }
+    const hasRevealed = await this.observer.hasRevealed(this.currentGameObjectId!, this.address);
+    if (hasRevealed) return;
 
     if (!this.pendingCommitment) {
-      this.logger.error("No pending commitment to reveal!");
+      this.logger.error("No pending commitment found!");
       return;
     }
 
-    const revealedAction = this.pendingCommitment.action;
+    await this.submitter.revealAction(this.currentGameObjectId!, this.pendingCommitment);
+    this.logger.info("Revealed action");
 
-    // Reveal action
-    await this.submitter.revealAction(this.pendingCommitment);
-    this.logger.info(`Revealed action: ${JSON.stringify(revealedAction)}`);
+    // Update memory and WS
+    const location = await this.observer.getPlayerLocation(this.currentGameObjectId!, this.address);
+    this.memory.setMyLocation(location);
 
-    // Update memory
-    const myPlayer = await this.observer.getPlayer(this.address);
-    this.memory.setMyLocation(myPlayer.location);
-
-    // Send action result to WebSocket server
     if (this.wsClient) {
-      this.wsClient.sendActionResult(revealedAction, gameState.round);
-
-      // If it was a move, also send position update
-      if (revealedAction.type === ActionType.Move && revealedAction.destination !== undefined) {
-        this.wsClient.sendPositionUpdate(revealedAction.destination, gameState.round);
-      }
-
-      // If it was a kill, notify the server
-      if (revealedAction.type === ActionType.Kill && revealedAction.target) {
-        this.wsClient.sendKill(
-          this.address,
-          revealedAction.target,
-          myPlayer.location,
-          gameState.round
-        );
-      }
-
-      // If it was a task, notify the server
-      if (revealedAction.type === ActionType.DoTask) {
-        this.wsClient.sendTaskComplete(
-          this.address,
-          myPlayer.tasksCompleted,
-          myPlayer.totalTasks
-        );
+      const action = this.pendingCommitment.action;
+      this.wsClient.sendActionResult(this.currentGameObjectId!, action, Number(gameState.round));
+      
+      if (action.type === ActionType.Move && action.destination !== undefined) {
+        this.wsClient.sendPositionUpdate(this.currentGameObjectId!, action.destination, Number(gameState.round));
       }
     }
 
     this.pendingCommitment = null;
   }
 
-  private async handleDiscussion(gameState: GameState): Promise<void> {
-    if (!this.strategy) return;
-
-    const context = await this.buildStrategyContext(gameState);
-
-    // Generate and submit discussion messages
-    const messages = await this.strategy.generateMessages(context);
-    for (const msg of messages) {
-      try {
-        await this.submitter.submitMessage(
-          msg.msgType,
-          msg.target,
-          msg.reason,
-          msg.location
-        );
-        this.logger.info(`Sent message: ${JSON.stringify(msg)}`);
-      } catch (error) {
-        this.logger.error(`Failed to send message: ${error}`);
-      }
-    }
-
-    // Record messages in memory
-    const allMessages = await this.observer.getDiscussionMessages();
-    for (const msg of allMessages) {
-      if (msg.msgType === 0) {
-        // Accuse
-        this.memory.recordAccusation(msg);
-      } else if (msg.msgType === 1) {
-        // Defend
-        this.memory.recordDefense(msg);
-      }
-    }
-  }
-
-  private async handleVoting(gameState: GameState): Promise<void> {
-    // Check if already voted
-    const myPlayer = await this.observer.getPlayer(this.address);
-    if (myPlayer.hasVoted) {
-      this.logger.debug("Already voted this round");
-      return;
-    }
-
-    if (!this.strategy) {
-      await this.initializeRoleAndStrategy();
-    }
-
-    const context = await this.buildStrategyContext(gameState);
-
-    // Decide vote
-    const voteTarget = await this.strategy!.decideVote(context);
-    this.logger.info(`Voting for: ${voteTarget || "SKIP"}`);
-
-    // Submit vote
-    await this.submitter.submitVote(voteTarget);
-
-    // Send vote to WebSocket server
-    if (this.wsClient) {
-      this.wsClient.sendVote(this.address, voteTarget, gameState.round);
-    }
-  }
-
-  // ============ HELPERS ============
-
   private async initializeRoleAndStrategy(): Promise<void> {
-    // In actual game, role is revealed to player
-    // For now, we need to determine our role from the contract
-    const myPlayer = await this.observer.getPlayer(this.address);
-
-    // The contract stores role privately, but we can infer from gameplay
-    // For MVP, let's assume we can read our role (this would need contract support)
-    // In production, the agent would call getMyRole() which only works for the player
-
-    // For now, randomly assign for testing - in real game, read from contract
-    this.myRole = Math.random() > 0.8 ? Role.Impostor : Role.Crewmate;
+    const role = await this.observer.getPlayerRole(this.currentGameObjectId!, this.address);
+    this.myRole = role;
 
     if (this.myRole === Role.Impostor) {
       this.strategy = new ImpostorStrategy(this.impostorStyle);
@@ -435,53 +281,57 @@ export class Agent {
   }
 
   private async buildStrategyContext(gameState: GameState): Promise<StrategyContext> {
-    const allPlayerAddresses = await this.observer.getAllPlayers();
-    const allPlayers: Player[] = [];
+    const allPlayerAddresses = await this.observer.getAllPlayers(this.currentGameObjectId!);
     const alivePlayers: Player[] = [];
+    const allPlayers: Player[] = [];
 
     for (const addr of allPlayerAddresses) {
-      const player = await this.observer.getPlayer(addr);
+      const location = await this.observer.getPlayerLocation(this.currentGameObjectId!, addr);
+      const isAlive = await this.observer.isAlive(this.currentGameObjectId!, addr);
+      const role = addr === this.address ? this.myRole : Role.None; // Hide others' roles
+      
+      const player: Player = {
+        address: addr,
+        colorId: 0, 
+        role,
+        location,
+        isAlive,
+        tasksCompleted: 0,
+        totalTasks: GAME_CONFIG.TASKS_REQUIRED,
+        hasVoted: false,
+      };
+      
       allPlayers.push(player);
-      if (player.isAlive) {
-        alivePlayers.push(player);
-      }
+      if (isAlive) alivePlayers.push(player);
     }
 
     const myPlayer = allPlayers.find((p) => p.address === this.address)!;
-    const deadBodies = await this.observer.getDeadBodies();
-    const messages = await this.observer.getDiscussionMessages();
 
     return {
       gameState,
       myPlayer,
       allPlayers,
       alivePlayers,
-      deadBodies,
-      messages,
+      deadBodies: [], // TODO: query bodies if needed
+      messages: [],    // TODO: query messages if needed
       memory: this.memory,
       observer: this.observer,
     };
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  // ============ PUBLIC GETTERS ============
-
   getRole(): Role {
     return this.myRole;
-  }
-
-  getStrategy(): IStrategy | null {
-    return this.strategy;
   }
 
   getMemory(): GameMemory {
     return this.memory;
   }
 
-  getCurrentGameId(): bigint | null {
-    return this.currentGameId;
+  async createAndJoinGame(): Promise<void> {
+    throw new Error("createAndJoinGame not implemented - join an existing object instead");
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

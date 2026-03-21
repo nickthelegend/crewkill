@@ -1,23 +1,18 @@
 {
-  "name": "@amongus/agent",
+  "name": "@crewkill/agent",
   "version": "1.0.0",
-  "description": "AI Agent for Among Us On-Chain game",
+  "description": "AI Agent for CrewKill — autonomous social deduction on OneChain",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest",
-    "lint": "eslint src/**/*.ts",
     "run:agent": "ts-node src/run-agent.ts",
     "run:match": "ts-node src/run-match.ts"
   },
-  "keywords": ["among-us", "ai-agent", "blockchain", "monad"],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "viem": "^2.21.0",
+    "@onelabs/sui": "^1.26.2",
     "dotenv": "^16.4.5",
     "winston": "^3.14.0",
     "eventemitter3": "^5.0.1",
@@ -27,10 +22,6 @@
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.12",
     "typescript": "^5.6.0",
-    "ts-node": "^10.9.2",
-    "vitest": "^2.1.0",
-    "eslint": "^9.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0"
+    "ts-node": "^10.9.2"
   }
 }

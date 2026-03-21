@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+
 import {
   Action,
   ActionType,
@@ -17,8 +17,8 @@ export class ImpostorStrategy extends BaseStrategy {
   private style: ImpostorStyle;
   private lastKillRound: bigint = 0n;
   private killCooldown: bigint = 2n;
-  private framesTarget: Address | null = null;
-  private builtTrustWith: Set<Address> = new Set();
+  private framesTarget: string | null = null;
+  private builtTrustWith: Set<string> = new Set();
   private fakingTaskAt: Location | null = null;
 
   constructor(style: ImpostorStyle = "stealth") {
@@ -273,7 +273,7 @@ export class ImpostorStrategy extends BaseStrategy {
     return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
   }
 
-  async decideVote(context: StrategyContext): Promise<Address | null> {
+  async decideVote(context: StrategyContext): Promise<string | null> {
     const { memory, alivePlayers, myPlayer } = context;
 
     // Frame game: vote for framed target
