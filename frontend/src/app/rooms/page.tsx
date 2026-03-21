@@ -6,6 +6,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { SpaceBackground } from "@/components/game/SpaceBackground";
 import { AmongUsSprite } from "@/components/game/AmongUsSprite";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function RoomsPage() {
   const [filter, setFilter] = useState<"LIVE" | "ARCHIVE">("LIVE");
@@ -21,51 +22,69 @@ export default function RoomsPage() {
 
   return (
     <SpaceBackground>
-      <div className="py-12 max-w-6xl mx-auto px-4">
-        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">
-              Combat <span className="text-red-500">Zones</span>
+      <div className="py-20 md:py-32 max-w-7xl mx-auto px-6 font-sans">
+        <header className="mb-20 flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+          >
+            <h1 className="text-7xl md:text-8xl font-black italic tracking-tighter uppercase leading-none text-white">
+              COMBAT <span className="text-red-500">ZONES</span>
             </h1>
-            <p className="text-white/40 font-mono tracking-widest text-[10px] mt-4 uppercase">
-              Neural Link Status: <span className="text-emerald-400">ACTIVE</span> • Select an arena below
-            </p>
-          </div>
+            <div className="flex items-center gap-4 mt-6">
+              <div className="h-0.5 w-12 bg-red-500" />
+              <p className="text-white/40 font-mono tracking-[0.3em] text-[10px] uppercase">
+                NEURAL LINK: <span className="text-emerald-400">ACTIVE</span> • SELECT SECTOR
+              </p>
+            </div>
+          </motion.div>
 
-          <div className="flex bg-white/5 backdrop-blur-3xl p-1.5 rounded-2xl border border-white/10 self-start md:self-auto">
+          <motion.div 
+            className="flex bg-white/5 backdrop-blur-3xl p-1 rounded-none border border-white/10"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
             <button 
               onClick={() => setFilter("LIVE")}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                filter === "LIVE" ? "bg-red-500 text-white shadow-lg shadow-red-500/20" : "text-white/40 hover:text-white"
+              className={`px-10 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                filter === "LIVE" ? "bg-red-500 text-white" : "text-white/30 hover:text-white"
               }`}
             >
               Live Missions
             </button>
             <button 
               onClick={() => setFilter("ARCHIVE")}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                filter === "ARCHIVE" ? "bg-white/10 text-white shadow-lg" : "text-white/40 hover:text-white"
+              className={`px-10 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                filter === "ARCHIVE" ? "bg-white/10 text-white" : "text-white/30 hover:text-white"
               }`}
             >
-              Archived
+              Archive
             </button>
-          </div>
+          </motion.div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGames.map((game) => (
-            <RoomCard key={game.roomId} game={game} />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <AnimatePresence mode="popLayout">
+            {filteredGames.map((game, i) => (
+              <RoomCard key={game.roomId} game={game} index={i} />
+            ))}
+          </AnimatePresence>
 
           {filteredGames.length === 0 && (
-            <div className="col-span-full py-32 text-center bg-black/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white/10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            <motion.div 
+              className="col-span-full py-40 text-center bg-white/[0.02] backdrop-blur-3xl rounded-none border border-white/5 flex flex-col items-center justify-center p-10"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="w-20 h-20 rounded-none border border-white/10 flex items-center justify-center mb-8 relative group">
+                <div className="absolute inset-0 bg-white/5 animate-pulse" />
+                <svg className="w-8 h-8 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M11 5.882V19.297A7.477 7.477 0 005.188 17.07Q2.594 17.07 1 18.06V5.79q1.594-.99 4.188-.99a7.405 7.405 0 015.812 2.082zM13 5.882V19.297a7.477 7.477 0 015.812-2.227q2.594 0 4.188.99V5.79q-1.594-.99-4.188-.99a7.405 7.405 0 00-5.812 2.082z" />
                 </svg>
               </div>
-              <p className="text-white/20 font-black uppercase tracking-[0.3em] text-xs">No matching zones found</p>
-            </div>
+              <h3 className="text-xl font-black text-white italic uppercase tracking-tighter mb-2">Signal Silence</h3>
+              <p className="text-white/20 font-mono uppercase tracking-[0.3em] text-[10px] max-w-xs leading-relaxed">No active combat signatures detected in the current mission parameters.</p>
+            </motion.div>
           )}
         </div>
       </div>
@@ -73,68 +92,89 @@ export default function RoomsPage() {
   );
 }
 
-function RoomCard({ game }: { game: any }) {
+function RoomCard({ game, index }: { game: any; index: number }) {
   const isStarting = game.status === "CREATED";
   const startAt = game.scheduledAt ? new Date(game.scheduledAt) : null;
   const bettingEndsAt = game.bettingEndsAt ? new Date(game.bettingEndsAt) : null;
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
 
+  const getStatusColor = () => {
+    if (game.status === "DONE" || game.status === "ENDED") return "bg-white/20";
+    if (isStarting) return "bg-cyan-500";
+    return "bg-red-500";
+  }
+
   return (
-    <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 hover:bg-white/10 transition-all border-l-4 border-l-red-500">
-      <div className="flex items-start justify-between mb-6">
+    <motion.div 
+      layout
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className={`group relative bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-none p-8 hover:bg-white/5 transition-all border-l-4 ${getStatusColor().replace('bg-', 'border-')}`}
+    >
+      <div className="flex items-start justify-between mb-10">
         <div>
-          <h3 className="text-lg font-black text-white uppercase truncate w-40">
-            {game.roomId.replace("scheduled_", "ALPHA-")}
+          <span className="text-[10px] text-white/30 font-mono uppercase tracking-[0.2em] mb-2 block">
+            ID: {game.roomId.slice(-8).toUpperCase()}
+          </span>
+          <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+            {game.roomId.replace("scheduled_", "MISSION-").replace("room_", "NODE-")}
           </h3>
-          <p className="text-[10px] text-white/40 font-mono uppercase tracking-widest">
-            {game.status}
-          </p>
+          <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-white/5 border border-white/5">
+            <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
+            <span className="text-[9px] text-white font-black uppercase tracking-widest">{game.status}</span>
+          </div>
         </div>
-        <div className="flex -space-x-2">
+        
+        <div className="flex items-center -space-x-3 opacity-60 group-hover:opacity-100 transition-opacity">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-gray-900 overflow-hidden flex items-center justify-center">
-              <AmongUsSprite colorId={i + (game.roomId.length % 10)} size={20} />
+            <div key={i} className="w-10 h-10 rounded-none border border-white/10 bg-black/40 flex items-center justify-center backdrop-blur-md">
+              <AmongUsSprite colorId={i + (game.roomId.length % 12)} size={24} />
             </div>
           ))}
         </div>
       </div>
 
-      <div className="space-y-3 mb-8">
-        <div className="flex justify-between items-center text-xs font-bold uppercase">
-          <span className="text-white/30">Scheduled For</span>
-          <span className="text-white">{startAt ? formatDistanceToNow(startAt, { addSuffix: true }) : "N/A"}</span>
+      <div className="space-y-4 mb-10 bg-black/20 p-5 border border-white/5">
+        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+          <span className="text-white/20 font-mono italic text-[9px]">LIFT_OFF:</span>
+          <span className="text-white">{startAt ? formatDistanceToNow(startAt, { addSuffix: true }) : "UNKNOWN"}</span>
         </div>
-        <div className="flex justify-between items-center text-xs font-bold uppercase">
-          <span className="text-white/30">Betting Status</span>
-          <span className={isBettingOpen ? "text-green-400" : "text-red-500"}>
-            {isBettingOpen ? "OPEN" : "CLOSED"}
+        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+          <span className="text-white/20 font-mono italic text-[9px]">WAGERS:</span>
+          <span className={isBettingOpen ? "text-emerald-400" : "text-red-500/50"}>
+            {isBettingOpen ? "PERMITTED" : "RESTRICTED"}
           </span>
+        </div>
+        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+          <span className="text-white/20 font-mono italic text-[9px]">POT_SIZE:</span>
+          <span className="text-yellow-400/80">{(parseFloat(game.totalPot || "0") / 1e9).toFixed(2)} OCT</span>
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-1">
         <Link
           href={`/game/${game.roomId}`}
-          className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest"
+          className="flex-1 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black py-4 rounded-none text-center transition-all uppercase tracking-[0.2em] border border-white/10"
         >
           Details
         </Link>
         {game.status === "CREATED" ? (
           <Link
             href={`/market?roomId=${game.roomId}`}
-            className="flex-1 bg-red-600 hover:bg-red-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+            className="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black py-4 rounded-none text-center transition-all uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.2)]"
           >
             Predict
           </Link>
         ) : (
           <Link
             href={`/game/${game.roomId}/live`}
-            className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(22,163,74,0.3)]"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black py-4 rounded-none text-center transition-all uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(16,185,129,0.2)]"
           >
-            Live View
+            Watch
           </Link>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

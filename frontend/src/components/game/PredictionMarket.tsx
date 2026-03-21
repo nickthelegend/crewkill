@@ -13,12 +13,12 @@ const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 
 interface Player {
   address: string;
-  name: string; // agent display name e.g. "Agent 0x857..."
+  name: string; 
 }
 
 interface SuspectPool {
   address: string;
-  totalBet: number; // in MIST
+  totalBet: number;
   percentage: number;
 }
 
@@ -30,12 +30,12 @@ interface UserBet {
 }
 
 interface PredictionMarketProps {
-  gameId: string;           // the Game shared object ID
-  marketObjectId: string;   // the PredictionMarket shared object ID
+  gameId: string;
+  marketObjectId: string;
   gamePlayers: Player[];
   isResolved: boolean;
   actualImpostors: string[];
-  gamePhase: number;        // 0=LOBBY, 1=ROLE_ASSIGN, 2+=betting closed
+  gamePhase: number;
 }
 
 export function PredictionMarket({
@@ -52,23 +52,21 @@ export function PredictionMarket({
   const [suspectPools, setSuspectPools] = useState<SuspectPool[]>([]);
   const [userBet, setUserBet] = useState<UserBet | null>(null);
   const [selectedSuspect, setSelectedSuspect] = useState<string>('');
-  const [betAmount, setBetAmount] = useState<string>('0.1'); // OCT
+  const [betAmount, setBetAmount] = useState<string>('0.1');
   const [totalPot, setTotalPot] = useState<number>(0);
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [txStatus, setTxStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [txMsg, setTxMsg] = useState('');
 
-  // Convex integration for offline mode
   const convexBets = useQuery(api.bets.getBetsByGame, { gameId }) || [];
   const placeConvexBet = useMutation(api.bets.placeBet);
 
   const fetchMarketState = useCallback(async () => {
     if (IS_OFFLINE) {
-        // Use Convex data to build pool
         const pot = convexBets.reduce((sum, b) => sum + b.amountMist, 0);
         setTotalPot(pot);
-        setIsOpen(gamePhase < 2); // Open during lobby
+        setIsOpen(gamePhase < 2);
 
         const pools: SuspectPool[] = gamePlayers.map((p) => {
           const amount = convexBets.filter(b => b.selection.toLowerCase() === p.address.toLowerCase())
@@ -88,7 +86,7 @@ export function PredictionMarket({
               suspect: myBet.selection,
               amount: myBet.amountMist,
               correct: myBet.status === "won",
-              claimed: myBet.status === "won", // Mock claimed if won in offline
+              claimed: myBet.status === "won",
             });
           }
         }
@@ -110,7 +108,6 @@ export function PredictionMarket({
       const pot = parseInt(fields.total_pot?.fields?.value || '0');
       setTotalPot(pot);
 
-      // Build suspect pool display
       const pools: SuspectPool[] = gamePlayers.map((p) => {
         const poolEntry = fields.suspect_pools?.fields?.contents?.find(
           (c: any) => c.fields?.key === p.address
@@ -124,7 +121,6 @@ export function PredictionMarket({
       });
       setSuspectPools(pools);
 
-      // Check if user has a bet
       if (account?.address) {
         const betEntry = fields.bets?.fields?.contents?.find(
           (c: any) => c.fields?.key === account.address
@@ -147,7 +143,6 @@ export function PredictionMarket({
     }
   }, [marketObjectId, account?.address, gamePlayers, convexBets, gamePhase]);
 
-  // Fetch market state periodically
   useEffect(() => {
     fetchMarketState();
     const interval = setInterval(fetchMarketState, 5000);
@@ -159,7 +154,7 @@ export function PredictionMarket({
 
     const betMist = Math.round(parseFloat(betAmount) * 1_000_000_000);
     if (betMist < 10_000_000) {
-      setTxMsg('Minimum bet is 0.01 OCT');
+      setTxMsg('Min: 0.01 OCT');
       setTxStatus('error');
       return;
     }
@@ -177,11 +172,11 @@ export function PredictionMarket({
           txDigest: `offline_${Date.now()}`,
         });
         setTxStatus('success');
-        setTxMsg(`Prediction locked via Neural Link (Offline)`);
+        setTxMsg(`NEURAL_PREDICTION_AUTHORIZED`);
         setLoading(false);
       } catch (e: any) {
         setTxStatus('error');
-        setTxMsg(e.message || 'Failed to place prediction');
+        setTxMsg(e.message || 'LINK_FAILURE');
         setLoading(false);
       }
       return;
@@ -204,20 +199,20 @@ export function PredictionMarket({
         {
           onSuccess: (result) => {
             setTxStatus('success');
-            setTxMsg(`Bet placed successfully!`);
+            setTxMsg(`PROTOCOL_EXECUTED`);
             setLoading(false);
             fetchMarketState();
           },
           onError: (err) => {
             setTxStatus('error');
-            setTxMsg(err.message || 'Transaction failed');
+            setTxMsg(err.message || 'TX_FAILED');
             setLoading(false);
           },
         }
       );
     } catch (e: any) {
       setTxStatus('error');
-      setTxMsg(e.message || 'Error building transaction');
+      setTxMsg(e.message || 'BUILD_ERROR');
       setLoading(false);
     }
   }
@@ -243,20 +238,20 @@ export function PredictionMarket({
         {
           onSuccess: (result) => {
             setTxStatus('success');
-            setTxMsg(`Winnings claimed!`);
+            setTxMsg(`REWARDS_SECURED`);
             setLoading(false);
             fetchMarketState();
           },
           onError: (err) => {
             setTxStatus('error');
-            setTxMsg(err.message || 'Claim failed');
+            setTxMsg(err.message || 'CLAIM_FAILED');
             setLoading(false);
           },
         }
       );
     } catch (e: any) {
       setTxStatus('error');
-      setTxMsg(e.message || 'Error building transaction');
+      setTxMsg(e.message || 'BUILD_ERROR');
       setLoading(false);
     }
   }
@@ -265,38 +260,44 @@ export function PredictionMarket({
 
   if (gamePlayers.length === 0) {
     return (
-      <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-16 text-center">
-        <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-8 relative">
-           <div className="absolute inset-0 rounded-full border border-cyan-500/20 animate-ping" />
-           <div className="w-10 h-10 rounded-full border-4 border-t-cyan-400 border-white/5 animate-spin" />
+      <div className="bg-white/[0.02] backdrop-blur-[40px] border border-white/10 rounded-none p-20 text-center">
+        <div className="w-24 h-24 border border-cyan-500/20 flex items-center justify-center mx-auto mb-10 relative">
+           <div className="absolute inset-0 border border-cyan-500/40 animate-pulse" />
+           <div className="w-12 h-12 border-2 border-t-cyan-400 border-white/5 animate-spin" />
         </div>
-        <h3 className="text-white/40 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Neural Synchronization in Progress...</h3>
-        <p className="text-white/10 text-[9px] uppercase font-bold tracking-widest max-w-[200px] mx-auto leading-relaxed">
-          Waiting for agents to board the ship. Market contracts will generate upon deployment.
+        <h3 className="text-white/40 font-black uppercase tracking-[0.5em] text-[10px] mb-6 underline decoration-cyan-500/30 underline-offset-8">Neural Sync Active</h3>
+        <p className="text-white/10 text-[9px] uppercase font-black tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed">
+          Retrieving agent combat signatures from sector link...
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Total Pot Banner */}
-      <div className="bg-gradient-to-r from-cyan-900/20 to-transparent border border-white/10 rounded-3xl p-6 flex items-center justify-between overflow-hidden relative group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full -mr-32 -mt-32 transition-colors group-hover:bg-cyan-500/10" />
-        <div className="relative z-10">
-          <div className="text-[10px] font-black text-cyan-400/60 uppercase tracking-widest mb-1">Total Trading Volume</div>
-          <div className="text-3xl font-black text-white tabular-nums italic">{(totalPot / 1_000_000_000).toFixed(3)} <span className="text-cyan-400 text-sm">OCT</span></div>
-        </div>
-        <div className="relative z-10 text-right">
-          <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Status</div>
-          <div className={`text-xs font-black uppercase tracking-tighter italic ${isOpen ? "text-green-400" : "text-rose-500"}`}>
-            {isOpen ? "● ACTIVE_EXCHANGE" : "● MARKET_HALTED"}
+    <div className="space-y-10 w-full max-w-5xl mx-auto">
+      {/* Header Stat Area */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-none py-1">
+        <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Total Pot</div>
+          <div className="text-4xl font-black text-white italic tracking-tighter tabular-nums">
+            {(totalPot / 1_000_000_000).toFixed(2)} <span className="text-red-500 text-sm not-italic ml-1">OCT</span>
           </div>
+        </div>
+        <div className="p-8 bg-black/20 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Protocol Status</div>
+          <div className={`text-sm font-black uppercase tracking-[0.1em] flex items-center gap-3 ${isOpen ? "text-cyan-400" : "text-red-500"}`}>
+            <span className={`w-2 h-2 rounded-full ${isOpen ? "bg-cyan-400 animate-pulse shadow-[0_0_10px_#00f0ff]" : "bg-red-500 shadow-[0_0_10px_#ff003c]"}`} />
+            {isOpen ? "ACTIVE_EXCHANGE" : "HALTED_PROTOCOL"}
+          </div>
+        </div>
+        <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Trading Floor</div>
+          <div className="text-sm font-black text-emerald-400 uppercase tracking-widest italic">{gamePlayers.length} Nodes Online</div>
         </div>
       </div>
 
-      {/* Contracts List */}
-      <div className="space-y-3">
+      {/* Contracts Grid */}
+      <div className="grid grid-cols-1 gap-1">
         {gamePlayers.map((player, idx) => {
           const pool = suspectPools.find(p => p.address === player.address);
           const isUserPick = userBet?.suspect === player.address;
@@ -307,70 +308,57 @@ export function PredictionMarket({
           return (
             <motion.div
               key={player.address}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => bettingOpen && setSelectedSuspect(player.address)}
-              className={`group flex items-center justify-between p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+              className={`group flex flex-col sm:flex-row items-center justify-between p-8 rounded-none border transition-all cursor-pointer relative overflow-hidden ${
                 isSelected 
-                  ? "bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_30px_rgba(34,211,238,0.1)]" 
-                  : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10"
+                  ? "bg-red-500/10 border-red-500/40" 
+                  : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
               }`}
             >
-              {/* Profile & Name */}
-              <div className="flex items-center gap-4 relative z-10 flex-1 min-w-0">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all ${
-                  isSelected ? "bg-cyan-400 border-white/20" : "bg-black/40 border-white/10 group-hover:border-white/30"
+              {/* Profile */}
+              <div className="flex items-center gap-8 relative z-10 flex-1 w-full sm:w-auto">
+                <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all ${
+                  isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
                 }`}>
-                  <AmongUsSprite colorId={idx + (gameId.length % 10)} size={32} />
+                  <AmongUsSprite colorId={idx + (gameId.length % 12)} size={48} />
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-white uppercase truncate">{player.name}</span>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-2xl font-black text-white uppercase italic tracking-tighter truncate">{player.name}</span>
                     {isUserPick && (
-                      <span className="text-[8px] font-black bg-cyan-500 text-black px-1.5 py-0.5 rounded italic whitespace-nowrap">HOLDING</span>
+                      <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none italic uppercase">Position_Open</span>
                     )}
                   </div>
-                  <div className="text-[9px] font-mono text-white/20 mt-0.5 uppercase tracking-tighter truncate opacity-60">ID: {player.address.slice(0, 10)}...</div>
+                  <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em]">Neural_Sig: {player.address.slice(0, 16)}...</div>
                 </div>
               </div>
 
-              {/* Sparkline Visual (Dummy) */}
-              <div className="hidden md:flex flex-1 justify-center px-8 relative z-10">
-                <div className="h-6 w-32 flex items-end gap-1 opacity-20 group-hover:opacity-40 transition-opacity">
-                  {[...Array(8)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="flex-1 bg-white/40 border-t border-white" 
-                      style={{ height: `${20 + Math.random() * 80}%` }} 
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Binary Pricing Buttons */}
-              <div className="flex items-center gap-2 relative z-10">
-                <div className="text-right mr-4 hidden sm:block">
-                   <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-0.5">Chance</div>
-                   <div className="text-sm font-black text-white italic">{prob}%</div>
+              {/* Stats & Actions */}
+              <div className="flex items-center gap-10 relative z-10 mt-8 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="text-right">
+                  <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Confidence</div>
+                  <div className="text-2xl font-black text-white italic tracking-tighter">{prob}%</div>
                 </div>
                 
-                <div className="flex gap-1 bg-black/40 rounded-xl p-1 border border-white/10">
+                <div className="flex gap-1 bg-black/40 p-1 border border-white/5 rounded-none">
                    <button 
                       disabled={!bettingOpen}
-                      className={`px-4 py-2.5 rounded-lg text-xs font-black uppercase transition-all flex flex-col items-center min-w-[70px] ${
-                        isSelected ? "bg-cyan-400 text-black shadow-lg" : "text-cyan-400 hover:bg-cyan-500/10"
+                      className={`px-8 py-4 rounded-none text-xs font-black uppercase transition-all flex flex-col items-center min-w-[100px] border ${
+                        isSelected ? "bg-red-500 text-white border-red-500" : "text-white/40 border-white/5 hover:border-white/20"
                       }`}
                    >
-                      <span className="text-[8px] opacity-60">YES</span>
-                      <span>{price}¢</span>
+                      <span className="text-[9px] opacity-40 mb-1 tracking-widest font-mono">BUY_YES</span>
+                      <span className="text-lg tabular-nums tracking-tighter italic">{price}¢</span>
                    </button>
                    <button 
                       disabled={true}
-                      className="px-4 py-2.5 rounded-lg text-xs font-black uppercase text-rose-500/40 cursor-not-allowed flex flex-col items-center min-w-[70px]"
+                      className="px-8 py-4 rounded-none text-xs font-black uppercase text-white/10 border border-white/5 cursor-not-allowed flex flex-col items-center min-w-[100px]"
                    >
-                      <span className="text-[8px] opacity-40">NO</span>
-                      <span>{100 - price}¢</span>
+                      <span className="text-[9px] opacity-30 mb-1 tracking-widest font-mono">BUY_NO</span>
+                      <span className="text-lg tabular-nums tracking-tighter italic opacity-30">{100 - price}¢</span>
                    </button>
                 </div>
               </div>
@@ -379,69 +367,78 @@ export function PredictionMarket({
         })}
       </div>
 
-      {/* Betting Console (Visible when selected) */}
+      {/* Order execution Console */}
       <AnimatePresence>
         {selectedSuspect && bettingOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-x-0 bottom-0 z-50 p-6 md:p-10 pointer-events-none"
           >
-            <div className="bg-white/5 border border-cyan-500/30 rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(6,182,212,0.1)]">
-              <div className="flex flex-col md:flex-row gap-8 items-end">
-                <div className="flex-1 space-y-4">
+            <div className="max-w-4xl mx-auto bg-[#0d141e]/90 backdrop-blur-3xl border border-red-500/50 rounded-none p-10 shadow-[0_-20px_50px_rgba(255,0,60,0.15)] pointer-events-auto">
+              <div className="flex flex-col md:flex-row gap-12 items-end">
+                <div className="flex-1 space-y-6">
                   <div>
-                    <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Order Execution: BUY_YES</h4>
-                    <div className="text-2xl font-black text-white uppercase italic">
-                      {(gamePlayers.find(p => p.address === selectedSuspect)?.name || "Unknown").toUpperCase()}
+                    <div className="flex items-center gap-3 mb-2">
+                       <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
+                       <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Protocol Initiation: MISSION_TRADE</h4>
+                    </div>
+                    <div className="text-4xl font-black text-white uppercase italic tracking-tighter">
+                      {(gamePlayers.find(p => p.address === selectedSuspect)?.name || "NODE").toUpperCase()}
                     </div>
                   </div>
                   
-                  <div className="relative">
+                  <div className="relative group">
                     <input
                       type="number"
                       value={betAmount}
                       onChange={(e) => setBetAmount(e.target.value)}
-                      placeholder="0.0"
-                      className="w-full bg-black/40 border-2 border-white/10 rounded-2xl py-5 px-6 text-2xl font-black text-white italic outline-none focus:border-cyan-500/50 transition-colors"
+                      placeholder="0.00"
+                      className="w-full bg-black/40 border-b-2 border-white/10 focus:border-red-500/50 py-6 px-1 text-4xl font-black text-white italic outline-none transition-all tabular-nums"
                     />
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-cyan-400 tracking-tighter">OCT</div>
+                    <div className="absolute right-0 bottom-6 font-black text-red-500 tracking-tighter text-xl">OCT</div>
                   </div>
                 </div>
 
-                <div className="w-full md:w-auto h-full space-y-4">
-                   <div className="grid grid-cols-2 gap-4 text-center md:text-left">
-                      <div className="bg-black/20 p-3 rounded-xl min-w-[120px]">
-                         <div className="text-[9px] text-white/20 uppercase font-black">Contract Price</div>
-                         <div className="text-sm font-bold text-white italic">{(suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 0)}¢</div>
+                <div className="w-full md:w-auto space-y-6">
+                   <div className="flex justify-between md:justify-end gap-10 bg-white/5 p-6 border border-white/5">
+                      <div className="text-right">
+                         <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Limit Price</div>
+                         <div className="text-xl font-black text-white tabular-nums italic">{(suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 0)}¢</div>
                       </div>
-                      <div className="bg-black/20 p-3 rounded-xl min-w-[120px]">
-                         <div className="text-[9px] text-white/20 uppercase font-black">Max Payout</div>
-                         <div className="text-sm font-bold text-emerald-400 italic">{(Number(betAmount) * 2).toFixed(2)} OCT</div>
+                      <div className="text-right">
+                         <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Est Payout</div>
+                         <div className="text-xl font-black text-emerald-400 tabular-nums italic">{(Number(betAmount) * 100 / Math.max(1, (suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 1))).toFixed(2)} OCT</div>
                       </div>
                    </div>
 
                    <button
                     onClick={() => handlePlaceBet()}
                     disabled={loading || !account || Number(betAmount) <= 0}
-                    className="w-full h-[76px] bg-cyan-500 hover:bg-cyan-400 disabled:bg-white/5 disabled:text-white/20 text-black rounded-2xl text-lg font-black uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(6,182,212,0.3)] hover:-translate-y-1 active:translate-y-0"
+                    className="w-full h-20 bg-red-600 hover:bg-red-500 disabled:bg-white/5 disabled:text-white/10 text-white rounded-none text-xl font-black uppercase tracking-[0.2em] transition-all relative group overflow-hidden"
                   >
                     {loading ? (
-                      <span className="flex items-center justify-center gap-3">
-                        <div className="w-5 h-5 border-4 border-black/20 border-t-black rounded-full animate-spin" />
-                        EXECUTING...
+                      <span className="flex items-center justify-center gap-4">
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white animate-spin" />
+                        SYNCING...
                       </span>
                     ) : (
-                      "EXECUTE TRADE"
+                      <span className="relative z-10 flex items-center justify-center gap-3">
+                        FINALIZE PROTOCOL
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </span>
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                   </button>
                 </div>
               </div>
 
               {txStatus !== 'idle' && (
-                <div className={`mt-6 p-4 rounded-xl text-center text-xs font-bold uppercase tracking-widest border ${
-                  txStatus === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                <div className={`mt-8 p-5 text-center text-xs font-black uppercase tracking-[0.3em] border ${
+                  txStatus === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-500"
                 }`}>
                   {txMsg}
                 </div>
@@ -453,16 +450,25 @@ export function PredictionMarket({
 
       {/* Resolution Section */}
       {isResolved && userBet && (
-        <div className="bg-white/5 border border-emerald-500/30 rounded-[2.5rem] p-10 text-center space-y-6">
-          <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-4xl">
-            {userBet.correct ? "🏆" : "💥"}
-          </div>
+        <div className="bg-white/[0.02] backdrop-blur-3xl border-y border-white/5 py-24 text-center space-y-10">
+          <motion.div 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            className={`w-32 h-32 border flex items-center justify-center mx-auto text-5xl relative ${
+              userBet.correct ? "border-emerald-500/50 bg-emerald-500/10" : "border-red-500/50 bg-red-500/10"
+            }`}
+          >
+            <div className={`absolute inset-0 border animate-ping opacity-20 ${userBet.correct ? "border-emerald-500" : "border-red-500"}`} />
+            {userBet.correct ? "🏆" : "💀"}
+          </motion.div>
           <div>
-            <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">
-              {userBet.correct ? "Prediction Validated" : "Neural Misalignment"}
+            <h3 className="text-5xl font-black text-white italic uppercase tracking-tighter mb-4">
+              {userBet.correct ? "Mission_Validated" : "Link_Severed"}
             </h3>
-            <p className="text-white/40 text-xs font-bold uppercase mt-2">
-              {userBet.correct ? "Selection confirmed as Impostor" : "Selection identified as Crewmate"}
+            <p className="text-white/20 text-[10px] font-mono tracking-[0.4em] uppercase max-w-md mx-auto leading-relaxed">
+              {userBet.correct 
+                ? "Neural signature matched the target agent. Sector secured. Winnings ready for extraction." 
+                : "Target agent verified as crewmate. Neural prediction failed. Resource extraction lost."}
             </p>
           </div>
           
@@ -470,9 +476,9 @@ export function PredictionMarket({
             <button
               onClick={() => handleClaimWinnings()}
               disabled={loading || userBet.claimed}
-              className="px-12 py-5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-black rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(16,185,129,0.3)]"
+              className="px-16 py-6 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-20 text-white rounded-none text-sm font-black uppercase tracking-[0.2em] transition-all shadow-[0_20px_40px_rgba(16,185,129,0.2)]"
             >
-              {loading ? "PROCESSING..." : userBet.claimed ? "WINNINGS_CLAIMED" : "CLAIM_PAYOUT_OCT"}
+              {loading ? "PROCESSING..." : userBet.claimed ? "REWARDS_EXTRACTED" : "EXTRACT_OCT_REWARDS"}
             </button>
           )}
         </div>
