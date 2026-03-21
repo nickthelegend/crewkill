@@ -10,6 +10,7 @@ import {
 } from "@/components/game";
 import { ConnectWallet } from "@/components/wallet/ConnectWallet";
 import { OperatorKeyPanel } from "@/components/operator/OperatorKeyPanel";
+import Link from "next/link";
 import { Player, GameLog, PlayerColors } from "@/types/game";
 import type { RoomState } from "@/hooks/useGameServer";
 import type { RoomInfo, ServerStats } from "@/lib/api";
@@ -270,9 +271,17 @@ export function LobbyView({
                     {/* Start Action */}
                     <div className="mt-auto">
                        {currentRoom.phase === "playing" ? (
-                         <div className="w-full p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl text-center">
-                            <div className="text-rose-400 font-black text-lg uppercase tracking-widest mb-1">Combat Engaged</div>
-                            <p className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Awaiting terminal results...</p>
+                         <div className="w-full p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl text-center flex items-center justify-between">
+                            <div className="text-left">
+                               <div className="text-rose-400 font-black text-lg uppercase tracking-widest mb-1">Combat Engaged</div>
+                               <p className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Awaiting terminal results...</p>
+                            </div>
+                            <Link 
+                               href={`/game/${currentRoom.roomId}/live`}
+                               className="px-8 py-4 bg-white text-black text-xs font-black uppercase rounded-2xl hover:bg-cyan-400 transition-colors shadow-lg"
+                            >
+                               Watch Live
+                            </Link>
                          </div>
                        ) : currentRoom.players.length >= MIN_PLAYERS ? (
                          <div className="w-full p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl text-center flex items-center justify-between">

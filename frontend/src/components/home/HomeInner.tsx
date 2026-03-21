@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useCurrentAccount } from "@onelabs/dapp-kit";
 import {
   MainMenu,
@@ -37,6 +38,7 @@ export function HomeInner({
 }: HomeInnerProps) {
   const [state, dispatch] = useHomeReducer();
   const currentAccount = useCurrentAccount();
+  const router = useRouter();
 
   // HTTP API for menu/lobby data (rooms, stats, leaderboard)
   const {
@@ -105,8 +107,13 @@ export function HomeInner({
   }, [dispatch]);
 
   const handleJoinRoom = useCallback((roomId: string) => {
+    const room = rooms?.find(r => r.roomId === roomId);
+    if (room?.phase === "playing") {
+      router.push(`/game/${roomId}/live`);
+      return;
+    }
     joinRoom(roomId, true);
-  }, [joinRoom]);
+  }, [joinRoom, rooms, router]);
 
   // Watch for phase changes from WebSocket
   useEffect(() => {

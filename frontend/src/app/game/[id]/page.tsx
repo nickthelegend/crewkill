@@ -81,7 +81,7 @@ export default function RoomDetailsPage() {
                           )}
                           {game.status === "ACTIVE" && (
                              <Link 
-                                href={`/room/${game.roomId}/live`}
+                                href={`/game/${game.roomId}/live`}
                                 className="px-10 py-5 bg-white text-black hover:bg-white/90 rounded-2xl text-sm font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
                              >
                                 Watch Live

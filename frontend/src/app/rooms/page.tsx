@@ -114,7 +114,7 @@ function RoomCard({ game }: { game: any }) {
 
       <div className="flex gap-2">
         <Link
-          href={`/room/${game.roomId}`}
+          href={`/game/${game.roomId}`}
           className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest"
         >
           Details
@@ -128,7 +128,7 @@ function RoomCard({ game }: { game: any }) {
           </Link>
         ) : (
           <Link
-            href={`/room/${game.roomId}/live`}
+            href={`/game/${game.roomId}/live`}
             className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(22,163,74,0.3)]"
           >
             Live View

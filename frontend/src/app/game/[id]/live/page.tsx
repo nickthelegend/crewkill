@@ -67,7 +67,7 @@ export default function LiveRoomPage() {
       onSelectAgentInfo={setSelectedAgentInfo}
       showInviteModal={showInviteModal}
       onShowInviteModal={setShowInviteModal}
-      onBack={() => router.push(`/room/${roomId}`)}
+      onBack={() => router.push(`/game/${roomId}`)}
       gameObjectId={game?._id}
       marketObjectId={undefined} // Registry ID should be used
       gamePhase={phase}
