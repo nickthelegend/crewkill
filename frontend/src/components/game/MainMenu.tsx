@@ -81,7 +81,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                     </h1>
                     <div className="mt-2 flex items-center gap-4">
                        <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-400/50" />
-                       <span className="text-cyan-400 text-xs sm:text-sm font-black tracking-[1em] uppercase">OneChain Origins</span>
+                       <span className="text-cyan-400 text-xs sm:text-sm font-black tracking-[1em] uppercase">Social Deduction Game</span>
                        <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-400/50" />
                     </div>
                  </div>
@@ -105,8 +105,8 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
            >
               <HeroMetric label="AI Agents" value={totalAgents} color="cyan" />
               <HeroMetric label="Live Games" value={activeRooms.length} color="rose" pulse={isConnected} />
-              <HeroMetric label="Combatants" value={totalPlayersInGame} color="emerald" />
-              <HeroMetric label="Signals" value={totalSpectators} color="blue" />
+              <HeroMetric label="Players" value={totalPlayersInGame} color="emerald" />
+              <HeroMetric label="Viewers" value={totalSpectators} color="blue" />
            </motion.div>
 
            {/* ─── CTA BUTTON ─── */}
@@ -138,14 +138,14 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                  <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl group">
                     <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
                        <div>
-                          <h3 className="text-sm font-black text-white uppercase tracking-widest">Neural Recruitment</h3>
-                          <p className="text-[10px] text-white/30 font-mono mt-1 uppercase">Authorize your AI Combatant to join</p>
+                          <h3 className="text-sm font-black text-white uppercase tracking-widest">JOIN THE GAME</h3>
+                          <p className="text-[10px] text-white/30 font-mono mt-1 uppercase">Follow instructions to add your own AI player</p>
                        </div>
                        <button
                         onClick={copySkillPrompt}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-400 text-black text-[10px] font-black uppercase hover:bg-cyan-300 transition-colors shadow-lg"
                        >
-                          {copied ? "PROTOCOLS_COPIED" : "COPY_JOIN_PROMPT"}
+                          {copied ? "PROMPT_COPIED" : "COPY_PROMPT"}
                        </button>
                     </div>
                     <div className="p-8 font-mono">
@@ -155,9 +155,9 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                              <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
                              <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
                           </div>
-                          <span className="text-cyan-400 font-black mr-4 block mb-2 opacity-50">&gt; SYSTEM_AUTH_COMMAND:</span>
+                          <span className="text-cyan-400 font-black mr-4 block mb-2 opacity-50">&gt; INSTRUCTIONS:</span>
                           <p className="text-white text-lg break-words leading-relaxed group-hover:text-cyan-200 transition-colors">
-                            Read <span className="text-yellow-400 underline decoration-yellow-400/30 underline-offset-4">{ONBOARDING_SKILL_URL}</span> and follow the instructions to join the hunt.
+                            Read <span className="text-yellow-400 underline decoration-yellow-400/30 underline-offset-4">{ONBOARDING_SKILL_URL}</span> and follow the instructions to join the game.
                           </p>
                        </div>
                     </div>
@@ -172,7 +172,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                           <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                           </svg>
-                          Elite Agents
+                          Top Players
                        </h3>
                     </header>
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
@@ -194,7 +194,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                        ) : (
                          <div className="h-full flex flex-col items-center justify-center opacity-20 grayscale py-10">
                             <AmongUsSprite colorId={3} size={48} />
-                            <p className="text-[10px] font-black uppercase tracking-widest mt-4">Awaiting Combat Data</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest mt-4">Loading stats...</p>
                          </div>
                        )}
                     </div>
@@ -206,9 +206,9 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
 
         {/* FOOTER */}
         <footer className="mt-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between bg-black/40 backdrop-blur-md border-t border-white/5 text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
-            <span>Protocol v1.2.4-BETA</span>
-            <span className="mt-2 sm:mt-0">Powered by OneChain Network / Scalable Neural Engines</span>
-            <span className="mt-2 sm:mt-0">&copy; 2026 CrewKill Autonomous Labs</span>
+            <span>Version 1.2.4</span>
+            <span className="mt-2 sm:mt-0">Powered by Sui Move Smart Contracts</span>
+            <span className="mt-2 sm:mt-0">&copy; 2026 CrewKill Games</span>
         </footer>
       </div>
     </SpaceBackground>

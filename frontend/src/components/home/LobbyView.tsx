@@ -91,7 +91,7 @@ export function LobbyView({
                     Explorer
                   </h2>
                   <div className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">
-                    Mission <span className="text-cyan-400">Hub</span>
+                    Game <span className="text-cyan-400">Lobby</span>
                   </div>
                 </div>
                 {!hasActiveRoom && isAuthenticated && (
@@ -172,10 +172,10 @@ export function LobbyView({
                       <div>
                         <div className="flex items-center gap-3 mb-4">
                            <div className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
-                           <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em]">Protocol Initiated: SECTOR_{currentRoom.roomId.slice(-4).toUpperCase()}</p>
+                           <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em]">Connection Active: ROOM_{currentRoom.roomId.slice(-4).toUpperCase()}</p>
                         </div>
                         <h2 className="text-5xl md:text-6xl font-black text-white uppercase italic tracking-tighter leading-none mb-6">
-                           MISSION <span className="text-cyan-400">REPORT</span>
+                           GAME <span className="text-cyan-400">PROFILE</span>
                         </h2>
                         <div className="flex items-center gap-6">
                            <div className="px-5 py-2 bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest">
@@ -191,7 +191,7 @@ export function LobbyView({
                       </div>
 
                       <div className="text-right hidden sm:block">
-                         <div className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-2 font-mono italic">Total Extraction Pool</div>
+                         <div className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-2 font-mono italic">Total Prize Pool</div>
                          <div className="text-5xl font-black text-white italic tracking-tighter tabular-nums leading-none">
                            {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-italic ml-1">OCT</span>
                          </div>
@@ -210,7 +210,7 @@ export function LobbyView({
                             }`}
                             whileHover={p ? { scale: 0.98 } : {}}
                            >
-                             <div className="absolute top-2 left-2 text-[8px] font-mono text-white/20 uppercase">Node_{i+1}</div>
+                             <div className="absolute top-2 left-2 text-[8px] font-mono text-white/20 uppercase">Seat_{i+1}</div>
                              {p ? (
                                <div className="p-4 flex flex-col items-center">
                                  <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center relative">
@@ -236,24 +236,24 @@ export function LobbyView({
                        {currentRoom.phase === "playing" ? (
                          <div className="bg-rose-500/10 border border-rose-500/20 p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                             <div className="text-center sm:text-left">
-                               <div className="text-rose-500 font-black text-3xl uppercase italic tracking-tighter mb-2">ENGAGEMENT DETECTED</div>
-                               <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">Terminal signatures active • Extracting telemetry...</p>
+                               <div className="text-rose-500 font-black text-3xl uppercase italic tracking-tighter mb-2">GAME IN PROGRESS</div>
+                               <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">Watch the live game and place bets.</p>
                             </div>
                             <Link 
                                href={`/game/${currentRoom.roomId}/live`}
                                className="px-12 py-6 bg-rose-600 text-white text-sm font-black uppercase hover:bg-rose-500 transition-all shadow-[0_20px_40px_rgba(255,0,60,0.2)]"
                             >
-                               EXTRACT LIVE FEED
+                               WATCH LIVE
                             </Link>
                          </div>
                        ) : (
                          <div className="bg-white/5 border border-white/10 p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                             <div className="text-center sm:text-left">
                                <div className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">
-                                  {currentRoom.players.length >= MIN_PLAYERS ? "SQUAD READY" : "RECRUITING PHASE"}
+                                  {currentRoom.players.length >= MIN_PLAYERS ? "LOBBY FULL" : "WAITING FOR PLAYERS"}
                                </div>
                                <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">
-                                  {currentRoom.players.length >= MIN_PLAYERS ? "Neural link standing by for authorization" : `Waiting for ${MIN_PLAYERS - currentRoom.players.length} matching signatures`}
+                                  {currentRoom.players.length >= MIN_PLAYERS ? "All agents are ready. Game is starting." : `Waiting for ${MIN_PLAYERS - currentRoom.players.length} more players`}
                                </p>
                             </div>
                             <div className="flex gap-1">
@@ -263,13 +263,13 @@ export function LobbyView({
                                     onClick={() => setShowInviteModal(true)}
                                     className="px-8 py-5 bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase hover:bg-white/10 transition-all tracking-widest"
                                    >
-                                    SYNC_INVITE
+                                    INVITE
                                    </button>
                                    <button
                                     onClick={() => onAddAIAgent?.(currentRoom.roomId)}
                                     className="px-8 py-5 bg-cyan-600 text-white text-[10px] font-black uppercase hover:bg-cyan-500 transition-all tracking-widest shadow-[0_0_30px_rgba(34,211,238,0.2)]"
                                    >
-                                    + ADD_AI_UNIT
+                                    + ADD AI
                                    </button>
                                  </>
                                ) : (
@@ -278,7 +278,7 @@ export function LobbyView({
                                     onClick={onAddAIAgent?.bind(null, currentRoom.roomId)}
                                     className="px-12 py-6 bg-emerald-600 text-white text-sm font-black uppercase hover:bg-emerald-500 transition-all tracking-widest shadow-[0_20px_40px_rgba(16,185,129,0.2)]"
                                    >
-                                    LIFT OFF
+                                    START GAME
                                    </button>
                                  )
                                )}
@@ -293,7 +293,7 @@ export function LobbyView({
                      <div className="p-10 lg:p-14 bg-black/40">
                         <div className="flex items-center gap-3 mb-10">
                            <div className="h-0.5 w-10 bg-yellow-500" />
-                           <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Proprietary Market Protocol</h3>
+                           <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Prediction Market</h3>
                         </div>
                         <PredictWinner
                           onPredict={(team) => console.log("Predicted:", team)}
@@ -312,9 +312,9 @@ export function LobbyView({
                    >
                      <AmongUsSprite colorId={0} size={180} />
                    </motion.div>
-                   <h2 className="text-3xl font-black text-white/20 uppercase tracking-[0.6em] mb-6 italic leading-none">SIGNAL_NOT_FOUND</h2>
+                   <h2 className="text-3xl font-black text-white/20 uppercase tracking-[0.6em] mb-6 italic leading-none">NO ROOM SELECTED</h2>
                    <p className="max-w-sm text-white/10 text-[10px] font-black leading-loose tracking-[0.3em] uppercase italic bg-white/5 p-8 border border-white/5">
-                     Awaiting neural uplink from mission control. Select a sector from the explorer link to initiate the tactical view.
+                     Please select a game room from the explorer on the left to view details.
                    </p>
                 </div>
               )}
@@ -333,10 +333,10 @@ export function LobbyView({
                     Feed
                   </h2>
                   <div className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">
-                    Signal <span className="text-rose-500">Log</span>
+                    Game <span className="text-rose-500">Logs</span>
                   </div>
                 </div>
-                <span className="text-[8px] font-mono text-white/20 uppercase tracking-widest border border-white/10 px-2 py-1">Secure_Link</span>
+                <span className="text-[8px] font-mono text-white/20 uppercase tracking-widest border border-white/10 px-2 py-1">Verified</span>
               </header>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar font-mono">
@@ -345,7 +345,7 @@ export function LobbyView({
                      <svg className="w-12 h-12 text-white mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                      </svg>
-                     <span className="text-[10px] font-black uppercase tracking-[0.4em]">Scanning sector...</span>
+                     <span className="text-[10px] font-black uppercase tracking-[0.4em]">Loading...</span>
                   </div>
                 ) : (
                   [...logs].reverse().map((log, i) => (

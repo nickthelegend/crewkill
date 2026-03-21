@@ -899,7 +899,7 @@ export class WebSocketRelayServer {
       );
 
       // Persist scheduled game start to database (async)
-      databaseService.createScheduledGame(roomId, scheduledAt, bettingEndsAt);
+      (databaseService as any).createScheduledGame(roomId, scheduledAt, bettingEndsAt);
 
       // Start the game immediately so player can interact
       this.startGameInternal(roomId);

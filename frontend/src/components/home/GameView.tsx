@@ -101,7 +101,7 @@ export function GameView({
 
            <div className="pointer-events-auto flex flex-col items-center">
               <TaskBar completed={tasksCompleted} total={totalTasks} />
-              <div className="mt-2 text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Neural Objectives</div>
+              <div className="mt-2 text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Current Tasks</div>
            </div>
 
            <div className="pointer-events-auto flex items-center gap-3">
@@ -110,7 +110,7 @@ export function GameView({
                   onClick={() => onShowInviteModal(true)}
                   className="px-6 py-3 rounded-2xl bg-cyan-400 text-black text-xs font-black uppercase tracking-widest hover:bg-cyan-300 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)]"
                 >
-                  DEPLO<span className="opacity-50">Y</span>_AGENT
+                  ADD PLAYER
                 </button>
               )}
               <ConnectWallet />
@@ -128,7 +128,7 @@ export function GameView({
                 className="bg-gradient-to-br from-yellow-400/20 to-amber-600/5 backdrop-blur-3xl rounded-[2rem] p-6 border border-yellow-400/20 pointer-events-auto"
               >
                   <div className="text-[9px] font-black text-yellow-400/40 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-yellow-400" /> MISSION_BOUNTY
+                    <div className="w-1 h-1 rounded-full bg-yellow-400" /> TOTAL POT
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-yellow-400 italic tracking-tighter leading-none">
@@ -147,7 +147,7 @@ export function GameView({
                className="flex-1 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden flex flex-col pointer-events-auto"
             >
                <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Combatants</span>
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Players</span>
                   <span className="text-[10px] font-black text-emerald-400/60 uppercase">{players.filter(p => p.isAlive).length}/{players.length}</span>
                </div>
                
@@ -183,7 +183,7 @@ export function GameView({
                                 <span className="text-[11px] font-black text-white truncate uppercase tracking-tight">
                                   {PlayerColors[player.colorId]?.name || `Player ${player.colorId}`}
                                 </span>
-                                {!player.isAlive && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded">Neutralized</span>}
+                                {!player.isAlive && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded">Eliminated</span>}
                               </div>
                               <div className="text-[9px] text-white/30 font-mono flex items-center gap-1.5 mt-0.5">
                                  <div className="w-1 h-1 rounded-full bg-white/20" />
@@ -207,8 +207,8 @@ export function GameView({
                                       <span className="text-cyan-400">{player.address.slice(0, 10)}...</span>
                                    </div>
                                    <div className="flex justify-between border-b border-white/5 pb-2">
-                                      <span className="text-white/30">Neural State:</span>
-                                      <span className={player.isAlive ? "text-emerald-400" : "text-rose-500"}>{player.isAlive ? "Fully_Active" : "Core_Offline"}</span>
+                                      <span className="text-white/30">Status:</span>
+                                      <span className={player.isAlive ? "text-emerald-400" : "text-rose-500"}>{player.isAlive ? "Alive" : "Dead"}</span>
                                    </div>
                                    <button
                                      onClick={(e) => {
@@ -217,7 +217,7 @@ export function GameView({
                                      }}
                                      className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/50 text-[8px] font-black uppercase transition-all"
                                    >
-                                     Copy_Neural_Key
+                                     Copy Address
                                    </button>
                                 </div>
                               </motion.div>
@@ -266,9 +266,9 @@ export function GameView({
               </div>
               <div className="w-px bg-white/10" />
               <div className="flex flex-col justify-center px-4">
-                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Causality_Report</span>
+                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Game Logs</span>
                  <div className="text-2xl font-black text-white italic tracking-tighter">
-                    {deadBodies.length} <span className="text-xs text-white/30 not-italic tracking-widest uppercase">Casualties</span>
+                    {deadBodies.length} <span className="text-xs text-white/30 not-italic tracking-widest uppercase">Eliminated</span>
                  </div>
               </div>
            </div>

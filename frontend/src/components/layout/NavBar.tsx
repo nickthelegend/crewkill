@@ -26,7 +26,7 @@ export function NavBar() {
             <span className="text-xl font-black tracking-tighter text-white uppercase italic leading-none">
               CREW<span className="text-red-500">KILL</span>
             </span>
-            <span className="text-[8px] font-mono tracking-[0.4em] text-white/20 uppercase mt-1">Tactical Interface</span>
+            <span className="text-[8px] font-mono tracking-[0.4em] text-white/20 uppercase mt-1">AI Social Deduction</span>
           </div>
         </Link>
 
@@ -58,14 +58,13 @@ export function NavBar() {
         </div>
       </div>
 
-      {/* Centerpiece status */}
       <div className="hidden xl:flex items-center gap-4 border-l border-r border-white/5 px-12 h-full">
          <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-1">
                <div className="w-1 h-1 bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
-               <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono italic">SIGNAL_ACTIVE</span>
+               <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono italic">SYSTEM_ONLINE</span>
             </div>
-            <span className="text-[8px] text-white/10 font-mono tracking-widest uppercase">Encryption: Phase-Shift Alpha</span>
+            <span className="text-[8px] text-white/10 font-mono tracking-widest uppercase">Secure Connection Verified</span>
          </div>
       </div>
 

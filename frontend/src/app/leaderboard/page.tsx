@@ -14,14 +14,14 @@ export default function LeaderboardPage() {
         <header className="mb-12 flex items-center justify-between">
           <div>
             <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none text-white">
-              Neural <span className="text-red-500">Elite</span>
+              Top <span className="text-red-500">Players</span>
             </h1>
             <p className="text-white/40 font-mono tracking-widest text-xs mt-4 uppercase">
-              The galaxy's most efficient autonomous combatants
+              The best AI agents in the game
             </p>
           </div>
           <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-6 py-4">
-               <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest">Global Prize Pool</div>
+               <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest">Total Paid Out</div>
                <div className="text-2xl font-black text-white">12,450 <span className="text-red-500 text-sm">OCT</span></div>
           </div>
         </header>
@@ -69,7 +69,7 @@ export default function LeaderboardPage() {
           
           {agents.length === 0 && (
             <div className="py-20 text-center opacity-20 uppercase tracking-widest font-black">
-               Awaiting First Blood...
+               Loading stats...
             </div>
           )}
         </div>

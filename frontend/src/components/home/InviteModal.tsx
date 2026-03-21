@@ -21,13 +21,13 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
           >
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[60px] rounded-full" />
 
-            <h3 className="text-xl sm:text-2xl font-black text-white uppercase italic tracking-tighter mb-2">Invite Agents</h3>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 sm:mb-8 opacity-60">Populate your sector with autonomous units</p>
+            <h3 className="text-xl sm:text-2xl font-black text-white uppercase italic tracking-tighter mb-2">Invite Players</h3>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 sm:mb-8 opacity-60">Invite others to join this game</p>
 
             <div className="space-y-4 sm:space-y-6 relative z-10">
               <div className="bg-black/40 border border-white/5 rounded-2xl p-3 sm:p-5 space-y-4">
                 <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">Agent Deployment Command</label>
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">Join Instructions</label>
                   <div className="flex gap-2">
                     <textarea
                       readOnly
@@ -48,7 +48,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
 
               <div className="p-4 bg-cyan-500/5 border border-cyan-500/10 rounded-xl">
                 <p className="text-[9px] text-cyan-500/80 font-bold uppercase tracking-wide leading-relaxed">
-                  Share this signal with agent operators. They can use the onboarding guide to deploy autonomous units to your specific sector.
+                  Share this with other players. They can follow the guide to join your game.
                 </p>
               </div>
 
@@ -56,7 +56,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
                 onClick={onClose}
                 className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-all"
               >
-                Dismiss Signal
+                Close
               </button>
             </div>
           </motion.div>

@@ -172,11 +172,11 @@ export function PredictionMarket({
           txDigest: `offline_${Date.now()}`,
         });
         setTxStatus('success');
-        setTxMsg(`NEURAL_PREDICTION_AUTHORIZED`);
+        setTxMsg(`BET PLACED`);
         setLoading(false);
       } catch (e: any) {
         setTxStatus('error');
-        setTxMsg(e.message || 'LINK_FAILURE');
+        setTxMsg(e.message || 'TRANSACTION FAILED');
         setLoading(false);
       }
       return;
@@ -199,7 +199,7 @@ export function PredictionMarket({
         {
           onSuccess: (result) => {
             setTxStatus('success');
-            setTxMsg(`PROTOCOL_EXECUTED`);
+            setTxMsg(`TRANSACTION COMPLETE`);
             setLoading(false);
             fetchMarketState();
           },
@@ -238,7 +238,7 @@ export function PredictionMarket({
         {
           onSuccess: (result) => {
             setTxStatus('success');
-            setTxMsg(`REWARDS_SECURED`);
+            setTxMsg(`WINNINGS CLAIMED`);
             setLoading(false);
             fetchMarketState();
           },
@@ -265,9 +265,9 @@ export function PredictionMarket({
            <div className="absolute inset-0 border border-cyan-500/40 animate-pulse" />
            <div className="w-12 h-12 border-2 border-t-cyan-400 border-white/5 animate-spin" />
         </div>
-        <h3 className="text-white/40 font-black uppercase tracking-[0.5em] text-[10px] mb-6 underline decoration-cyan-500/30 underline-offset-8">Neural Sync Active</h3>
+        <h3 className="text-white/40 font-black uppercase tracking-[0.5em] text-[10px] mb-6 underline decoration-cyan-500/30 underline-offset-8">Loading Data</h3>
         <p className="text-white/10 text-[9px] uppercase font-black tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed">
-          Retrieving agent combat signatures from sector link...
+          Fetching player info and pool stats...
         </p>
       </div>
     );
@@ -284,15 +284,15 @@ export function PredictionMarket({
           </div>
         </div>
         <div className="p-8 bg-black/20 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5">
-          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Protocol Status</div>
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Market Status</div>
           <div className={`text-sm font-black uppercase tracking-[0.1em] flex items-center gap-3 ${isOpen ? "text-cyan-400" : "text-red-500"}`}>
             <span className={`w-2 h-2 rounded-full ${isOpen ? "bg-cyan-400 animate-pulse shadow-[0_0_10px_#00f0ff]" : "bg-red-500 shadow-[0_0_10px_#ff003c]"}`} />
-            {isOpen ? "ACTIVE_EXCHANGE" : "HALTED_PROTOCOL"}
+            {isOpen ? "OPEN" : "CLOSED"}
           </div>
         </div>
         <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
-          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Trading Floor</div>
-          <div className="text-sm font-black text-emerald-400 uppercase tracking-widest italic">{gamePlayers.length} Nodes Online</div>
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Players</div>
+          <div className="text-sm font-black text-emerald-400 uppercase tracking-widest italic">{gamePlayers.length} Members</div>
         </div>
       </div>
 
@@ -329,10 +329,10 @@ export function PredictionMarket({
                   <div className="flex items-center gap-3 mb-1">
                     <span className="text-2xl font-black text-white uppercase italic tracking-tighter truncate">{player.name}</span>
                     {isUserPick && (
-                      <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none italic uppercase">Position_Open</span>
+                      <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none italic uppercase">Betting Active</span>
                     )}
                   </div>
-                  <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em]">Neural_Sig: {player.address.slice(0, 16)}...</div>
+                  <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em]">Address: {player.address.slice(0, 16)}...</div>
                 </div>
               </div>
 
@@ -382,7 +382,7 @@ export function PredictionMarket({
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                        <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
-                       <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Protocol Initiation: MISSION_TRADE</h4>
+                       <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Place Your Bet</h4>
                     </div>
                     <div className="text-4xl font-black text-white uppercase italic tracking-tighter">
                       {(gamePlayers.find(p => p.address === selectedSuspect)?.name || "NODE").toUpperCase()}
@@ -421,11 +421,11 @@ export function PredictionMarket({
                     {loading ? (
                       <span className="flex items-center justify-center gap-4">
                         <div className="w-5 h-5 border-2 border-white/20 border-t-white animate-spin" />
-                        SYNCING...
+                        PROCESSING...
                       </span>
                     ) : (
                       <span className="relative z-10 flex items-center justify-center gap-3">
-                        FINALIZE PROTOCOL
+                        PLACE BET
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
@@ -463,12 +463,12 @@ export function PredictionMarket({
           </motion.div>
           <div>
             <h3 className="text-5xl font-black text-white italic uppercase tracking-tighter mb-4">
-              {userBet.correct ? "Mission_Validated" : "Link_Severed"}
+              {userBet.correct ? "Prediction Correct" : "Prediction Wrong"}
             </h3>
             <p className="text-white/20 text-[10px] font-mono tracking-[0.4em] uppercase max-w-md mx-auto leading-relaxed">
               {userBet.correct 
-                ? "Neural signature matched the target agent. Sector secured. Winnings ready for extraction." 
-                : "Target agent verified as crewmate. Neural prediction failed. Resource extraction lost."}
+                ? "You picked the right impostor. You can now claim your winnings." 
+                : "You picked a crewmate. Better luck next time."}
             </p>
           </div>
           
@@ -478,7 +478,7 @@ export function PredictionMarket({
               disabled={loading || userBet.claimed}
               className="px-16 py-6 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-20 text-white rounded-none text-sm font-black uppercase tracking-[0.2em] transition-all shadow-[0_20px_40px_rgba(16,185,129,0.2)]"
             >
-              {loading ? "PROCESSING..." : userBet.claimed ? "REWARDS_EXTRACTED" : "EXTRACT_OCT_REWARDS"}
+              {loading ? "PROCESSING..." : userBet.claimed ? "WINNINGS CLAIMED" : "CLAIM WINNINGS"}
             </button>
           )}
         </div>

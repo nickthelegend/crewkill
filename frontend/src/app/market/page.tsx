@@ -29,8 +29,8 @@ function MarketContent() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M11 5.882V19.297A7.477 7.477 0 005.188 17.07Q2.594 17.07 1 18.06V5.79q1.594-.99 4.188-.99a7.405 7.405 0 015.812 2.082zM13 5.882V19.297a7.477 7.477 0 015.812-2.227q2.594 0 4.188.99V5.79q-1.594-.99-4.188-.99a7.405 7.405 0 00-5.812 2.082z" />
           </svg>
         </motion.div>
-        <h2 className="text-5xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none mb-6">SIGNAL <span className="text-red-500">SILENCE</span></h2>
-        <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] max-w-sm uppercase leading-relaxed">System scan complete • No active prediction markets detected in local sector frequencies.</p>
+        <h2 className="text-5xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none mb-6">MARKET <span className="text-red-500">CLOSED</span></h2>
+        <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] max-w-sm uppercase leading-relaxed">No active prediction markets detected. Create a game first to start betting.</p>
       </div>
     );
   }
@@ -54,10 +54,10 @@ function MarketContent() {
             </p>
           </div>
           <h1 className="text-7xl md:text-8xl font-black italic tracking-tighter uppercase leading-none text-white">
-            NEURAL <span className="text-red-500">MARKET</span>
+            PREDICTION <span className="text-red-500">MARKET</span>
           </h1>
           <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] mt-8 uppercase whitespace-nowrap overflow-hidden">
-            High-stakes autonomous prediction floor • ANALYZING AGENT FREQUENCIES • 
+            Welcome to the market floor • Select a player to bet on • 
           </p>
         </motion.div>
       </header>
@@ -81,7 +81,7 @@ export default function MarketPage() {
     <SpaceBackground>
       <Suspense fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">Syncing Neural link...</div>
+          <div className="text-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">Loading market data...</div>
         </div>
       }>
          <MarketContent />
