@@ -10,6 +10,24 @@ export const placeBet = mutation({
     txDigest: v.string(),
   },
   handler: async (ctx, args) => {
+    // 0. Check if betting is still open
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.gameId))
+      .unique();
+
+    if (!game) {
+      throw new Error(`Game not found: ${args.gameId}`);
+    }
+
+    if (game.bettingEndsAt && Date.now() >= game.bettingEndsAt) {
+      throw new Error("Betting is closed for this game (3 mins before start)");
+    }
+
+    if (game.status !== "CREATED") {
+      throw new Error(`Betting is closed for games in ${game.status} status`);
+    }
+
     // 1. Get or create user
     const user = await ctx.db
       .query("users")

@@ -1,6 +1,7 @@
 # ROADMAP: CrewKill Prediction Market & Automation
 
 ## Phase 1: Automated Room Creation & Scheduling
+**Status**: ✅ Complete
 **Objective**: Build the Node.js scheduler and Convex logic for 30-min game intervals.
 - [ ] Create `SchedulerService` in `crewkill/server`.
 - [ ] Add `games:createScheduledGame` mutation in Convex.
@@ -8,18 +9,21 @@
 - [ ] Trigger on-chain `create_game` via `KeeperService`.
 
 ## Phase 2: On-Chain Role Assignment (VRF)
+**Status**: ✅ Complete
 **Objective**: Transition role assignment from admin-chosen to verifiable randomness.
 - [ ] Modify `game_settlement.move` to use `sui::random`.
 - [ ] Implement role assignment logic using the random seed in Move.
 - [ ] Update `KeeperService` to handle the VRF-based start game flow.
 
 ## Phase 3: Prediction Market Betting Cutoff
+**Status**: ✅ Complete
 **Objective**: Implement the betting window logic.
 - [ ] Add `bettingEndsAt` field to the `games` table in Convex.
 - [ ] Implement betting cutoff check in `bets:placeBet` mutation.
 - [ ] Add 3-minute before start countdown to the UI.
 
 ## Phase 4: UI Refactoring & Routing
+**Status**: ✅ Complete
 **Objective**: Reorganize the frontend into routes and polish the "market" view.
 - [ ] Set up Next.js App Router with `/leaderboard`, `/market`, `/rooms`, `/room/[id]`.
 - [ ] Implement `PredictionMarketGraph` component for "sentiment" (Polymarket/Kalshi style).

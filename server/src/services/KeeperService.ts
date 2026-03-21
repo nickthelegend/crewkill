@@ -4,6 +4,9 @@ import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 import { ConvexHttpClient } from "convex/browser";
 import { uploadToPinata } from "../lib/pinata.js";
 import { CONTRACT_CONFIG } from "../config.js";
+import { createLogger } from "../logger.js";
+
+const logger = createLogger("keeper");
 
 /**
  * KeeperService — Automates game phase transitions and settles markets.
@@ -29,6 +32,27 @@ export class KeeperService {
     });
   }
 
+  async createOnChainGame(roomId: string, wagerAmount: string, maxPlayers: number) {
+    logger.info(`Creating on-chain game for room: ${roomId}`);
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::create_game`,
+      arguments: [
+        tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
+        tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
+        tx.pure.u64(maxPlayers),
+        tx.pure.u64(wagerAmount),
+        tx.pure.u64(5), // tasks required
+        tx.object('0x6'), // Clock
+      ],
+    });
+
+    return await this.client.signAndExecuteTransaction({
+      signer: this.keypair,
+      transaction: tx,
+    });
+  }
+
   private async handleEvent(event: SuiEvent) {
     const { type, parsedJson } = event;
     console.log(`Event received: ${type}`);
@@ -37,6 +61,29 @@ export class KeeperService {
       await this.handleGameEnded(parsedJson as any);
     } else if (type.endsWith('::prediction_market::BetPlaced')) {
       await this.handleBetPlaced(parsedJson as any);
+    } else if (type.endsWith('::game_settlement::PhaseChanged')) {
+      await this.handlePhaseChanged(parsedJson as any);
+    }
+  }
+
+  private async handlePhaseChanged(data: any) {
+    // Phase 1 = PHASE_STARTING
+    if (data.new_phase === 1) {
+      logger.info(`Game ${data.game_id} starting. Assigning roles randomly...`);
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::assign_roles_randomly`,
+        arguments: [
+          tx.object(data.game_id),
+          tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
+          tx.object('0x8'), // Random object ID on Sui/OneChain
+        ],
+      });
+
+      await this.client.signAndExecuteTransaction({
+        signer: this.keypair,
+        transaction: tx,
+      });
     }
   }
 

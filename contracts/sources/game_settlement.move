@@ -6,6 +6,7 @@ use one::transfer;
 use one::table::{Self, Table};
 use one::event;
 use one::clock::{Self, Clock};
+use one::random::{Self, Random};
 use std::hash;
 use among_agents::wager_vault::{Self, WagerVault};
 use among_agents::agent_registry::{Self, AgentRegistry};
@@ -299,6 +300,43 @@ public entry fun assign_roles(
             table::add(&mut game.roles, player, ROLE_IMPOSTOR);
         } else {
             table::add(&mut game.roles, player, ROLE_CREWMATE);
+        };
+        i = i + 1;
+    };
+}
+
+public entry fun assign_roles_randomly(
+    game: &mut Game,
+    manager: &GameManager,
+    r: &Random,
+    ctx: &mut TxContext,
+) {
+    assert!(ctx.sender() == manager.admin, 13);
+    assert!(game.phase == PHASE_STARTING, 14);
+
+    let mut generator = random::new_generator(r, ctx);
+    let num_players = vector::length(&game.players);
+
+    // Determine impostor count (e.g., 2 for 6+ players, 1 otherwise)
+    let impostor_count = if (num_players >= 6) { 2 } else { 1 };
+
+    // Generate a list of impostor indices
+    let mut impostor_indices = vector::empty<u64>();
+    while (vector::length(&impostor_indices) < impostor_count) {
+        let idx = random::generate_u64_in_range(&mut generator, 0, num_players - 1);
+        if (!vector::contains(&impostor_indices, &idx)) {
+            vector::push_back(&mut impostor_indices, idx);
+        }
+    };
+
+    // Assign roles
+    let mut i = 0;
+    while (i < num_players) {
+        let player = *vector::borrow(&game.players, i);
+        if (vector::contains(&impostor_indices, &i)) {
+            table::add(&mut game.roles, player, 2); // ROLE_IMPOSTOR
+        } else {
+            table::add(&mut game.roles, player, 1); // ROLE_CREWMATE
         };
         i = i + 1;
     };

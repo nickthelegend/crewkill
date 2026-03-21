@@ -203,6 +203,39 @@ export const getGameByRoomId = query({
   },
 });
 
+export const listGames = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("games")
+      .order("desc")
+      .take(args.limit || 50);
+  },
+});
+
+export const getBettingStatus = query({
+  args: { roomId: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .unique();
+
+    if (!game) return { isOpen: false, error: "Game not found" };
+
+    const now = Date.now();
+    const bettingEndsAt = game.bettingEndsAt || 0;
+    const isOpen = game.status === "CREATED" && (bettingEndsAt === 0 || now < bettingEndsAt);
+
+    return {
+      isOpen,
+      bettingEndsAt,
+      remainingMs: Math.max(0, bettingEndsAt - now),
+      status: game.status,
+    };
+  },
+});
+
 // ============ Transaction Log ============
 
 export const logTransaction = mutation({
