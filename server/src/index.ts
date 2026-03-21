@@ -4,15 +4,29 @@ import { createApiServer } from "./api.js";
 import { logger } from "./logger.js";
 import { databaseService } from "./DatabaseService.js";
 
+import { KeeperService } from "./services/KeeperService.js";
+
 // Render (and similar platforms) set PORT env var — single port mode
 const SINGLE_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
 const WS_PORT = parseInt(process.env.WS_PORT || "8082", 10);
 const API_PORT = parseInt(process.env.API_PORT || "8080", 10);
 const HOST = process.env.WS_HOST || "0.0.0.0";
 
+const KEEPER_ENABLED = process.env.KEEPER_ENABLED === "true";
+
 async function main() {
   // Connect to database
   await databaseService.connect();
+
+  // Initialize Keeper Service if enabled
+  if (KEEPER_ENABLED) {
+    const keeper = new KeeperService(
+      process.env.ONECHAIN_RPC || "https://rpc-testnet.onelabs.cc:443",
+      process.env.OPERATOR_PRIV_KEY || "", // Use deployer or operator key
+      process.env.NEXT_PUBLIC_CONVEX_URL || "https://beaming-crocodile-136.convex.cloud"
+    );
+    keeper.start().catch(err => logger.error("Keeper start failed:", err));
+  }
 
   // Create WebSocket server
   const wsServer = new WebSocketRelayServer({ port: WS_PORT, host: HOST });

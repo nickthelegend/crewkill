@@ -21,22 +21,36 @@ export class ReplayLogger {
     fs.appendFileSync(this.logPath, logEntry + '\n');
   }
 
-  async uploadToWalrus(): Promise<string | null> {
+  async uploadToPinata(): Promise<string | null> {
     try {
-      const data = fs.readFileSync(this.logPath);
-      // Walrus Devnet Publisher
-      const response = await fetch('https://publisher-devnet.walrus.site/v1/store?epochs=5', {
-        method: 'PUT',
-        body: data,
+      const data = fs.readFileSync(this.logPath, 'utf8');
+      
+      const pinataApiKey = process.env.PINATA_API_KEY || '';
+      const pinataSecretApiKey = process.env.PINATA_API_SECRET || '';
+
+      if (!pinataApiKey || !pinataSecretApiKey) {
+        console.warn('Pinata keys not found. Skipping IPFS upload.');
+        return null;
+      }
+
+      const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'pinata_api_key': pinataApiKey,
+          'pinata_secret_api_key': pinataSecretApiKey,
+        },
+        body: JSON.stringify({
+          pinataMetadata: { name: `replay_${Date.now()}.jsonl` },
+          pinataContent: { log: data },
+        }),
       });
 
-      const result = await response.json();
-      console.log('Walrus upload result:', result);
-      
-      // Blob ID is usually in result.newElement.blobId or result.alreadyCertified.blobId
-      return result.newElement?.blobId || result.alreadyCertified?.blobId || null;
+      const result: any = await response.json();
+      console.log('Pinata upload result:', result);
+      return result.IpfsHash || null;
     } catch (error) {
-      console.error('Walrus upload failed:', error);
+      console.error('Pinata upload failed:', error);
       return null;
     }
   }

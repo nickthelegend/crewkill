@@ -7,15 +7,17 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node src/index.ts",
+    "dev": "node --loader ts-node/esm src/index.ts",
     "start": "node dist/index.js",
-    "run:agent": "ts-node src/run-agent.ts",
-    "run:match": "ts-node src/run-match.ts"
+    "run:agent": "node --loader ts-node/esm src/run-agent.ts",
+    "run:match": "node dist/run-match.js"
   },
   "dependencies": {
     "@onelabs/sui": "^1.26.2",
+    "@pinata/sdk": "^2.1.0",
     "dotenv": "^16.4.5",
     "eventemitter3": "^5.0.1",
+    "pinata-web3": "^0.5.4",
     "winston": "^3.14.0",
     "ws": "^8.18.0"
   },
