@@ -18,6 +18,7 @@ import {
 } from "@/types/game";
 import type { RoomState } from "@/hooks/useGameServer";
 import { InviteModal } from "./InviteModal";
+import { PredictionMarket } from "@/components/game/PredictionMarket";
 
 export interface GameViewProps {
   players: Player[];
@@ -35,6 +36,10 @@ export interface GameViewProps {
   showInviteModal: boolean;
   onShowInviteModal: (show: boolean) => void;
   onBack: () => void;
+  gameObjectId?: string;
+  marketObjectId?: string;
+  gamePhase?: number;
+  actualImpostors?: string[];
 }
 
 export function GameView({
@@ -53,6 +58,10 @@ export function GameView({
   showInviteModal,
   onShowInviteModal,
   onBack,
+  gameObjectId,
+  marketObjectId,
+  gamePhase = 0,
+  actualImpostors = [],
 }: GameViewProps) {
   return (
     <div key="game" className="fixed inset-0">
@@ -253,6 +262,23 @@ export function GameView({
             Exit Spectator
           </button>
         </div>
+
+        {/* Prediction Market Section */}
+        {gameObjectId && marketObjectId && (
+          <div className="flex-shrink-0">
+            <PredictionMarket
+              gameId={gameObjectId}
+              marketObjectId={marketObjectId}
+              gamePlayers={players.map((p) => ({
+                address: p.address,
+                name: `Agent ${p.address.slice(0, 6)}...${p.address.slice(-4)}`,
+              }))}
+              isResolved={gamePhase === 7} // PHASE_ENDED is 7 in aligned Move
+              actualImpostors={actualImpostors}
+              gamePhase={gamePhase}
+            />
+          </div>
+        )}
       </div>
 
       {/* Game Invite Modal */}
