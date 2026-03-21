@@ -195,7 +195,7 @@ export function PredictionMarket({
       });
 
       signAndExecute(
-        { transaction: tx, options: { showEffects: true } },
+        { transaction: tx },
         {
           onSuccess: (result) => {
             setTxStatus('success');
@@ -234,7 +234,7 @@ export function PredictionMarket({
       });
 
       signAndExecute(
-        { transaction: tx, options: { showEffects: true } },
+        { transaction: tx },
         {
           onSuccess: (result) => {
             setTxStatus('success');
@@ -260,14 +260,14 @@ export function PredictionMarket({
 
   if (gamePlayers.length === 0) {
     return (
-      <div className="bg-white/[0.02] backdrop-blur-[40px] border border-white/10 rounded-none p-20 text-center">
-        <div className="w-24 h-24 border border-cyan-500/20 flex items-center justify-center mx-auto mb-10 relative">
-           <div className="absolute inset-0 border border-cyan-500/40 animate-pulse" />
-           <div className="w-12 h-12 border-2 border-t-cyan-400 border-white/5 animate-spin" />
+      <div className="bg-white/[0.02] backdrop-blur-[40px] border border-white/10 rounded-[2.5rem] p-16 text-center">
+        <div className="w-20 h-20 border border-white/5 flex items-center justify-center mx-auto mb-8 relative">
+           <div className="absolute inset-0 border border-cyan-500/20 animate-pulse" />
+           <div className="text-2xl grayscale opacity-30">👥</div>
         </div>
-        <h3 className="text-white/40 font-black uppercase tracking-[0.5em] text-[10px] mb-6 underline decoration-cyan-500/30 underline-offset-8">Loading Data</h3>
-        <p className="text-white/10 text-[9px] uppercase font-black tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed">
-          Fetching player info and pool stats...
+        <h3 className="text-white/40 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Lobby Empty</h3>
+        <p className="text-white/10 text-[9px] uppercase font-black tracking-[0.2em] max-w-[240px] mx-auto leading-relaxed">
+          Waiting for players to join the game room...
         </p>
       </div>
     );

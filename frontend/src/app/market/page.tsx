@@ -12,7 +12,16 @@ function MarketContent() {
   const searchParams = useSearchParams();
   const roomId = searchParams.get("roomId");
 
-  const games = useQuery(api.crewkill.listGames, {}) || [];
+  const games = useQuery(api.crewkill.listGames, {});
+  
+  if (games === undefined) {
+    return (
+       <div className="min-h-[60vh] flex items-center justify-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">
+          Scanning Active Sectors...
+       </div>
+    );
+  }
+
   const targetRoomId = roomId || games.find(g => g.status === "CREATED")?.roomId;
   const game = useQuery(api.crewkill.getGameByRoomId, targetRoomId ? { roomId: targetRoomId } : "skip");
 
@@ -32,6 +41,17 @@ function MarketContent() {
         <h2 className="text-5xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none mb-6">MARKET <span className="text-red-500">CLOSED</span></h2>
         <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] max-w-sm uppercase leading-relaxed">No active prediction markets detected. Create a game first to start betting.</p>
       </div>
+    );
+  }
+
+  if (game === undefined) {
+    return (
+       <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-6">
+             <div className="w-16 h-16 border-2 border-t-red-500 border-white/5 animate-spin rounded-full" />
+             <div className="text-[10px] font-black tracking-[0.4em] text-white/30 uppercase animate-pulse">Fetching Game State...</div>
+          </div>
+       </div>
     );
   }
 
