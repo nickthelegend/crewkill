@@ -53,40 +53,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
       <WalkingCharacters />
 
       <div className="min-h-screen flex flex-col relative z-20 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
-        {/* ─── Top Nav ─── */}
-        <motion.nav
-          className="flex items-center justify-between gap-3 px-6 py-4 bg-black/30 backdrop-blur-xl border-b border-white/5"
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        >
-          <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-[10px] font-black tracking-[0.2em] transition-all duration-500 ${
-              isConnected
-                ? "bg-emerald-500/5 border-emerald-500/30 text-emerald-400"
-                : "bg-rose-500/5 border-rose-500/30 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
-            }`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500"}`} />
-              {isConnected ? "NETWORK_ONLINE" : "NETWORK_OFFLINE"}
-            </div>
-          </div>
-
-          <div className="flex-1 text-center hidden sm:block">
-             <span className="text-[10px] text-white/20 font-mono tracking-[0.5em] uppercase">Securing Neural Link...</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {onOpenDashboard && (
-              <button
-                onClick={onOpenDashboard}
-                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white text-[11px] font-black tracking-widest uppercase transition-all"
-              >
-                Dashboard
-              </button>
-            )}
-            <ConnectWallet />
-          </div>
-        </motion.nav>
+        <div className="h-4 md:h-8" />
 
         {/* ─── Main Hero ─── */}
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">

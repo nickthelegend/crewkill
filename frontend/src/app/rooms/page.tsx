@@ -1,3 +1,4 @@
+"use client"
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
@@ -54,11 +55,11 @@ function RoomCard({ game }: { game: any }) {
           </p>
         </div>
         <div className="flex -space-x-2">
-           {[...Array(3)].map((_, i) => (
-             <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-gray-900 overflow-hidden flex items-center justify-center">
-                <AmongUsSprite colorId={i + (game.roomId.length % 10)} size={20} />
-             </div>
-           ))}
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-gray-900 overflow-hidden flex items-center justify-center">
+              <AmongUsSprite colorId={i + (game.roomId.length % 10)} size={20} />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -76,23 +77,23 @@ function RoomCard({ game }: { game: any }) {
       </div>
 
       <div className="flex gap-2">
-        <Link 
+        <Link
           href={`/room/${game.roomId}`}
           className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest"
         >
           Details
         </Link>
         {game.status === "CREATED" ? (
-          <Link 
-             href={`/market?roomId=${game.roomId}`}
-             className="flex-1 bg-red-600 hover:bg-red-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+          <Link
+            href={`/market?roomId=${game.roomId}`}
+            className="flex-1 bg-red-600 hover:bg-red-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.3)]"
           >
             Predict
           </Link>
         ) : (
-          <Link 
-             href={`/room/${game.roomId}/live`}
-             className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(22,163,74,0.3)]"
+          <Link
+            href={`/room/${game.roomId}/live`}
+            className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-black py-4 rounded-2xl text-center transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(22,163,74,0.3)]"
           >
             Live View
           </Link>

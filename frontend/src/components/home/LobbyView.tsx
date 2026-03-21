@@ -70,48 +70,7 @@ export function LobbyView({
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-        {/* ─── Top Nav ─── */}
-        <motion.nav
-          className="flex items-center justify-between gap-3 px-6 py-4 bg-black/20 backdrop-blur-xl border-b border-white/10 relative z-50"
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          transition={{ type: "spring", damping: 20 }}
-        >
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onBack}
-              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
-            >
-              <svg className="w-5 h-5 text-white/50 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest ${
-              isConnected
-                ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
-                : "bg-red-500/10 border border-red-500/30 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-red-400"}`} />
-              {isConnected ? "LIVE NETWORK" : "DISCONNECTED"}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center">
-             <h1 className="text-xl font-black text-white tracking-[0.2em] uppercase italic">
-              Crew<span className="text-cyan-400">Kill</span>
-            </h1>
-            <div className="text-[10px] text-white/30 font-bold tracking-[0.3em] uppercase mt-0.5">Operation Lobby</div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex flex-col items-end mr-2">
-              <span className="text-[10px] text-white/30 uppercase font-black tracking-wider">Active Rooms</span>
-              <span className="text-sm font-mono text-cyan-400 font-bold">{allActiveRooms.length}</span>
-            </div>
-            <ConnectWallet />
-          </div>
-        </motion.nav>
+        <div className="h-4 md:h-8" />
 
         {/* ─── Main Content ─── */}
         <main className="flex-1 p-6 relative z-10 flex min-h-0">

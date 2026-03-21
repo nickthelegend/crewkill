@@ -234,7 +234,7 @@ public entry fun reveal_action(
     vector::push_back(&mut reveal_bytes, action_type);
     vector::append(&mut reveal_bytes, salt);
 
-    let computed_hash = hash::sha3_256(reveal_bytes);
+    let computed_hash = hash::sha2_256(reveal_bytes);
     assert!(computed_hash == commitment, 12);
 
     let revealed = RevealedAction { action_type, target, room, task_id, salt };

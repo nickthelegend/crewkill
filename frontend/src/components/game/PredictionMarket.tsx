@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@onelabs/dapp-kit';
 import { Transaction } from '@onelabs/sui/transactions';
-import { suiClient, CONTRACT_CONFIG } from '@/lib/onechain';
-
-const PACKAGE_ID = CONTRACT_CONFIG.PACKAGE_ID;
-const MARKET_REGISTRY_ID = CONTRACT_CONFIG.MARKET_REGISTRY_ID;
+import { suiClient, PACKAGE_ID, MARKET_REGISTRY_ID } from '@/lib/onechain';
 
 interface Player {
   address: string;

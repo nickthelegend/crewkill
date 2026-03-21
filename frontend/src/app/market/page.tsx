@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { PredictionMarket } from "@/components/game/PredictionMarket";
 import { SpaceBackground } from "@/components/game/SpaceBackground";
 import { Suspense } from "react";
-import { CONTRACT_CONFIG } from "@/lib/onechain";
+import { PACKAGE_ID, MARKET_REGISTRY_ID } from "@/lib/onechain";
 
 function MarketContent() {
   const searchParams = useSearchParams();
@@ -54,7 +54,7 @@ function MarketContent() {
       <div className="flex justify-center">
         <PredictionMarket 
           gameId={game?._id || ""}
-          marketObjectId={CONTRACT_CONFIG.MARKET_REGISTRY_ID} // Using Registry as placeholder or lookup
+          marketObjectId={MARKET_REGISTRY_ID} // Using Registry as placeholder or lookup
           gamePlayers={gamePlayers}
           isResolved={game?.status === "DONE"}
           actualImpostors={[]} // Will be filled from replay/convex after end
