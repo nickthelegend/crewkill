@@ -45,7 +45,7 @@ export default function LiveRoomPage() {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">
-           Establishing Neural Link...
+           Connecting...
         </div>
       </div>
     );

@@ -40,7 +40,7 @@ export default function RoomDetailsPage() {
   if (!dbGame) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">Scanning Neural Network...</div>
+        <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">Scanning System...</div>
       </div>
     );
   }
@@ -67,22 +67,22 @@ export default function RoomDetailsPage() {
                 <svg className="w-3 h-3 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
                 </svg>
-                Terminal Mainframe
+                Back to Menu
               </button>
               
               <div className="flex items-center gap-4 mb-4">
                 <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase ${
                   isLive ? "bg-red-500/20 text-red-500 border border-red-500/30" : "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                 }`}>
-                  {isLive ? "● LIVE PROTOCOL" : dbGame.status === "COMPLETED" ? "MISSION_ENDED" : "RECRUITING AGENTS"}
+                  {isLive ? "● LIVE GAME" : dbGame.status === "COMPLETED" ? "GAME OVER" : "LOBBY OPEN"}
                 </div>
                 <div className="h-4 w-px bg-white/10" />
-                <span className="text-white/30 font-mono text-[10px] uppercase tracking-widest">NODE_{dbGame.roomId.slice(-8)}</span>
+                <span className="text-white/30 font-mono text-[10px] uppercase tracking-widest">ROOM_{dbGame.roomId.slice(-8)}</span>
               </div>
               
               <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-white leading-[0.9]">
-                Neural <span className="text-cyan-400">Arena</span><br/>
-                <span className="text-3xl md:text-5xl opacity-50 block mt-2">DEPLOYMENT_ALPHA_{dbGame._id.slice(-4).toUpperCase()}</span>
+                Game <span className="text-cyan-400">Arena</span><br/>
+                <span className="text-3xl md:text-5xl opacity-50 block mt-2">VERSION_{dbGame._id.slice(-4).toUpperCase()}</span>
               </h1>
             </motion.div>
 
@@ -99,7 +99,7 @@ export default function RoomDetailsPage() {
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
                   <span className="relative z-10 text-lg font-black uppercase tracking-[0.2em] flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    Board Live Mission
+                    Watch Live Game
                   </span>
                 </Link>
               )}
@@ -144,7 +144,7 @@ export default function RoomDetailsPage() {
               <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8">
                 <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                   Neural Participants ({currentRoom?.players.length || 0}/10)
+                   Players ({currentRoom?.players.length || 0}/10)
                 </h3>
                 
                 <div className="space-y-3">
@@ -165,7 +165,7 @@ export default function RoomDetailsPage() {
                                {p.address.slice(0, 10)}...
                                {p.isAIAgent && <span className="text-[8px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">AI</span>}
                             </div>
-                            <div className="text-[8px] text-white/20 font-mono mt-0.5 uppercase">SYNCING_NEURAL_LINK</div>
+                            <div className="text-[8px] text-white/20 font-mono mt-0.5 uppercase">CONNECTING...</div>
                          </div>
                          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
                       </motion.div>
@@ -188,7 +188,7 @@ export default function RoomDetailsPage() {
                   <div className="flex items-center justify-between mb-8">
                     <div>
                       <h2 className="text-2xl font-black text-white italic tracking-tight uppercase">Prediction Market</h2>
-                      <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1 font-bold">Predict the Neural Outcome</p>
+                      <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1 font-bold">Predict the Winner</p>
                     </div>
                     {isBettingOpen && (
                       <div className="flex items-center gap-2 text-[10px] font-black text-cyan-400 bg-cyan-500/10 px-4 py-2 rounded-full border border-cyan-500/20">
@@ -213,8 +213,8 @@ export default function RoomDetailsPage() {
                   {/* Market Sentiment Disclaimer */}
                   <div className="mt-8 p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
                     <p className="text-[10px] text-white/30 leading-relaxed font-bold uppercase tracking-wider text-center">
-                      Market will settle automatically upon mission completion. 
-                      Impostor identities are cryptographically sealed until terminal resolution.
+                      Market will settle automatically upon game completion. 
+                      Impostor identities are hidden until the game ends.
                     </p>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default function RoomDetailsPage() {
                 <div className="bg-white/[0.03] border border-white/10 rounded-[2rem] p-8 flex flex-col justify-center">
                    <div className="text-xs font-black text-white/30 uppercase tracking-widest mb-2">Historical Accuracy</div>
                    <div className="text-4xl font-black text-white">98.4%</div>
-                   <p className="text-[10px] text-white/20 mt-2 font-bold leading-tight">PREDICTIVE STABILITY ENHANCED VIA ONECHAIN NEURAL LINKS</p>
+                   <p className="text-[10px] text-white/20 mt-2 font-bold leading-tight">PREDICTIVE STABILITY ENHANCED VIA SMART CONTRACTS</p>
                 </div>
               </div>
             </div>
