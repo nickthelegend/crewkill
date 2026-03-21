@@ -37,6 +37,60 @@ export default defineSchema({
     timestamp: v.number(),
   }).index("by_game", ["gameId"]),
 
+  operators: defineTable({
+    name: v.string(),
+    operatorKey: v.string(),
+    walletAddress: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_operatorKey", ["operatorKey"])
+    .index("by_wallet", ["walletAddress"]),
+
+  agents: defineTable({
+    walletAddress: v.string(),
+    name: v.string(),
+    operatorId: v.id("operators"),
+    gamesPlayed: v.number(),
+    wins: v.number(),
+    losses: v.number(),
+    kills: v.number(),
+    tasksCompleted: v.number(),
+    balance: v.string(), // in wei as string
+    totalDeposited: v.string(),
+    totalWon: v.string(),
+    totalLost: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_wallet", ["walletAddress"])
+    .index("by_operator", ["operatorId"]),
+
+  games: defineTable({
+    roomId: v.string(),
+    status: v.string(), // "CREATED", "ACTIVE", "SETTLED", "CANCELLED"
+    phase: v.string(), // "lobby", "playing", "ended"
+    crewmatesWon: v.optional(v.boolean()),
+    winReason: v.optional(v.string()),
+    totalPot: v.string(),
+    winningsPerPlayer: v.optional(v.string()),
+    startedAt: v.optional(v.number()),
+    endedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    settlementTxHash: v.optional(v.string()),
+  }).index("by_roomId", ["roomId"])
+    .index("by_status", ["status"]),
+
+  transactions: defineTable({
+    type: v.string(), // "DEPOSIT", "WAGER", "WINNINGS", "REFUND", "WITHDRAWAL"
+    walletAddress: v.string(),
+    amount: v.string(), // in wei
+    gameRoomId: v.optional(v.string()),
+    txHash: v.optional(v.string()),
+    blockNumber: v.optional(v.number()),
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_wallet", ["walletAddress"])
+    .index("by_type", ["type"]),
+
   notifications: defineTable({
     userId: v.id("users"),
     type: v.string(), // "bet_won", "xp_earned"

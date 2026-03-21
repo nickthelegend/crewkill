@@ -9,6 +9,7 @@
  */
 
 import type * as bets from "../bets.js";
+import type * as crewkill from "../crewkill.js";
 import type * as replays from "../replays.js";
 import type * as users from "../users.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   bets: typeof bets;
+  crewkill: typeof crewkill;
   replays: typeof replays;
   users: typeof users;
 }>;
