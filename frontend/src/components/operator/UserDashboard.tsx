@@ -13,7 +13,7 @@ interface AgentExtended extends AgentWallet {
   stats?: AgentStats;
   balance?: {
     balance: string;
-    balanceETH: number;
+    balanceOCT: number;
     totalDeposited: string;
     totalWon: string;
     totalLost: string;
@@ -37,7 +37,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
 
   // Calculate total balance across all agents
   const totalBalance = agents.reduce((sum, agent) => {
-    return sum + (agent.balance?.balanceETH || 0);
+    return sum + (agent.balance?.balanceOCT || 0);
   }, 0);
 
   const totalProfit = agents.reduce((sum, agent) => {
@@ -150,19 +150,19 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
 
           {/* Total Balance Summary */}
           {!dataLoading && agents.length > 0 && (
-            <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-              <div className="text-center">
-                <div className="text-[10px] text-emerald-400/70 uppercase mb-1">Total Vault Balance</div>
-                <div className="text-xl font-black text-white">
-                  {totalBalance.toFixed(4)} <span className="text-sm text-emerald-400">ETH</span>
+              <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl">
+                <div className="text-center">
+                  <div className="text-[10px] text-cyan-400/70 uppercase mb-1">Total Vault Balance</div>
+                  <div className="text-xl font-black text-white">
+                    {totalBalance.toFixed(4)} <span className="text-sm text-cyan-400">OCT</span>
+                  </div>
                 </div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-emerald-400/70 uppercase mb-1">Total Net Profit</div>
-                <div className={`text-xl font-black ${totalProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                  {totalProfit >= 0 ? "+" : ""}{totalProfit.toFixed(4)} <span className="text-sm opacity-70">ETH</span>
+                <div className="text-center">
+                  <div className="text-[10px] text-cyan-400/70 uppercase mb-1">Total Net Profit</div>
+                  <div className={`text-xl font-black ${totalProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                    {totalProfit >= 0 ? "+" : ""}{totalProfit.toFixed(4)} <span className="text-sm opacity-70">OCT</span>
+                  </div>
                 </div>
-              </div>
               <div className="text-center">
                 <div className="text-[10px] text-emerald-400/70 uppercase mb-1">Active Agents</div>
                 <div className="text-xl font-black text-white">
@@ -213,7 +213,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                       <div className="bg-white/5 p-2 rounded-lg">
                         <div className="text-[9px] text-slate-400 uppercase">Balance</div>
                         <div className="text-sm font-bold text-white">
-                          {balance ? balance.balanceETH.toFixed(4) : "0.0000"} <span className="text-[10px] text-slate-500">ETH</span>
+                          {balance ? balance.balanceOCT.toFixed(4) : "0.0000"} <span className="text-[10px] text-slate-500">OCT</span>
                         </div>
                       </div>
                       <div className="bg-white/5 p-2 rounded-lg">
@@ -260,7 +260,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                       )}
 
                       {/* Withdraw Button */}
-                      {balance && balance.balanceETH > 0 && !activeRoom && (
+                      {balance && balance.balanceOCT > 0 && !activeRoom && (
                         <button
                           onClick={() => handleWithdraw(agent.address)}
                           disabled={withdrawState?.agentAddress === agent.address && withdrawState.loading}
@@ -277,7 +277,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                               <span className="text-red-400">{withdrawState.error}</span>
                             ) : null
                           ) : (
-                            <>WITHDRAW {balance.balanceETH.toFixed(4)} ETH</>
+                            <>WITHDRAW {balance.balanceOCT.toFixed(4)} OCT</>
                           )}
                         </button>
                       )}

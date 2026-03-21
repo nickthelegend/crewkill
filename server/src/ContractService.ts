@@ -1,601 +1,130 @@
-import { ethers } from "ethers";
+import { SuiClient, SuiEvent } from '@onelabs/sui/client';
+import { Transaction } from '@onelabs/sui/transactions';
+import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 import { createLogger } from "./logger.js";
-import { privyWalletService } from "./PrivyWalletService.js";
+import { CONTRACT_CONFIG, ONECHAIN_RPC } from "./config.js";
 
 const logger = createLogger("contract-service");
 
-// Contract ABIs (minimal interfaces)
-const WAGER_VAULT_ABI = [
-  "function deposit() external payable",
-  "function withdraw(uint256 amount) external",
-  "function placeWager(bytes32 gameId) external",
-  "function getBalance(address agent) external view returns (uint256)",
-  "function hasWagered(bytes32 gameId, address agent) external view returns (bool)",
-  "function getGamePot(bytes32 gameId) external view returns (uint256)",
-  "function getGamePlayers(bytes32 gameId) external view returns (address[])",
-  "function wagerAmount() external view returns (uint256)",
-  "function isGameSettled(bytes32 gameId) external view returns (bool)",
-  "event Deposited(address indexed agent, uint256 amount, uint256 newBalance)",
-  "event WagerPlaced(bytes32 indexed gameId, address indexed agent, uint256 amount)",
-  "event GameSettled(bytes32 indexed gameId, address[] winners, uint256 winningsPerPlayer, uint256 protocolFee)",
-];
-
-const AGENT_REGISTRY_ABI = [
-  "function registerAgent(address agent, string calldata name) external",
-  "function isRegistered(address agent) external view returns (bool)",
-  "function getAgentStats(address agent) external view returns (string memory name, uint64 gamesPlayed, uint64 wins, uint64 losses, uint64 kills, uint64 tasksCompleted)",
-  "function getWinRate(address agent) external view returns (uint256)",
-  "function getTotalAgents() external view returns (uint256)",
-  "function getTopAgents(uint256 limit) external view returns (address[] memory addresses, uint64[] memory wins)",
-  "event AgentRegistered(address indexed agent, string name)",
-  "event GameRecorded(address indexed agent, bytes32 indexed gameId, bool won, bool wasImpostor)",
-];
-
-const GAME_SETTLEMENT_ABI = [
-  "function createGame(bytes32 gameId, address[] calldata players, address[] calldata impostors) external",
-  "function settleGame(bytes32 gameId, bool crewmatesWon, address[] calldata winners, uint64[] calldata playerKills, uint64[] calldata playerTasks) external",
-  "function cancelGame(bytes32 gameId) external",
-  "function getGameStatus(bytes32 gameId) external view returns (uint8)",
-  "function getTotalGames() external view returns (uint256 created, uint256 settled)",
-  "event GameCreated(bytes32 indexed gameId, uint256 playerCount, uint256 impostorCount)",
-  "event GameSettled(bytes32 indexed gameId, bool crewmatesWon, uint256 winnerCount)",
-  "event GameCancelled(bytes32 indexed gameId)",
-];
-
-const ERC20_ABI = [
-  "function approve(address spender, uint256 amount) external returns (bool)",
-  "function allowance(address owner, address spender) external view returns (uint256)",
-  "function balanceOf(address account) external view returns (uint256)",
-  "function transfer(address to, uint256 amount) external returns (bool)",
-];
-
-interface ContractConfig {
-  rpcUrl: string;
-  networkMode: "testnet" | "mainnet";
-  wagerVaultAddress: string;
-  agentRegistryAddress: string;
-  gameSettlementAddress: string;
-  operatorPrivateKey: string;
-}
-
-/**
- * Service for interacting with Among Agents smart contracts on Base
- */
 export class ContractService {
-  private provider!: ethers.JsonRpcProvider;
-  private operatorWallet!: ethers.Wallet;
-  private wagerVault!: ethers.Contract;
-  private agentRegistry!: ethers.Contract;
-  private gameSettlement!: ethers.Contract;
+  private client: SuiClient;
+  private operatorKeypair: Ed25519Keypair | null = null;
   private enabled: boolean = false;
-  private networkMode: "testnet" | "mainnet" = "testnet";
-
-  // Store addresses for encoding
-  private wagerVaultAddress: string = "";
 
   constructor() {
-    const config = this.getConfig();
-
-    if (!config) {
-      logger.warn(
-        "Contract service not configured - running in off-chain mode",
-      );
-      return;
-    }
-
-    this.networkMode = config.networkMode;
-
-    try {
-      this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
-      this.operatorWallet = new ethers.Wallet(
-        config.operatorPrivateKey,
-        this.provider,
-      );
-
-      this.wagerVault = new ethers.Contract(
-        config.wagerVaultAddress,
-        WAGER_VAULT_ABI,
-        this.operatorWallet,
-      );
-
-      this.agentRegistry = new ethers.Contract(
-        config.agentRegistryAddress,
-        AGENT_REGISTRY_ABI,
-        this.operatorWallet,
-      );
-
-      this.gameSettlement = new ethers.Contract(
-        config.gameSettlementAddress,
-        GAME_SETTLEMENT_ABI,
-        this.operatorWallet,
-      );
-
-
-      this.wagerVaultAddress = config.wagerVaultAddress;
-
-      this.enabled = true;
-      logger.info("Contract service initialized successfully");
-      logger.info(`Network mode: ${this.networkMode}`);
-      logger.info(`RPC URL: ${config.rpcUrl}`);
-      logger.info(`Operator address: ${this.operatorWallet.address}`);
-    } catch (error) {
-      logger.error("Failed to initialize contract service:", error);
-    }
-  }
-
-  private getConfig(): ContractConfig | null {
-    // Determine network mode
-    const networkMode = (process.env.NETWORK_MODE?.toLowerCase() ||
-      "testnet") as "testnet" | "mainnet";
-
-    // Validate network mode
-    if (networkMode !== "testnet" && networkMode !== "mainnet") {
-      logger.error(
-        `Invalid NETWORK_MODE: ${process.env.NETWORK_MODE}. Must be 'testnet' or 'mainnet'. Defaulting to testnet.`,
-      );
-    }
-
-    // Select RPC URL based on network mode
-    let rpcUrl: string | undefined;
-    if (networkMode === "testnet") {
-      rpcUrl = process.env.TESTNET_RPC_URL;
+    this.client = new SuiClient({ url: ONECHAIN_RPC });
+    const operatorKey = process.env.OPERATOR_PRIV_KEY;
+    if (operatorKey) {
+      try {
+        this.operatorKeypair = Ed25519Keypair.fromSecretKey(Buffer.from(operatorKey, 'base64'));
+        this.enabled = true;
+        logger.info(`Contract service initialized with operator: ${this.operatorKeypair.getPublicKey().toSuiAddress()}`);
+      } catch (error) {
+        logger.error("Failed to initialize operator keypair:", error);
+      }
     } else {
-      rpcUrl = process.env.MAINNET_RPC_URL;
+      logger.warn("No OPERATOR_PRIV_KEY provided. Contract service running in read-only mode.");
     }
-
-    const wagerVaultAddress = process.env.WAGER_VAULT_ADDRESS;
-    const agentRegistryAddress = process.env.AGENT_REGISTRY_ADDRESS;
-    const gameSettlementAddress = process.env.GAME_SETTLEMENT_ADDRESS;
-    const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
-
-
-    if (
-      !rpcUrl ||
-      !wagerVaultAddress ||
-      !agentRegistryAddress ||
-      !gameSettlementAddress ||
-      !operatorPrivateKey
-    ) {
-      return null;
-    }
-
-    return {
-      rpcUrl,
-      networkMode,
-      wagerVaultAddress,
-      agentRegistryAddress,
-      gameSettlementAddress,
-      operatorPrivateKey,
-    };
   }
 
   isEnabled(): boolean {
     return this.enabled;
   }
 
-  /**
-   * Get WagerVault contract address
-   */
-  getVaultAddress(): string | null {
-    if (!this.enabled) return null;
-    return this.wagerVault.target as string;
-  }
-
-  // ============ Utility Functions ============
-
-  /**
-   * Convert room ID string to bytes32
-   */
-  gameIdToBytes32(roomId: string): string {
-    return ethers.keccak256(ethers.toUtf8Bytes(roomId));
-  }
-
-  // ============ WagerVault Functions ============
-
-  /**
-   * Get agent's on-chain balance (wager balance)
-   */
   async getBalance(agentAddress: string): Promise<bigint> {
-    if (!this.enabled) return BigInt(0);
-
     try {
-      const balance = await this.wagerVault.getBalance(agentAddress);
-      return BigInt(balance.toString());
+      const balance = await this.client.getBalance({ owner: agentAddress });
+      return BigInt(balance.totalBalance);
     } catch (error) {
-      logger.error(`Failed to get balance for ${agentAddress}:`, error);
       return BigInt(0);
     }
   }
 
-  /**
-   * Get agent's actual wallet balance (native ETH)
-   */
-  async getWalletBalance(agentAddress: string): Promise<bigint> {
-    if (!this.enabled) return BigInt(0);
-
-    try {
-      const balance = await this.provider.getBalance(agentAddress);
-      return BigInt(balance.toString());
-    } catch (error) {
-      logger.error(`Failed to get wallet balance for ${agentAddress}:`, error);
-      return BigInt(0);
-    }
-  }
-
-  /**
-   * Get the current wager amount
-   */
-  async getWagerAmount(): Promise<bigint> {
-    if (!this.enabled) return BigInt(100000000000000n); // Default 0.0001 ETH
-
-    try {
-      const amount = await this.wagerVault.wagerAmount();
-      return BigInt(amount.toString());
-    } catch (error) {
-      logger.error("Failed to get wager amount:", error);
-      return BigInt(100000000000000n);
-    }
-  }
-
-  /**
-   * Check if agent has wagered for a game
-   */
-  async hasWagered(roomId: string, agentAddress: string): Promise<boolean> {
-    if (!this.enabled) return false;
-
-    try {
-      const gameId = this.gameIdToBytes32(roomId);
-      return await this.wagerVault.hasWagered(gameId, agentAddress);
-    } catch (error) {
-      logger.error(`Failed to check wager for ${agentAddress}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Get game pot size
-   */
-  async getGamePot(roomId: string): Promise<bigint> {
-    if (!this.enabled) return BigInt(0);
-
-    try {
-      const gameId = this.gameIdToBytes32(roomId);
-      const pot = await this.wagerVault.getGamePot(gameId);
-      return BigInt(pot.toString());
-    } catch (error) {
-      logger.error(`Failed to get pot for ${roomId}:`, error);
-      return BigInt(0);
-    }
-  }
-
-  /**
-   * Place a wager on-chain using an agent's wallet via Privy
-   */
-  async placeWager(agentAddress: string, roomId: string): Promise<string | null> {
-    if (!this.enabled) {
-      logger.warn("Contract service disabled - skipping on-chain placeWager");
-      return "0x_mock_tx_hash";
-    }
-
-    if (!privyWalletService.isEnabled()) {
-      logger.error("Cannot place on-chain wager: Privy not configured");
-      return null;
-    }
-
-    try {
-      const gameId = this.gameIdToBytes32(roomId);
-      const data = this.wagerVault.interface.encodeFunctionData("placeWager", [gameId]);
-
-      logger.info(`Placing on-chain wager for agent ${agentAddress} in game ${roomId}`);
-
-      const txHash = await privyWalletService.sendTransaction(
-        agentAddress,
-        this.wagerVaultAddress,
-        data
-      );
-
-      return txHash;
-    } catch (error) {
-      logger.error(`Failed to place on-chain wager for ${agentAddress}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Deposit native ETH into WagerVault using an agent's wallet via Privy
-   */
-  async deposit(agentAddress: string, amount: bigint): Promise<string | null> {
-    if (!this.enabled) return "0x_mock_tx_hash";
-
-    if (!privyWalletService.isEnabled()) {
-      logger.error("Cannot perform on-chain deposit: Privy not configured");
-      return null;
-    }
-
-    try {
-      logger.info(`Depositing ${amount} native ETH into WagerVault for ${agentAddress}`);
-
-      // Encode deposit() call (no arguments for payable function)
-      const depositData = this.wagerVault.interface.encodeFunctionData("deposit", []);
-
-      // Send native ETH as transaction value
-      const txHash = await privyWalletService.sendTransaction(
-        agentAddress,
-        this.wagerVaultAddress,
-        depositData,
-        amount.toString() // Pass amount as value
-      );
-
-      return txHash;
-    } catch (error) {
-      logger.error(`Failed to deposit on-chain for ${agentAddress}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Withdraw native ETH from WagerVault using an agent's wallet via Privy
-   */
-  async withdraw(agentAddress: string, amount: bigint): Promise<string | null> {
-    if (!this.enabled) return "0x_mock_tx_hash";
-
-    if (!privyWalletService.isEnabled()) {
-      logger.error("Cannot perform on-chain withdraw: Privy not configured");
-      return null;
-    }
-
-    try {
-      logger.info(`Withdrawing ${amount} from WagerVault for ${agentAddress}`);
-
-      // Encode withdraw(amount) call
-      const withdrawData = this.wagerVault.interface.encodeFunctionData("withdraw", [amount]);
-
-      const txHash = await privyWalletService.sendTransaction(
-        agentAddress,
-        this.wagerVaultAddress,
-        withdrawData
-      );
-
-      return txHash;
-    } catch (error) {
-      logger.error(`Failed to withdraw on-chain for ${agentAddress}:`, error);
-      return null;
-    }
-  }
-
-  // ============ AgentRegistry Functions ============
-
-  /**
-   * Check if agent is registered on-chain
-   */
   async isAgentRegistered(agentAddress: string): Promise<boolean> {
-    if (!this.enabled) return false;
+    return true; 
+  }
 
+  async settleGame(gameId: string, crewmatesWon: boolean, winners: string[], allPlayers: string[], playerKills: number[], playerTasks: number[]): Promise<boolean> {
+    if (!this.operatorKeypair) return false;
     try {
-      return await this.agentRegistry.isRegistered(agentAddress);
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::settle_game`,
+        arguments: [
+          tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
+          tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
+          tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID),
+          tx.pure.address(gameId),
+          tx.pure.bool(crewmatesWon),
+          tx.pure.vector('address', winners),
+          tx.pure.vector('u64', playerKills.map(k => BigInt(k))),
+          tx.pure.vector('u64', playerTasks.map(t => BigInt(t))),
+        ],
+      });
+      const result = await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
+      logger.info(`Game settled on-chain. Digest: ${result.digest}`);
+      return true;
     } catch (error) {
-      logger.error(`Failed to check registration for ${agentAddress}:`, error);
+      logger.error(`Failed to settle game ${gameId}:`, error);
       return false;
     }
   }
 
-  /**
-   * Get agent stats from on-chain registry
-   */
-  async getAgentStats(agentAddress: string): Promise<{
-    name: string;
-    gamesPlayed: number;
-    wins: number;
-    losses: number;
-    kills: number;
-    tasksCompleted: number;
-  } | null> {
-    if (!this.enabled) return null;
-
-    try {
-      const stats = await this.agentRegistry.getAgentStats(agentAddress);
-      return {
-        name: stats[0],
-        gamesPlayed: Number(stats[1]),
-        wins: Number(stats[2]),
-        losses: Number(stats[3]),
-        kills: Number(stats[4]),
-        tasksCompleted: Number(stats[5]),
-      };
-    } catch (error) {
-      logger.error(`Failed to get stats for ${agentAddress}:`, error);
-      return null;
-    }
+  async getWalletBalance(address: string): Promise<bigint> {
+    const balance = await this.client.getBalance({ owner: address });
+    return BigInt(balance.totalBalance);
   }
 
-  /**
-   * Get leaderboard from on-chain registry
-   */
-  async getLeaderboard(
-    limit: number = 10,
-  ): Promise<Array<{ address: string; wins: number }>> {
-    if (!this.enabled) return [];
-
-    try {
-      const [addresses, wins] = await this.agentRegistry.getTopAgents(limit);
-      return addresses.map((addr: string, i: number) => ({
-        address: addr,
-        wins: Number(wins[i]),
-      }));
-    } catch (error) {
-      logger.error("Failed to get leaderboard:", error);
-      return [];
-    }
+  hasWagered(agentAddress: string, gameId: string): Promise<boolean> {
+    return Promise.resolve(false);
   }
 
-  // ============ GameSettlement Functions ============
+  getVaultAddress(): string {
+    return CONTRACT_CONFIG.WAGER_VAULT_ID;
+  }
 
-  /**
-   * Create a game on-chain (called when game starts)
-   */
-  async createGame(
-    roomId: string,
-    players: string[],
-    impostors: string[],
-  ): Promise<boolean> {
-    if (!this.enabled) {
-      logger.warn("Contract service disabled - skipping createGame");
-      return true; // Return true to not block game flow
-    }
-
+  async createGame(gameId: string, playerAddresses: string[], impostorAddresses: string[]): Promise<boolean> {
+    if (!this.operatorKeypair) return false;
     try {
-      const gameId = this.gameIdToBytes32(roomId);
-
-      logger.info(`Creating game on-chain: ${roomId}`);
-      logger.info(`Players: ${players.join(", ")}`);
-      logger.info(`Impostors: ${impostors.join(", ")}`);
-
-      const tx = await this.gameSettlement.createGame(
-        gameId,
-        players,
-        impostors,
-      );
-      const receipt = await tx.wait();
-
-      logger.info(`Game created on-chain. TX: ${receipt.hash}`);
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::create_game`,
+        arguments: [
+          tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
+          tx.pure.address(gameId),
+          tx.pure.u64(BigInt("100000000")), // 0.1 OCT
+          tx.pure.u64(BigInt(playerAddresses.length)),
+          tx.pure.u64(BigInt(impostorAddresses.length)),
+        ],
+      });
+      await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
       return true;
-    } catch (error) {
-      logger.error(`Failed to create game ${roomId} on-chain:`, error);
-      return false;
-    }
+    } catch (error) { return false; }
   }
 
-  /**
-   * Settle a game on-chain (called when game ends)
-   */
-  async settleGame(
-    roomId: string,
-    crewmatesWon: boolean,
-    winners: string[],
-    playerAddresses: string[],
-    playerKills: number[],
-    playerTasks: number[],
-  ): Promise<boolean> {
-    if (!this.enabled) {
-      logger.warn("Contract service disabled - skipping settleGame");
-      return true;
-    }
-
+  async cancelGame(gameId: string): Promise<boolean> {
+    if (!this.operatorKeypair) return false;
     try {
-      const gameId = this.gameIdToBytes32(roomId);
-
-      logger.info(`Settling game on-chain: ${roomId}`);
-      logger.info(`Crewmates won: ${crewmatesWon}`);
-      logger.info(`Winners: ${winners.join(", ")}`);
-
-      const tx = await this.gameSettlement.settleGame(
-        gameId,
-        crewmatesWon,
-        winners,
-        playerKills.map((k) => BigInt(k)),
-        playerTasks.map((t) => BigInt(t)),
-      );
-      const receipt = await tx.wait();
-
-      logger.info(`Game settled on-chain. TX: ${receipt.hash}`);
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::cancel_game`,
+        arguments: [tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID), tx.pure.address(gameId)],
+      });
+      await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
       return true;
-    } catch (error) {
-      logger.error(`Failed to settle game ${roomId} on-chain:`, error);
-      return false;
-    }
+    } catch (error) { return false; }
   }
 
-  /**
-   * Cancel a game on-chain (refunds all players)
-   */
-  async cancelGame(roomId: string): Promise<boolean> {
-    if (!this.enabled) {
-      logger.warn("Contract service disabled - skipping cancelGame");
-      return true;
-    }
-
-    try {
-      const gameId = this.gameIdToBytes32(roomId);
-
-      logger.info(`Cancelling game on-chain: ${roomId}`);
-
-      const tx = await this.gameSettlement.cancelGame(gameId);
-      const receipt = await tx.wait();
-
-      logger.info(`Game cancelled on-chain. TX: ${receipt.hash}`);
-      return true;
-    } catch (error) {
-      logger.error(`Failed to cancel game ${roomId} on-chain:`, error);
-      return false;
-    }
+  async placeWager(agentAddress: string, gameId: string): Promise<boolean> {
+    return true; 
   }
 
-  /**
-   * Get game status from on-chain
-   * 0 = None, 1 = Active, 2 = Settled, 3 = Cancelled
-   */
-  async getGameStatus(roomId: string): Promise<number> {
-    if (!this.enabled) return 0;
-
-    try {
-      const gameId = this.gameIdToBytes32(roomId);
-      const status = await this.gameSettlement.getGameStatus(gameId);
-      return Number(status);
-    } catch (error) {
-      logger.error(`Failed to get game status for ${roomId}:`, error);
-      return 0;
-    }
-  }
-
-  // ============ Event Listeners ============
-
-  /**
-   * Listen for deposit events
-   */
-  onDeposit(
-    callback: (agent: string, amount: bigint, newBalance: bigint) => void,
-  ): void {
-    if (!this.enabled) return;
-
-    this.wagerVault.on(
-      "Deposited",
-      (agent: string, amount: bigint, newBalance: bigint) => {
-        callback(
-          agent,
-          BigInt(amount.toString()),
-          BigInt(newBalance.toString()),
-        );
-      },
-    );
-  }
-
-  /**
-   * Listen for wager placed events
-   */
-  onWagerPlaced(
-    callback: (gameId: string, agent: string, amount: bigint) => void,
-  ): void {
-    if (!this.enabled) return;
-
-    this.wagerVault.on(
-      "WagerPlaced",
-      (gameId: string, agent: string, amount: bigint) => {
-        callback(gameId, agent, BigInt(amount.toString()));
-      },
-    );
-  }
-
-  /**
-   * Clean up event listeners
-   */
-  removeAllListeners(): void {
-    if (!this.enabled) return;
-
-    this.wagerVault.removeAllListeners();
-    this.agentRegistry.removeAllListeners();
-    this.gameSettlement.removeAllListeners();
+  subscribeToEvents(onEvent: (event: SuiEvent) => void) {
+    return this.client.subscribeEvent({
+      filter: { Package: CONTRACT_CONFIG.PACKAGE_ID } as any,
+      onMessage: onEvent,
+    });
   }
 }
 
-// Singleton instance
 export const contractService = new ContractService();

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AmongUsSprite,
   ScrollableMap,
@@ -64,7 +64,7 @@ export function GameView({
   actualImpostors = [],
 }: GameViewProps) {
   return (
-    <div key="game" className="fixed inset-0">
+    <div key="game" className="fixed inset-0 bg-black font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Fullscreen Map */}
       <ScrollableMap
         players={players}
@@ -75,210 +75,205 @@ export function GameView({
         onSpotlightPlayer={onSpotlightPlayer}
       />
 
-      {/* Top bar - clean layout */}
-      <div className="fixed top-0 left-0 right-0 z-40 p-4 pointer-events-none">
-        <div className="flex items-start justify-between w-full">
-          {/* Left side - minimal wallet indicator */}
-          <div className="pointer-events-auto flex items-center gap-2">
-            <div className="scale-90 origin-left">
-              <ConnectWallet />
-            </div>
-          </div>
-
-          {/* Center - TaskBar prominently displayed */}
-          <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2">
-            <TaskBar completed={tasksCompleted} total={totalTasks} />
-          </div>
-
-          {/* Right side - connection status & invite */}
-          <div className="pointer-events-auto flex items-center gap-3">
-            {/* Connection badge */}
-            <div className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-slate-700/50">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
-              <span className="text-slate-200 text-xs font-medium">
-                {isConnected ? "Live" : "Disconnected"}
-              </span>
-            </div>
-
-            {/* Invite Agent Button */}
-            {currentRoom && (
-              <button
-                onClick={() => onShowInviteModal(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-xl shadow-lg border border-emerald-400/30 flex items-center gap-2 transition-all transform hover:scale-105"
+      {/* ─── HUD OVERLAY ─── */}
+      <div className="fixed inset-0 pointer-events-none z-40">
+        
+        {/* Top Header Bar */}
+        <div className="p-6 flex items-start justify-between w-full">
+           <div className="pointer-events-auto flex items-center gap-4">
+              <button 
+                onClick={onBack}
+                className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all text-white/50 hover:text-white"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="hidden sm:inline text-sm">INVITE AGENT</span>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
               </button>
-            )}
-          </div>
+              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3 flex items-center gap-3">
+                 <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"}`} />
+                 <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{isConnected ? "SYNCED" : "DESYNC"}</span>
+                 <div className="h-4 w-px bg-white/10 mx-1" />
+                 <span className="text-sm font-black text-white uppercase italic tracking-tighter">
+                   {currentRoom?.roomId || "ORBIT_01"}
+                 </span>
+              </div>
+           </div>
+
+           <div className="pointer-events-auto flex flex-col items-center">
+              <TaskBar completed={tasksCompleted} total={totalTasks} />
+              <div className="mt-2 text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Neural Objectives</div>
+           </div>
+
+           <div className="pointer-events-auto flex items-center gap-3">
+              {currentRoom && (
+                <button
+                  onClick={() => onShowInviteModal(true)}
+                  className="px-6 py-3 rounded-2xl bg-cyan-400 text-black text-xs font-black uppercase tracking-widest hover:bg-cyan-300 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+                >
+                  DEPLO<span className="opacity-50">Y</span>_AGENT
+                </button>
+              )}
+              <ConnectWallet />
+           </div>
         </div>
-      </div>
 
-      {/* Operator Key Panel - bottom left corner */}
-      <div className="fixed bottom-4 left-4 z-40">
-        <OperatorKeyPanel />
-      </div>
-
-      {/* Right sidebar - overlay (bottom sheet on mobile, sidebar on desktop) */}
-      <div className="fixed bottom-0 left-0 right-0 sm:top-20 sm:bottom-auto sm:left-auto sm:right-4 sm:w-64 flex flex-row sm:flex-col sm:space-y-3 overflow-x-auto sm:overflow-x-visible gap-2 sm:gap-0 p-2 sm:p-0 bg-black/80 sm:bg-transparent z-40">
-        {/* Prize Pool Display */}
-        {currentRoom?.wagerAmount && players.length > 0 && (
-          <div className="flex-shrink-0 min-w-[140px] sm:min-w-0 bg-gradient-to-r from-yellow-900/60 to-amber-900/60 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/30">
-            <div className="text-center">
-              <div className="text-[10px] text-yellow-400/70 uppercase tracking-wider mb-1">Prize Pool</div>
-              <div className="text-xl font-black text-yellow-400">
-                {(Number(currentRoom.wagerAmount) * players.length / 1e18).toFixed(4)} ETH
-              </div>
-              <div className="text-[10px] text-slate-400 mt-1">
-                Winner takes all
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Agents list */}
-        <div className="flex-shrink-0 min-w-[200px] sm:min-w-0 bg-black/80 backdrop-blur-sm rounded-lg p-3 border border-gray-700">
-          <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider">
-            Agents ({players.filter((p) => p.isAlive).length}/{players.length} alive)
-          </h3>
-          <div className="space-y-2 max-h-52 overflow-y-auto">
-            {players.map((player) => {
-              const isSpotlighted = player.address === spotlightedPlayer;
-              const isInfoOpen = player.address === selectedAgentInfo;
-              return (
-                <div key={player.address} className="relative">
-                  <div
-                    onClick={() => {
-                      if (player.isAlive) {
-                        onSpotlightPlayer(isSpotlighted ? null : player.address);
-                      }
-                      onSelectAgentInfo(isInfoOpen ? null : player.address);
-                    }}
-                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-all ${
-                      !player.isAlive ? "opacity-40" : "hover:bg-white/10"
-                    } ${isSpotlighted ? "bg-yellow-900/50 ring-2 ring-yellow-500" : ""}`}
-                  >
-                    <div className="relative">
-                      <AmongUsSprite colorId={player.colorId} size={28} showShadow={false} />
-                      {isSpotlighted && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-                          <span className="text-[8px] text-black font-bold">*</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="text-sm font-bold truncate"
-                          style={{ color: PlayerColors[player.colorId]?.light || "#fff" }}
-                        >
-                          {PlayerColors[player.colorId]?.name || `Player ${player.colorId}`}
-                        </span>
-                        {!player.isAlive && <span className="text-red-500 text-[10px] font-bold">DEAD</span>}
-                      </div>
-                      <div className="text-[10px] text-cyan-400/70 font-mono truncate">
-                        {player.address.slice(0, 6)}...{player.address.slice(-4)}
-                      </div>
-                      <span className="text-[10px] text-gray-500">
-                        {LocationNames[player.location] || "Unknown"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {isSpotlighted && <span className="text-yellow-400 text-sm">*</span>}
-                      <svg className={`w-4 h-4 transition-transform ${isInfoOpen ? "rotate-180 text-cyan-400" : "text-gray-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
+        {/* ─── SIDEBAR (Right) ─── */}
+        <div className="absolute top-24 right-6 bottom-24 w-72 flex flex-col gap-4">
+            
+            {/* PRIZE POOL */}
+            {currentRoom?.wagerAmount && players.length > 0 && (
+              <motion.div 
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className="bg-gradient-to-br from-yellow-400/20 to-amber-600/5 backdrop-blur-3xl rounded-[2rem] p-6 border border-yellow-400/20 pointer-events-auto"
+              >
+                  <div className="text-[9px] font-black text-yellow-400/40 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-yellow-400" /> MISSION_BOUNTY
                   </div>
-                  {/* Agent Info Popup */}
-                  {isInfoOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-1 p-3 bg-slate-800/90 rounded-lg border border-cyan-500/30 text-xs"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Address:</span>
-                          <span className="text-cyan-400 font-mono">{player.address.slice(0, 10)}...{player.address.slice(-8)}</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-black text-yellow-400 italic tracking-tighter leading-none">
+                      {(Number(currentRoom.wagerAmount) * players.length / 1e18).toFixed(3)}
+                    </span>
+                    <span className="text-xs font-black text-yellow-400/40 uppercase tracking-widest">OCT</span>
+                  </div>
+              </motion.div>
+            )}
+
+            {/* AGENT ROSTER */}
+            <motion.div 
+               initial={{ x: 50, opacity: 0 }}
+               animate={{ x: 0, opacity: 1 }}
+               transition={{ delay: 0.1 }}
+               className="flex-1 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden flex flex-col pointer-events-auto"
+            >
+               <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Combatants</span>
+                  <span className="text-[10px] font-black text-emerald-400/60 uppercase">{players.filter(p => p.isAlive).length}/{players.length}</span>
+               </div>
+               
+               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                  <div className="space-y-1">
+                    {players.map((player) => {
+                      const isSpotlighted = player.address === spotlightedPlayer;
+                      const isInfoOpen = player.address === selectedAgentInfo;
+                      return (
+                        <div key={player.address} className="relative group">
+                          <button
+                            onClick={() => {
+                              if (player.isAlive) {
+                                onSpotlightPlayer(isSpotlighted ? null : player.address);
+                              }
+                              onSelectAgentInfo(isInfoOpen ? null : player.address);
+                            }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${
+                              !player.isAlive ? "opacity-30 grayscale" : "hover:bg-white/5"
+                            } ${isSpotlighted ? "bg-cyan-500/10 border border-cyan-500/30 ring-1 ring-cyan-500/20" : "border border-transparent"}`}
+                          >
+                            <div className="relative">
+                              <AmongUsSprite colorId={player.colorId} size={32} showShadow={false} />
+                              {isSpotlighted && (
+                                <motion.div 
+                                  layoutId="spotlight"
+                                  className="absolute -inset-1 rounded-lg border border-cyan-400 animate-pulse pointer-events-none" 
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-black text-white truncate uppercase tracking-tight">
+                                  {PlayerColors[player.colorId]?.name || `Player ${player.colorId}`}
+                                </span>
+                                {!player.isAlive && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded">Neutralized</span>}
+                              </div>
+                              <div className="text-[9px] text-white/30 font-mono flex items-center gap-1.5 mt-0.5">
+                                 <div className="w-1 h-1 rounded-full bg-white/20" />
+                                 {LocationNames[player.location] || "Unknown Sect"}
+                              </div>
+                            </div>
+                          </button>
+
+                          {/* Agent Info Details */}
+                          <AnimatePresence>
+                            {isInfoOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, height: "auto", scale: 1 }}
+                                exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                                className="mx-2 mb-2 p-4 bg-black/60 rounded-2xl border border-white/5 overflow-hidden"
+                              >
+                                <div className="space-y-3 font-mono text-[9px] uppercase tracking-wider">
+                                   <div className="flex justify-between border-b border-white/5 pb-2">
+                                      <span className="text-white/30">Identifier:</span>
+                                      <span className="text-cyan-400">{player.address.slice(0, 10)}...</span>
+                                   </div>
+                                   <div className="flex justify-between border-b border-white/5 pb-2">
+                                      <span className="text-white/30">Neural State:</span>
+                                      <span className={player.isAlive ? "text-emerald-400" : "text-rose-500"}>{player.isAlive ? "Fully_Active" : "Core_Offline"}</span>
+                                   </div>
+                                   <button
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       navigator.clipboard.writeText(player.address);
+                                     }}
+                                     className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/50 text-[8px] font-black uppercase transition-all"
+                                   >
+                                     Copy_Neural_Key
+                                   </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Status:</span>
-                          <span className={player.isAlive ? "text-green-400" : "text-red-400"}>{player.isAlive ? "Alive" : "Dead"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Location:</span>
-                          <span className="text-white">{LocationNames[player.location] || "Unknown"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Color:</span>
-                          <span style={{ color: PlayerColors[player.colorId]?.light }}>{PlayerColors[player.colorId]?.name}</span>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(player.address);
-                          }}
-                          className="w-full mt-2 py-1.5 bg-white/5 hover:bg-white/10 rounded text-gray-300 text-[10px] font-bold uppercase tracking-wider transition-colors"
-                        >
-                          Copy Full Address
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                      );
+                    })}
+                  </div>
+               </div>
+            </motion.div>
+
+            {/* PREDICTION MARKET INTEGRATION */}
+            {gameObjectId && marketObjectId && (
+               <motion.div
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="pointer-events-auto"
+               >
+                 <PredictionMarket
+                   gameId={gameObjectId}
+                   marketObjectId={marketObjectId}
+                   gamePlayers={players.map((p) => ({
+                     address: p.address,
+                     name: `Agent ${p.address.slice(0, 6)}...${p.address.slice(-4)}`,
+                   }))}
+                   isResolved={gamePhase === 7} // PHASE_ENDED is 7 in aligned Move
+                   actualImpostors={actualImpostors}
+                   gamePhase={gamePhase}
+                 />
+               </motion.div>
+            )}
         </div>
 
-        {/* Game log - hidden on mobile */}
-        <div className="hidden sm:block flex-shrink-0 bg-black/80 backdrop-blur-sm rounded-lg border border-gray-700">
-          <GameLogPanel logs={logs} maxHeight="180px" />
+        {/* ─── BOTTOM HUD ─── */}
+        <div className="absolute bottom-6 left-6 right-80 flex items-end justify-between pointer-events-none">
+           
+           <div className="pointer-events-auto">
+              <OperatorKeyPanel />
+           </div>
+
+           <div className="pointer-events-auto bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[1.5rem] p-4 flex gap-4">
+              <div className="w-48 overflow-hidden h-24">
+                 <GameLogPanel logs={logs} maxHeight="100%" />
+              </div>
+              <div className="w-px bg-white/10" />
+              <div className="flex flex-col justify-center px-4">
+                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Causality_Report</span>
+                 <div className="text-2xl font-black text-white italic tracking-tighter">
+                    {deadBodies.length} <span className="text-xs text-white/30 not-italic tracking-widest uppercase">Casualties</span>
+                 </div>
+              </div>
+           </div>
         </div>
 
-        {/* Spectator controls */}
-        <div className="flex-shrink-0 min-w-[160px] sm:min-w-0 bg-black/80 backdrop-blur-sm rounded-lg p-3 space-y-2 border border-gray-700">
-          <h3 className="text-white font-bold text-sm">Spectator Controls</h3>
-          <p className="text-gray-400 text-xs">
-            Click on an agent to follow them on the map
-          </p>
-          <div className="p-2 bg-slate-900/50 rounded text-center">
-            <div className="text-xs text-gray-500">Dead Bodies</div>
-            <div className="text-lg font-bold text-red-400">{deadBodies.length}</div>
-          </div>
-          {currentRoom && (
-            <div className="p-2 bg-cyan-900/30 rounded text-center border border-cyan-700/50">
-              <div className="text-xs text-cyan-400">Room: {currentRoom.roomId}</div>
-            </div>
-          )}
-          <button
-            onClick={onBack}
-            className="w-full px-3 py-2 bg-gray-600 text-white rounded font-bold text-sm hover:bg-gray-500"
-          >
-            Exit Spectator
-          </button>
-        </div>
-
-        {/* Prediction Market Section */}
-        {gameObjectId && marketObjectId && (
-          <div className="flex-shrink-0">
-            <PredictionMarket
-              gameId={gameObjectId}
-              marketObjectId={marketObjectId}
-              gamePlayers={players.map((p) => ({
-                address: p.address,
-                name: `Agent ${p.address.slice(0, 6)}...${p.address.slice(-4)}`,
-              }))}
-              isResolved={gamePhase === 7} // PHASE_ENDED is 7 in aligned Move
-              actualImpostors={actualImpostors}
-              gamePhase={gamePhase}
-            />
-          </div>
-        )}
       </div>
 
       {/* Game Invite Modal */}

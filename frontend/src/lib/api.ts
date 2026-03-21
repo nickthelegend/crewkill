@@ -117,7 +117,7 @@ export const api = {
   async getWagerBalance(address: string): Promise<{
     address: string;
     balance: string;
-    balanceETH: number;
+    balanceOCT: number;
     totalDeposited: string;
     totalWon: string;
     totalLost: string;

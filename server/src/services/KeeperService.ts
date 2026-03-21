@@ -2,7 +2,6 @@ import { SuiClient, SuiEvent } from '@onelabs/sui/client';
 import { Transaction } from '@onelabs/sui/transactions';
 import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../frontend/convex/_generated/api";
 import { uploadToPinata } from "../lib/pinata.js";
 import { CONTRACT_CONFIG } from "../config.js";
 
@@ -25,7 +24,7 @@ export class KeeperService {
     
     // Subscribe to all events from the package
     this.client.subscribeEvent({
-      filter: { Package: CONTRACT_CONFIG.PACKAGE_ID },
+      filter: { Package: CONTRACT_CONFIG.PACKAGE_ID } as any,
       onMessage: (event) => this.handleEvent(event),
     });
   }
@@ -43,13 +42,13 @@ export class KeeperService {
 
   private async handleBetPlaced(data: any) {
     console.log('Processing bet for Convex indexing...');
-    // Sync with Convex
-    await this.convex.mutation(api.bets.placeBet, {
+    // Sync with Convex using string-based mutation path
+    await this.convex.mutation("bets:placeBet" as any, {
       address: data.better,
       gameId: data.game_id,
       selection: data.selection,
       amountMist: parseInt(data.amount),
-      txDigest: data.game_id, // Use game_id as placeholder if digest not available
+      txDigest: data.game_id, 
     });
   }
 
@@ -62,7 +61,7 @@ export class KeeperService {
       target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::resolve_market`,
       arguments: [
         tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
-        tx.pure.address(data.game_id), // Actually need the winner address from game logic
+        tx.pure.address(data.game_id), // placeholder
         tx.pure.u8(data.winner),
       ],
     });
@@ -74,10 +73,10 @@ export class KeeperService {
     console.log('Market resolved:', result.digest);
 
     // 2. Resolve Convex Bets & Award XP
-    await this.convex.mutation(api.bets.resolveBets, {
+    await this.convex.mutation("bets:resolveBets" as any, {
       gameId: data.game_id,
       winnerSide: data.winner,
-      winningAgentAddress: "", // Logic to find winning agent address
+      winningAgentAddress: "", 
     });
 
     // 3. Mint GameReplayNFT

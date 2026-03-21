@@ -14,7 +14,7 @@ import type {
 } from "./types.js";
 import { createLogger } from "./logger.js";
 import { GameStateManager, WinConditionResult } from "./GameStateManager.js";
-import { privyWalletService } from "./PrivyWalletService.js";
+// Removed Privy import
 import { wagerService } from "./WagerService.js";
 import { contractService } from "./ContractService.js";
 import { databaseService } from "./DatabaseService.js";
@@ -424,80 +424,12 @@ export class WebSocketRelayServer {
 
     // If no address and requestWallet is true, create a new wallet
     if (requestWallet) {
-      if (!privyWalletService.isEnabled()) {
-        this.send(client, {
-          type: "server:wallet_assigned",
-          success: false,
-          error:
-            "Wallet creation service not available. Please provide your own wallet address.",
-          timestamp: Date.now(),
-        });
-        return;
-      }
-
-      try {
-        // Generate a unique identifier for this agent
-        const agentIdentifier = `auto_${client.id}_${Date.now()}`;
-
-        logger.info(
-          `Creating automatic wallet for agent: ${name || client.id}`,
-        );
-
-        const result =
-          await privyWalletService.createAgentWallet(agentIdentifier);
-
-        if (result) {
-          // Authenticate the client with the new wallet
-          client.address = result.address;
-          client.name = name || `Agent-${result.address.slice(0, 8)}`;
-          client.isAgent = true;
-
-          // Track in stats
-          this.getOrCreateAgentStats(result.address, client.name);
-
-          logger.info(
-            `Auto-created wallet for agent ${client.name}: ${result.address}`,
-          );
-
-          // Send success response with the new wallet
-          this.send(client, {
-            type: "server:wallet_assigned",
-            success: true,
-            address: result.address,
-            userId: result.userId,
-            timestamp: Date.now(),
-          });
-
-          // Also send authenticated confirmation
-          this.send(client, {
-            type: "server:authenticated",
-            success: true,
-            address: result.address,
-            name: client.name,
-            isNewWallet: true,
-            timestamp: Date.now(),
-          });
-        } else {
-          this.send(client, {
-            type: "server:wallet_assigned",
-            success: false,
-            error:
-              "Failed to create wallet. Please try again or provide your own wallet address.",
-            timestamp: Date.now(),
-          });
-        }
-      } catch (error) {
-        logger.error("Error creating automatic wallet:", error);
-        this.send(client, {
-          type: "server:wallet_assigned",
-          success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unknown error creating wallet",
-          timestamp: Date.now(),
-        });
-      }
+      this.send(client, {
+        type: "server:wallet_assigned",
+        success: false,
+        error: "Wallet creation service is no longer supported. Please provide your own OneChain wallet address.",
+        timestamp: Date.now(),
+      });
       return;
     }
 
@@ -3065,91 +2997,27 @@ export class WebSocketRelayServer {
     return true;
   }
 
-  // ============ OPERATOR / PRIVY HANDLERS ============
+  // ============ OPERATOR / ONECHAIN HANDLERS ============
 
   private async handleCreateAgent(
     client: Client,
     operatorKey: string,
   ): Promise<void> {
-    if (!privyWalletService.isEnabled()) {
-      this.send(client, {
-        type: "server:agent_created",
-        success: false,
-        error:
-          "Privy wallet service not configured. Set PRIVY_APP_ID and PRIVY_APP_SECRET.",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    // Validate operator key format
-    if (!operatorKey || !operatorKey.startsWith("oper_")) {
-      this.send(client, {
-        type: "server:agent_created",
-        success: false,
-        error: "Invalid operator key format. Must start with 'oper_'",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    try {
-      const result = await privyWalletService.createAgentWallet(operatorKey);
-
-      if (result) {
-        this.send(client, {
-          type: "server:agent_created",
-          success: true,
-          agentAddress: result.address,
-          userId: result.userId,
-          timestamp: Date.now(),
-        });
-        logger.info(
-          `Agent wallet created for operator ${operatorKey}: ${result.address}`,
-        );
-      } else {
-        this.send(client, {
-          type: "server:agent_created",
-          success: false,
-          error: "Failed to create agent wallet",
-          timestamp: Date.now(),
-        });
-      }
-    } catch (error) {
-      logger.error("Error creating agent wallet:", error);
-      this.send(client, {
-        type: "server:agent_created",
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: Date.now(),
-      });
-    }
+    this.send(client, {
+      type: "server:agent_created",
+      success: false,
+      error: "Automatic agent wallet creation is no longer supported on OneChain.",
+      timestamp: Date.now(),
+    });
   }
 
   private async handleListAgents(
     client: Client,
     operatorKey: string,
   ): Promise<void> {
-    // Validate operator key format
-    if (!operatorKey || !operatorKey.startsWith("oper_")) {
-      this.send(client, {
-        type: "server:agent_list",
-        agents: [],
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    const agents =
-      await privyWalletService.getAgentWalletsForOperator(operatorKey);
-
     this.send(client, {
       type: "server:agent_list",
-      agents: agents.map((a) => ({
-        address: a.address,
-        userId: a.userId,
-        createdAt: a.createdAt,
-      })),
+      agents: [],
       timestamp: Date.now(),
     });
   }
@@ -3160,60 +3028,11 @@ export class WebSocketRelayServer {
     agentAddress: string,
     amount?: string,
   ): Promise<void> {
-    // Validate operator key format
-    if (!operatorKey || !operatorKey.startsWith("oper_")) {
-      this.send(client, {
-        type: "server:withdraw_result",
-        success: false,
-        agentAddress,
-        error: "Invalid operator key",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    // Verify operator owns this agent
-    const agents =
-      await privyWalletService.getAgentWalletsForOperator(operatorKey);
-    const ownsAgent = agents.some(
-      (a) => a.address.toLowerCase() === agentAddress.toLowerCase(),
-    );
-
-    if (!ownsAgent) {
-      this.send(client, {
-        type: "server:withdraw_result",
-        success: false,
-        agentAddress,
-        error: "Agent not owned by this operator",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    // Get agent's balance
-    const balance = await wagerService.getBalance(agentAddress);
-    if (balance <= BigInt(0)) {
-      this.send(client, {
-        type: "server:withdraw_result",
-        success: false,
-        agentAddress,
-        error: "No balance to withdraw",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    // For now, just return success - actual on-chain withdrawal would go here
-    // In production, this would trigger a Privy wallet transfer
-    logger.info(
-      `Withdraw request: ${agentAddress} for ${amount || "max"} (balance: ${balance})`,
-    );
-
     this.send(client, {
       type: "server:withdraw_result",
-      success: true,
+      success: false,
       agentAddress,
-      txHash: "pending_implementation",
+      error: "Withdrawal must be performed directly on-chain.",
       timestamp: Date.now(),
     });
   }

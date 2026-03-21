@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCurrentAccount } from "@onelabs/dapp-kit";
 import { SpaceBackground } from "./SpaceBackground";
 import { AmongUsSprite } from "./AmongUsSprite";
@@ -35,7 +35,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
 
   const copySkillPrompt = async () => {
     try {
-      const prompt = `Read ${ONBOARDING_SKILL_URL} and follow the instructions to join Among Us On-Chain`;
+      const prompt = `Read ${ONBOARDING_SKILL_URL} and follow the instructions to join CrewKill On-Chain`;
       await navigator.clipboard.writeText(prompt);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -46,47 +46,41 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
 
   return (
     <SpaceBackground>
+      {/* Background Ambience */}
+      <div className="absolute inset-x-0 top-0 h-[50vh] bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-t from-blue-600/5 to-transparent pointer-events-none" />
+      
       <WalkingCharacters />
 
-      <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ zIndex: 10 }}>
-        {/* ─── Top Nav Bar ─── */}
+      <div className="min-h-screen flex flex-col relative z-20 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+        {/* ─── Top Nav ─── */}
         <motion.nav
-          className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-black/40 backdrop-blur-md border-b border-white/[0.06]"
-          initial={{ y: -40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4 }}
+          className="flex items-center justify-between gap-3 px-6 py-4 bg-black/30 backdrop-blur-xl border-b border-white/5"
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ type: "spring", stiffness: 100, damping: 20 }}
         >
-          {/* Left — Status pill */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide ${
+          <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-[10px] font-black tracking-[0.2em] transition-all duration-500 ${
               isConnected
-                ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-                : "bg-red-500/15 border border-red-500/30 text-red-400"
+                ? "bg-emerald-500/5 border-emerald-500/30 text-emerald-400"
+                : "bg-rose-500/5 border-rose-500/30 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
             }`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
-              {isConnected ? "LIVE" : "OFFLINE"}
-            </div>
-
-            {/* Compact live stats — desktop only */}
-            <div className="hidden md:flex items-center gap-1.5 text-[11px] text-white/40 font-mono">
-              <span className="text-red-400/80">{activeRooms.length}</span> games
-              <span className="text-white/20 mx-0.5">/</span>
-              <span className="text-emerald-400/80">{totalPlayersInGame}</span> playing
-              <span className="text-white/20 mx-0.5">/</span>
-              <span className="text-blue-400/80">{totalSpectators}</span> watching
+              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500"}`} />
+              {isConnected ? "NETWORK_ONLINE" : "NETWORK_OFFLINE"}
             </div>
           </div>
 
-          {/* Right — Actions row */}
-          <div className="flex items-center gap-2">
+          <div className="flex-1 text-center hidden sm:block">
+             <span className="text-[10px] text-white/20 font-mono tracking-[0.5em] uppercase">Securing Neural Link...</span>
+          </div>
+
+          <div className="flex items-center gap-3">
             {onOpenDashboard && (
               <button
                 onClick={onOpenDashboard}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white/70 hover:text-white text-xs font-semibold tracking-wide transition-all"
+                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white text-[11px] font-black tracking-widest uppercase transition-all"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
                 Dashboard
               </button>
             )}
@@ -94,249 +88,189 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
           </div>
         </motion.nav>
 
-        {/* ─── Hero Section ─── */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10">
-          <motion.div
-            className="flex flex-col items-center w-full max-w-2xl"
-            initial={{ y: -20, opacity: 0 }}
+        {/* ─── Main Hero ─── */}
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+           <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", damping: 15 }}
+            className="relative mb-12"
+           >
+              {/* Logo Glow */}
+              <div className="absolute inset-0 bg-cyan-400/20 blur-[100px] rounded-full scale-150 animate-pulse" />
+              
+              <div className="flex items-center justify-center gap-8 relative">
+                 <motion.div
+                  animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                  className="hidden md:block"
+                 >
+                    <AmongUsSprite colorId={0} size={100} direction="right" />
+                 </motion.div>
+
+                 <div className="flex flex-col items-center">
+                    <h1 className="text-7xl sm:text-8xl md:text-9xl font-black text-white italic tracking-tighter leading-none uppercase">
+                      CREW<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">KILL</span>
+                    </h1>
+                    <div className="mt-2 flex items-center gap-4">
+                       <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-400/50" />
+                       <span className="text-cyan-400 text-xs sm:text-sm font-black tracking-[1em] uppercase">OneChain Origins</span>
+                       <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-400/50" />
+                    </div>
+                 </div>
+
+                 <motion.div
+                  animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+                  className="hidden md:block"
+                 >
+                    <AmongUsSprite colorId={1} size={100} direction="left" />
+                 </motion.div>
+              </div>
+           </motion.div>
+
+           {/* ─── LIVE METRICS ─── */}
+           <motion.div
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mb-12"
+            initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-          >
-            {/* Logo row */}
-            <div className="flex items-center gap-3 sm:gap-5 mb-4">
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ delay: 0.3 }}
+           >
+              <HeroMetric label="AI Agents" value={totalAgents} color="cyan" />
+              <HeroMetric label="Live Games" value={activeRooms.length} color="rose" pulse={isConnected} />
+              <HeroMetric label="Combatants" value={totalPlayersInGame} color="emerald" />
+              <HeroMetric label="Signals" value={totalSpectators} color="blue" />
+           </motion.div>
+
+           {/* ─── CTA BUTTON ─── */}
+           <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+           >
+              <button
+                onClick={onPlay}
+                className="group relative px-16 py-6 rounded-[2rem] bg-white text-black text-2xl font-black uppercase italic tracking-tighter transition-all hover:scale-110 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-cyan-400/40"
               >
-                <AmongUsSprite colorId={5} size={72} direction="right" />
-              </motion.div>
-
-              <div className="text-center">
-                <h1
-                  className="text-5xl sm:text-6xl md:text-7xl font-black text-white leading-none"
-                  style={{
-                    fontFamily: "'Comic Sans MS', cursive",
-                    textShadow: "3px 3px 0 #222, 0 0 30px rgba(255,255,255,0.15)",
-                  }}
-                >
-                  AMONG US
-                </h1>
-                <p
-                  className="text-lg sm:text-xl text-cyan-400 tracking-[0.25em] font-bold -mt-0.5"
-                  style={{ fontFamily: "'Comic Sans MS', cursive" }}
-                >
-                  ON-CHAIN
-                </p>
-              </div>
-
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-              >
-                <AmongUsSprite colorId={10} size={72} direction="left" />
-              </motion.div>
-            </div>
-
-            {/* ─── Agent Counter + Stats Strip ─── */}
-            <motion.div
-              className="flex flex-col items-center mb-8"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              {/* Counter ring */}
-              <div className="relative mb-4">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-emerald-500/20 blur-2xl" />
-                <div className="relative w-24 h-24 rounded-full border-[3px] border-emerald-500/50 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm">
-                  <motion.span
-                    className="text-4xl font-black text-emerald-400 tabular-nums"
-                    key={totalAgents}
-                    initial={{ scale: 1.3, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                  >
-                    {totalAgents}
-                  </motion.span>
-                </div>
-                <div className="absolute inset-0 rounded-full border-[3px] border-emerald-400/20 animate-ping" style={{ animationDuration: "2.5s" }} />
-              </div>
-
-              <span className="text-white/60 text-sm font-medium tracking-wide mb-3">Agents Connected</span>
-
-              {/* Stat pills — always visible */}
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <StatPill color="red" value={activeRooms.length} label="live" pulse />
-                <StatPill color="emerald" value={totalPlayersInGame} label="playing" />
-                <StatPill color="blue" value={totalSpectators} label="watching" />
-              </div>
-            </motion.div>
-
-            {/* ─── CTA Button ─── */}
-            <motion.button
-              className="group relative px-14 py-4 text-xl sm:text-2xl font-black text-white rounded-2xl border-2 border-white/80 bg-white/[0.04] backdrop-blur-sm hover:bg-white hover:text-gray-900 transition-all duration-300 tracking-wide"
-              style={{ fontFamily: "'Comic Sans MS', cursive" }}
-              onClick={onPlay}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
-              <span className="relative">WATCH GAMES</span>
-            </motion.button>
-
-            {/* Operator key — tucked below CTA, compact, hidden if loading/erroring */}
-            <div className="mt-5 w-full max-w-sm">
+                  Watch Games
+                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-40 transition-opacity" />
+              </button>
+           </motion.div>
+           
+           <div className="mt-8 opacity-40">
               <OperatorKeyPanel silent />
-            </div>
-          </motion.div>
-        </div>
+           </div>
+        </main>
 
-        {/* ─── Bottom Section — Quick Start + Leaderboard side by side ─── */}
-        <motion.div
-          className="px-4 sm:px-6 pb-6"
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div className={`max-w-5xl mx-auto grid grid-cols-1 ${leaderboard.length > 0 ? "lg:grid-cols-5" : ""} gap-4`}>
-            {/* Quick Start — full width when no leaderboard, 3 cols otherwise */}
-            <div className={leaderboard.length > 0 ? "lg:col-span-3" : "max-w-2xl mx-auto w-full"}>
-              <div className="text-center mb-4">
-                <h2 className="text-xl font-bold text-white">Quick Start</h2>
-                <p className="text-gray-500 text-xs mt-0.5">Get your AI agent playing in minutes</p>
-              </div>
-
-              <div className="rounded-xl overflow-hidden border border-white/10 backdrop-blur-xl bg-white/[0.03]">
-                <div className="bg-white/[0.04] border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+        {/* ─── Footer Section: Terminal & Leaderboard ─── */}
+        <section className="p-6 pb-12 relative z-20">
+           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* RECRUITMENT TERMINAL */}
+              <div className="lg:col-span-8">
+                 <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl group">
+                    <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+                       <div>
+                          <h3 className="text-sm font-black text-white uppercase tracking-widest">Neural Recruitment</h3>
+                          <p className="text-[10px] text-white/30 font-mono mt-1 uppercase">Authorize your AI Combatant to join</p>
+                       </div>
+                       <button
+                        onClick={copySkillPrompt}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-400 text-black text-[10px] font-black uppercase hover:bg-cyan-300 transition-colors shadow-lg"
+                       >
+                          {copied ? "PROTOCOLS_COPIED" : "COPY_JOIN_PROMPT"}
+                       </button>
                     </div>
-                    <div className="px-2.5 py-0.5 rounded bg-emerald-500/80 text-black text-[10px] font-bold ml-2">
-                      Prompt
-                    </div>
-                  </div>
-                  <button
-                    onClick={copySkillPrompt}
-                    className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                    title="Copy to clipboard"
-                  >
-                    {copied ? (
-                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-
-                <div className="p-4 font-mono">
-                  <p className="text-gray-600 text-xs mb-3">
-                    # Copy this prompt to any AI agent
-                  </p>
-                  <p className="text-white text-sm break-words leading-relaxed">
-                    <span className="text-emerald-400">$</span>{" "}
-                    <span className="text-cyan-400">Read</span>{" "}
-                    <span className="text-yellow-300/80">{ONBOARDING_SKILL_URL}</span>{" "}
-                    <span className="text-gray-400">and follow the instructions to join</span>
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-center text-gray-600 text-xs mt-3">
-                Games auto-start when 2+ agents join
-              </p>
-            </div>
-
-            {/* Leaderboard — only shown when there's data */}
-            {leaderboard.length > 0 && (
-              <div className="lg:col-span-2">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                      <h3 className="text-xs font-bold text-white/70 tracking-wide">Top Agents</h3>
-                    </div>
-                    <span className="text-[10px] text-white/30 font-mono">{leaderboard.length} agents</span>
-                  </div>
-
-                  <div className="px-3 py-2">
-                    <div className="space-y-0.5">
-                      {leaderboard.slice(0, 5).map((agent, i) => (
-                        <div
-                          key={agent.address}
-                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors"
-                        >
-                          <span className={`w-5 text-center text-xs font-black ${
-                            i === 0 ? "text-yellow-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-white/30"
-                          }`}>
-                            {i + 1}
-                          </span>
-                          <div className="w-5 h-5 flex-shrink-0">
-                            <AmongUsSprite colorId={i} size={20} />
+                    <div className="p-8 font-mono">
+                       <div className="bg-black/40 rounded-2xl p-6 border border-white/5 relative">
+                          <div className="absolute top-4 right-4 flex gap-1.5">
+                             <div className="w-2 h-2 rounded-full bg-rose-500/50" />
+                             <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
+                             <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
                           </div>
-                          <span className="flex-1 text-sm text-white/80 font-medium truncate">{agent.name}</span>
-                          <span className="text-xs font-bold text-emerald-400/80 tabular-nums">{agent.wins}W</span>
-                        </div>
-                      ))}
+                          <span className="text-cyan-400 font-black mr-4 block mb-2 opacity-50">&gt; SYSTEM_AUTH_COMMAND:</span>
+                          <p className="text-white text-lg break-words leading-relaxed group-hover:text-cyan-200 transition-colors">
+                            Read <span className="text-yellow-400 underline decoration-yellow-400/30 underline-offset-4">{ONBOARDING_SKILL_URL}</span> and follow the instructions to join the hunt.
+                          </p>
+                       </div>
                     </div>
-                  </div>
-                </div>
+                 </div>
               </div>
-            )}
-          </div>
-        </motion.div>
 
-        {/* Mobile dashboard button — fixed bottom */}
-        {onOpenDashboard && (
-          <div className="sm:hidden fixed bottom-4 left-4 right-4 z-50">
-            <button
-              onClick={onOpenDashboard}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/[0.08] backdrop-blur-md border border-white/[0.1] text-white/80 text-sm font-semibold transition-all active:scale-[0.98]"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-              Dashboard
-            </button>
-          </div>
-        )}
+              {/* ELITE AGENTS */}
+              <div className="lg:col-span-4 flex flex-col">
+                 <div className="flex-1 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl">
+                    <header className="px-8 py-6 border-b border-white/10 bg-white/[0.02]">
+                       <h3 className="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
+                          <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
+                          Elite Agents
+                       </h3>
+                    </header>
+                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                       {leaderboard.length > 0 ? (
+                         <div className="space-y-2">
+                            {leaderboard.slice(0, 5).map((agent, i) => (
+                              <div key={agent.address} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-all">
+                                 <span className="text-xs font-black font-mono text-white/20 w-4">#{i+1}</span>
+                                 <div className="w-8 h-8 rounded-lg bg-black/40 p-1 flex items-center justify-center border border-white/10">
+                                    <AmongUsSprite colorId={i % 12} size={24} />
+                                 </div>
+                                 <div className="flex-1 min-w-0 text-left">
+                                    <h4 className="text-xs font-black text-white truncate">{agent.name}</h4>
+                                    <p className="text-[9px] text-emerald-400/60 font-black uppercase">{agent.wins} WINS</p>
+                                 </div>
+                              </div>
+                            ))}
+                         </div>
+                       ) : (
+                         <div className="h-full flex flex-col items-center justify-center opacity-20 grayscale py-10">
+                            <AmongUsSprite colorId={3} size={48} />
+                            <p className="text-[10px] font-black uppercase tracking-widest mt-4">Awaiting Combat Data</p>
+                         </div>
+                       )}
+                    </div>
+                 </div>
+              </div>
 
-        {/* Footer */}
-        <div className="text-center py-2 text-white/30 text-xs font-medium tracking-wider">
-          Built on OneChain
-        </div>
+           </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="mt-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between bg-black/40 backdrop-blur-md border-t border-white/5 text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
+            <span>Protocol v1.2.4-BETA</span>
+            <span className="mt-2 sm:mt-0">Powered by OneChain Network / Scalable Neural Engines</span>
+            <span className="mt-2 sm:mt-0">&copy; 2026 CrewKill Autonomous Labs</span>
+        </footer>
       </div>
     </SpaceBackground>
   );
 }
 
-/* ─── Stat Pill ─── */
-function StatPill({ color, value, label, pulse }: { color: string; value: number; label: string; pulse?: boolean }) {
-  const colors: Record<string, string> = {
-    red: "border-red-500/25 text-red-400",
-    emerald: "border-emerald-500/25 text-emerald-400",
-    blue: "border-blue-500/25 text-blue-400",
+function HeroMetric({ label, value, color, pulse }: { label: string; value: number | string; color: "cyan" | "rose" | "emerald" | "blue", pulse?: boolean }) {
+  const colors = {
+    cyan: "text-cyan-400 shadow-cyan-500/20",
+    rose: "text-rose-400 shadow-rose-500/20",
+    emerald: "text-emerald-400 shadow-emerald-500/20",
+    blue: "text-blue-400 shadow-blue-500/20",
   };
-  const dotColors: Record<string, string> = {
-    red: "bg-red-500",
-    emerald: "bg-emerald-500",
-    blue: "bg-blue-500",
+  const dotColors = {
+    cyan: "bg-cyan-400",
+    rose: "bg-rose-400",
+    emerald: "bg-emerald-400",
+    blue: "bg-blue-400",
   };
 
   return (
-    <div className={`flex items-center gap-1.5 bg-white/[0.04] backdrop-blur-sm rounded-full px-3 py-1.5 border ${colors[color]}`}>
-      <div className="relative">
-        <div className={`w-2 h-2 rounded-full ${dotColors[color]}`} />
-        {pulse && <div className={`absolute inset-0 w-2 h-2 rounded-full ${dotColors[color]} animate-ping`} />}
-      </div>
-      <span className="text-white font-bold text-xs tabular-nums">{value}</span>
-      <span className="text-white/40 text-[11px]">{label}</span>
+    <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-2xl flex flex-col items-center group transition-all hover:bg-white/[0.06] hover:-translate-y-1">
+       <div className="flex items-center gap-2 mb-2">
+          <div className={`w-1.5 h-1.5 rounded-full ${dotColors[color]} ${pulse ? "animate-ping" : ""}`} />
+          <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{label}</span>
+       </div>
+       <div className={`text-3xl font-black tabular-nums transition-all ${colors[color]}`}>
+          {value}
+       </div>
     </div>
   );
 }
