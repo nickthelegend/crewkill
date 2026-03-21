@@ -1,0 +1,542 @@
+[note] Dependencies on Bridge, MoveStdlib, One, and OneSystem are automatically added, but this feature is disabled for your package because you have explicitly included dependencies on One. Consider removing these dependencies from Move.toml.
+UPDATING GIT DEPENDENCY https://github.com/one-chain-labs/onechain.git
+INCLUDING DEPENDENCY One
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING among_agents
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:1:8
+  [0m[34m│[0m
+[0m[34m1[0m [0m[34m│[0m module [0m[31mcrewkill[0m::game_replay {
+  [0m[34m│[0m        [0m[31m^^^^^^^^[0m [0m[31maddress 'crewkill' is not assigned a value. Try assigning it a value when calling the compiler[0m
+
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:2:9
+  [0m[34m│[0m
+[0m[34m2[0m [0m[34m│[0m     use [0m[31msui[0m::tx_context::{Self, TxContext};
+  [0m[34m│[0m         [0m[31m^^^[0m [0m[31maddress 'sui' is not assigned a value[0m
+
+[0m[1m[38;5;9merror[E03002][0m[1m: unbound module[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:2:9
+  [0m[34m│[0m
+[0m[34m2[0m [0m[34m│[0m     use [0m[31msui::tx_context[0m::{Self, TxContext};
+  [0m[34m│[0m         [0m[31m^^^^^^^^^^^^^^^[0m [0m[31mInvalid 'use'. Unbound module: 'sui::tx_context'[0m
+
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:3:9
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m     use [0m[31msui[0m::object::{Self, UID, ID};
+  [0m[34m│[0m         [0m[31m^^^[0m [0m[31maddress 'sui' is not assigned a value[0m
+
+[0m[1m[38;5;9merror[E03002][0m[1m: unbound module[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:3:9
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m     use [0m[31msui::object[0m::{Self, UID, ID};
+  [0m[34m│[0m         [0m[31m^^^^^^^^^^^[0m [0m[31mInvalid 'use'. Unbound module: 'sui::object'[0m
+
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:4:9
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m     use [0m[31msui[0m::transfer;
+  [0m[34m│[0m         [0m[31m^^^[0m [0m[31maddress 'sui' is not assigned a value[0m
+
+[0m[1m[38;5;9merror[E03002][0m[1m: unbound module[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:4:9
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m     use [0m[31msui::transfer[0m;
+  [0m[34m│[0m         [0m[31m^^^^^^^^^^^^^[0m [0m[31mInvalid 'use'. Unbound module: 'sui::transfer'[0m
+
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:6:9
+  [0m[34m│[0m
+[0m[34m6[0m [0m[34m│[0m     use [0m[31msui[0m::event;
+  [0m[34m│[0m         [0m[31m^^^[0m [0m[31maddress 'sui' is not assigned a value[0m
+
+[0m[1m[38;5;9merror[E03002][0m[1m: unbound module[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:6:9
+  [0m[34m│[0m
+[0m[34m6[0m [0m[34m│[0m     use [0m[31msui::event[0m;
+  [0m[34m│[0m         [0m[31m^^^^^^^^^^[0m [0m[31mInvalid 'use'. Unbound module: 'sui::event'[0m
+
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:7:9
+  [0m[34m│[0m
+[0m[34m7[0m [0m[34m│[0m     use [0m[31msui[0m::package;
+  [0m[34m│[0m         [0m[31m^^^[0m [0m[31maddress 'sui' is not assigned a value[0m
+
+[0m[1m[38;5;9merror[E03002][0m[1m: unbound module[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:7:9
+  [0m[34m│[0m
+[0m[34m7[0m [0m[34m│[0m     use [0m[31msui::package[0m;
+  [0m[34m│[0m         [0m[31m^^^^^^^^^^^^[0m [0m[31mInvalid 'use'. Unbound module: 'sui::package'[0m
+
+[0m[1m[38;5;9merror[E03001][0m[1m: address with no value[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:8:9
+  [0m[34m│[0m
+[0m[34m8[0m [0m[34m│[0m     use [0m[31msui[0m::display;
+  [0m[34m│[0m         [0m[31m^^^[0m [0m[31maddress 'sui' is not assigned a value[0m
+
+[0m[1m[38;5;9merror[E03002][0m[1m: unbound module[0m
+  [0m[34m┌─[0m ./sources/game_replay.move:8:9
+  [0m[34m│[0m
+[0m[34m8[0m [0m[34m│[0m     use [0m[31msui::display[0m;
+  [0m[34m│[0m         [0m[31m^^^^^^^^^^^^[0m [0m[31mInvalid 'use'. Unbound module: 'sui::display'[0m
+
+[0m[1m[38;5;11mwarning[W09002][0m[1m: unused variable[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:40:14
+   [0m[34m│[0m
+[0m[34m40[0m [0m[34m│[0m     fun init([0m[33motw[0m: GAME_REPLAY, ctx: &mut TxContext) {
+   [0m[34m│[0m              [0m[33m^^^[0m [0m[33mUnused parameter 'otw'. Consider removing or prefixing with an underscore: '_otw'[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_variable)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;9merror[E03006][0m[1m: unexpected name in this position[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:41:25
+   [0m[34m│[0m
+[0m[34m41[0m [0m[34m│[0m         let publisher = [0m[31mpackage[0m::claim(otw, ctx);
+   [0m[34m│[0m                         [0m[31m^^^^^^^[0m [0m[31mCould not resolve the name 'package'[0m
+
+[0m[1m[38;5;11mwarning[W09002][0m[1m: unused variable[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:43:13
+   [0m[34m│[0m
+[0m[34m43[0m [0m[34m│[0m         let [0m[33mkeys[0m = vector[
+   [0m[34m│[0m             [0m[33m^^^^[0m [0m[33mUnused local variable 'keys'. Consider removing or prefixing with an underscore: '_keys'[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_variable)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09002][0m[1m: unused variable[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:51:13
+   [0m[34m│[0m
+[0m[34m51[0m [0m[34m│[0m         let [0m[33mvalues[0m = vector[
+   [0m[34m│[0m             [0m[33m^^^^^^[0m [0m[33mUnused local variable 'values'. Consider removing or prefixing with an underscore: '_values'[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_variable)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;9merror[E03006][0m[1m: unexpected name in this position[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:59:24
+   [0m[34m│[0m
+[0m[34m59[0m [0m[34m│[0m         let mut disp = [0m[31mdisplay[0m::new_with_fields<GameReplayNFT>(
+   [0m[34m│[0m                        [0m[31m^^^^^^^[0m [0m[31mCould not resolve the name 'display'[0m
+
+[0m[1m[38;5;9merror[E03006][0m[1m: unexpected name in this position[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:63:9
+   [0m[34m│[0m
+[0m[34m63[0m [0m[34m│[0m         [0m[31mdisplay[0m::update_version(&mut disp);
+   [0m[34m│[0m         [0m[31m^^^^^^^[0m [0m[31mCould not resolve the name 'display'[0m
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:74:12
+   [0m[34m│[0m
+[0m[34m74[0m [0m[34m│[0m     public [0m[33mentry[0m fun mint_replay(
+   [0m[34m│[0m            [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+   [0m[34m│[0m
+   [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+   [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09002][0m[1m: unused variable[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:86:13
+   [0m[34m│[0m
+[0m[34m86[0m [0m[34m│[0m         let [0m[33mnft_id[0m = object::uid_to_inner(&id);
+   [0m[34m│[0m             [0m[33m^^^^^^[0m [0m[33mUnused local variable 'nft_id'. Consider removing or prefixing with an underscore: '_nft_id'[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_variable)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;9merror[E03006][0m[1m: unexpected name in this position[0m
+   [0m[34m┌─[0m ./sources/game_replay.move:99:9
+   [0m[34m│[0m
+[0m[34m99[0m [0m[34m│[0m         [0m[31mevent[0m::emit(ReplayMinted {
+   [0m[34m│[0m         [0m[31m^^^^^[0m [0m[31mCould not resolve the name 'event'[0m
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:3:19
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{[0m[33mSelf[0m, UID, ID};
+  [0m[34m│[0m                   [0m[33m^^^^[0m [0m[33mUnnecessary alias 'object' for module 'one::object'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:3:25
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, [0m[33mUID[0m, ID};
+  [0m[34m│[0m                         [0m[33m^^^[0m [0m[33mUnnecessary alias 'UID' for module member 'one::object::UID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:3:30
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, UID, [0m[33mID[0m};
+  [0m[34m│[0m                              [0m[33m^^[0m [0m[33mUnnecessary alias 'ID' for module member 'one::object::ID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnnecessary alias 'tx_context' for module 'one::tx_context'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09001][0m[1m: unused alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnused 'use' of alias 'tx_context'. Consider removing it[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(unused_use)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:4:29
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{Self, [0m[33mTxContext[0m};
+  [0m[34m│[0m                             [0m[33m^^^^^^^^^[0m [0m[33mUnnecessary alias 'TxContext' for module member 'one::tx_context::TxContext'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/game_settlement.move:5:10
+  [0m[34m│[0m
+[0m[34m5[0m [0m[34m│[0m use one::[0m[33mtransfer[0m;
+  [0m[34m│[0m          [0m[33m^^^^^^^^[0m [0m[33mUnnecessary alias 'transfer' for module 'one::transfer'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09011][0m[1m: unused constant[0m
+   [0m[34m┌─[0m ./sources/game_settlement.move:28:7
+   [0m[34m│[0m
+[0m[34m28[0m [0m[34m│[0m const [0m[33mWIN_CREWMATES[0m: u8 = 1;
+   [0m[34m│[0m       [0m[33m^^^^^^^^^^^^^[0m [0m[33mThe constant 'WIN_CREWMATES' is never used. Consider removing it.[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_const)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09011][0m[1m: unused constant[0m
+   [0m[34m┌─[0m ./sources/game_settlement.move:29:7
+   [0m[34m│[0m
+[0m[34m29[0m [0m[34m│[0m const [0m[33mWIN_IMPOSTORS[0m: u8 = 2;
+   [0m[34m│[0m       [0m[33m^^^^^^^^^^^^^[0m [0m[33mThe constant 'WIN_IMPOSTORS' is never used. Consider removing it.[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_const)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:127:8
+    [0m[34m│[0m
+[0m[34m127[0m [0m[34m│[0m public [0m[33mentry[0m fun create_game(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:177:8
+    [0m[34m│[0m
+[0m[34m177[0m [0m[34m│[0m public [0m[33mentry[0m fun join_game(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:197:8
+    [0m[34m│[0m
+[0m[34m197[0m [0m[34m│[0m public [0m[33mentry[0m fun commit_action(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:216:8
+    [0m[34m│[0m
+[0m[34m216[0m [0m[34m│[0m public [0m[33mentry[0m fun reveal_action(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:255:8
+    [0m[34m│[0m
+[0m[34m255[0m [0m[34m│[0m public [0m[33mentry[0m fun advance_phase(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:285:8
+    [0m[34m│[0m
+[0m[34m285[0m [0m[34m│[0m public [0m[33mentry[0m fun assign_roles(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:307:8
+    [0m[34m│[0m
+[0m[34m307[0m [0m[34m│[0m public [0m[33mentry[0m fun process_kill(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/game_settlement.move:319:8
+    [0m[34m│[0m
+[0m[34m319[0m [0m[34m│[0m public [0m[33mentry[0m fun settle_game(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:3:19
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{[0m[33mSelf[0m, UID, ID};
+  [0m[34m│[0m                   [0m[33m^^^^[0m [0m[33mUnnecessary alias 'object' for module 'one::object'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:3:25
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, [0m[33mUID[0m, ID};
+  [0m[34m│[0m                         [0m[33m^^^[0m [0m[33mUnnecessary alias 'UID' for module member 'one::object::UID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:3:30
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, UID, [0m[33mID[0m};
+  [0m[34m│[0m                              [0m[33m^^[0m [0m[33mUnnecessary alias 'ID' for module member 'one::object::ID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnnecessary alias 'tx_context' for module 'one::tx_context'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09001][0m[1m: unused alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnused 'use' of alias 'tx_context'. Consider removing it[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(unused_use)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:4:29
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{Self, [0m[33mTxContext[0m};
+  [0m[34m│[0m                             [0m[33m^^^^^^^^^[0m [0m[33mUnnecessary alias 'TxContext' for module member 'one::tx_context::TxContext'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/prediction_market.move:5:10
+  [0m[34m│[0m
+[0m[34m5[0m [0m[34m│[0m use one::[0m[33mtransfer[0m;
+  [0m[34m│[0m          [0m[33m^^^^^^^^[0m [0m[33mUnnecessary alias 'transfer' for module 'one::transfer'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09011][0m[1m: unused constant[0m
+   [0m[34m┌─[0m ./sources/prediction_market.move:14:7
+   [0m[34m│[0m
+[0m[34m14[0m [0m[34m│[0m const [0m[33mE_MARKET_NOT_FOUND[0m: u64 = 0;
+   [0m[34m│[0m       [0m[33m^^^^^^^^^^^^^^^^^^[0m [0m[33mThe constant 'E_MARKET_NOT_FOUND' is never used. Consider removing it.[0m
+   [0m[34m│[0m
+   [0m[34m=[0m This warning can be suppressed with '#[allow(unused_const)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/prediction_market.move:129:8
+    [0m[34m│[0m
+[0m[34m129[0m [0m[34m│[0m public [0m[33mentry[0m fun create_market(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/prediction_market.move:175:8
+    [0m[34m│[0m
+[0m[34m175[0m [0m[34m│[0m public [0m[33mentry[0m fun close_market(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/prediction_market.move:194:8
+    [0m[34m│[0m
+[0m[34m194[0m [0m[34m│[0m public [0m[33mentry[0m fun resolve_market(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/prediction_market.move:243:8
+    [0m[34m│[0m
+[0m[34m243[0m [0m[34m│[0m public [0m[33mentry[0m fun withdraw_fees(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/prediction_market.move:260:8
+    [0m[34m│[0m
+[0m[34m260[0m [0m[34m│[0m public [0m[33mentry[0m fun place_bet(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/prediction_market.move:302:8
+    [0m[34m│[0m
+[0m[34m302[0m [0m[34m│[0m public [0m[33mentry[0m fun claim_winnings(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/agent_registry.move:3:19
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{[0m[33mSelf[0m, UID};
+  [0m[34m│[0m                   [0m[33m^^^^[0m [0m[33mUnnecessary alias 'object' for module 'one::object'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/agent_registry.move:3:25
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, [0m[33mUID[0m};
+  [0m[34m│[0m                         [0m[33m^^^[0m [0m[33mUnnecessary alias 'UID' for module member 'one::object::UID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/agent_registry.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnnecessary alias 'tx_context' for module 'one::tx_context'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09001][0m[1m: unused alias[0m
+  [0m[34m┌─[0m ./sources/agent_registry.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnused 'use' of alias 'tx_context'. Consider removing it[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(unused_use)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/agent_registry.move:4:29
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{Self, [0m[33mTxContext[0m};
+  [0m[34m│[0m                             [0m[33m^^^^^^^^^[0m [0m[33mUnnecessary alias 'TxContext' for module member 'one::tx_context::TxContext'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/agent_registry.move:5:10
+  [0m[34m│[0m
+[0m[34m5[0m [0m[34m│[0m use one::[0m[33mtransfer[0m;
+  [0m[34m│[0m          [0m[33m^^^^^^^^[0m [0m[33mUnnecessary alias 'transfer' for module 'one::transfer'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+   [0m[34m┌─[0m ./sources/agent_registry.move:53:8
+   [0m[34m│[0m
+[0m[34m53[0m [0m[34m│[0m public [0m[33mentry[0m fun register_agent(
+   [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+   [0m[34m│[0m
+   [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+   [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:3:19
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{[0m[33mSelf[0m, UID, ID};
+  [0m[34m│[0m                   [0m[33m^^^^[0m [0m[33mUnnecessary alias 'object' for module 'one::object'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:3:25
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, [0m[33mUID[0m, ID};
+  [0m[34m│[0m                         [0m[33m^^^[0m [0m[33mUnnecessary alias 'UID' for module member 'one::object::UID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:3:30
+  [0m[34m│[0m
+[0m[34m3[0m [0m[34m│[0m use one::object::{Self, UID, [0m[33mID[0m};
+  [0m[34m│[0m                              [0m[33m^^[0m [0m[33mUnnecessary alias 'ID' for module member 'one::object::ID'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnnecessary alias 'tx_context' for module 'one::tx_context'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W09001][0m[1m: unused alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:4:23
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{[0m[33mSelf[0m, TxContext};
+  [0m[34m│[0m                       [0m[33m^^^^[0m [0m[33mUnused 'use' of alias 'tx_context'. Consider removing it[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(unused_use)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:4:29
+  [0m[34m│[0m
+[0m[34m4[0m [0m[34m│[0m use one::tx_context::{Self, [0m[33mTxContext[0m};
+  [0m[34m│[0m                             [0m[33m^^^^^^^^^[0m [0m[33mUnnecessary alias 'TxContext' for module member 'one::tx_context::TxContext'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[W02021][0m[1m: duplicate alias[0m
+  [0m[34m┌─[0m ./sources/wager_vault.move:5:10
+  [0m[34m│[0m
+[0m[34m5[0m [0m[34m│[0m use one::[0m[33mtransfer[0m;
+  [0m[34m│[0m          [0m[33m^^^^^^^^[0m [0m[33mUnnecessary alias 'transfer' for module 'one::transfer'. This alias is provided by default[0m
+  [0m[34m│[0m
+  [0m[34m=[0m This warning can be suppressed with '#[allow(duplicate_alias)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+   [0m[34m┌─[0m ./sources/wager_vault.move:75:8
+   [0m[34m│[0m
+[0m[34m75[0m [0m[34m│[0m public [0m[33mentry[0m fun place_wager(
+   [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+   [0m[34m│[0m
+   [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+   [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+[0m[1m[38;5;11mwarning[Lint W99010][0m[1m: unnecessary `entry` on a `public` function[0m
+    [0m[34m┌─[0m ./sources/wager_vault.move:137:8
+    [0m[34m│[0m
+[0m[34m137[0m [0m[34m│[0m public [0m[33mentry[0m fun withdraw_fees(
+    [0m[34m│[0m        [0m[33m^^^^^[0m [0m[33m`entry` on `public` functions limits composability as it adds restrictions, e.g. the type of each return value must have `drop`. `entry` on `public` is only meaningful in niche scenarios.[0m
+    [0m[34m│[0m
+    [0m[34m=[0m `public` functions can be called from PTBs. `entry` can be used to allow non-`public` functions to be called from PTBs, but it adds restrictions on the usage of input arguments and on the type of return values. Unless this `public` function interacts with an intricate set of other `entry` functions, the `entry` modifier should be removed.
+    [0m[34m=[0m This warning can be suppressed with '#[allow(lint(public_entry))]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+Failed to build Move modules: Compilation error.
