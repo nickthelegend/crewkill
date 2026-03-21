@@ -94,9 +94,9 @@ export function LobbyView({
                       <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
-                      Terminal
+                      Total Rooms
                     </h2>
-                    <p className="text-[10px] text-white/40 mt-1 font-mono">{allActiveRooms.length} ACTIVE_NODES</p>
+                    <p className="text-[10px] text-white/40 mt-1 font-mono">{allActiveRooms.length} TOTAL_ROOMS</p>
                   </div>
                   {!hasActiveRoom && isAuthenticated && (
                     <motion.button
@@ -122,7 +122,7 @@ export function LobbyView({
                       >
                         <AmongUsSprite colorId={11} size={80} />
                       </motion.div>
-                      <p className="text-white text-xs font-black uppercase tracking-[0.2em]">No Nodes Found</p>
+                      <p className="text-white text-xs font-black uppercase tracking-[0.2em]">No Rooms Found</p>
                       <p className="text-white/30 text-[10px] mt-2 font-mono">WAITING FOR NETWORK BROADCAST...</p>
                     </div>
                   ) : (
@@ -144,7 +144,7 @@ export function LobbyView({
                             }`}
                           >
                             <div className="flex items-center justify-between mb-3">
-                              <span className="text-xs font-black text-white/90 font-mono tracking-tighter">NODE_{room.roomId.slice(-6)}</span>
+                              <span className="text-xs font-black text-white/90 font-mono tracking-tighter">ROOM_{room.roomId.slice(-6)}</span>
                               <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${
                                 isPlaying ? "bg-rose-500/20 text-rose-400" : "bg-cyan-500/20 text-cyan-400"
                               }`}>

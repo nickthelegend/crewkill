@@ -112,8 +112,9 @@ export function HomeInner({
       router.push(`/game/${roomId}/live`);
       return;
     }
-    joinRoom(roomId, true);
-  }, [joinRoom, rooms, router]);
+    // Navigate to the prediction lobby for not-yet-started games
+    router.push(`/game/${roomId}`);
+  }, [rooms, router]);
 
   // Watch for phase changes from WebSocket
   useEffect(() => {

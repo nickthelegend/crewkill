@@ -148,6 +148,19 @@ export class DatabaseService {
     }
   }
 
+  async createScheduledGame(roomId: string, scheduledAt: number, bettingEndsAt: number) {
+    if (!this.enabled) return;
+    try {
+      await this.convex.mutation("crewkill:createScheduledGame" as any, { 
+        roomId, 
+        scheduledAt, 
+        bettingEndsAt 
+      });
+    } catch (error) {
+      logger.error("Failed to create scheduled game via Convex:", error);
+    }
+  }
+
   async updateGamePlayers(roomId: string, players: Array<{
     address: string;
     name: string;

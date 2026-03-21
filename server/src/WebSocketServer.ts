@@ -891,14 +891,20 @@ export class WebSocketRelayServer {
 
     // If first player joins (and we're in lobby), start session if reached min players
     if (room.players.length >= MIN_PLAYERS_TO_START && room.phase === "lobby") {
+      const scheduledAt = Date.now() + LOBBY_WAITING_DURATION;
+      const bettingEndsAt = scheduledAt; // Betting ends when lobby locks
+
       logger.info(
         `Reached minimum players (${room.players.length}/${MIN_PLAYERS_TO_START}) for room ${roomId}, starting game and opening lobby for ${LOBBY_WAITING_DURATION / 1000}s`,
       );
 
+      // Persist scheduled game start to database (async)
+      databaseService.createScheduledGame(roomId, scheduledAt, bettingEndsAt);
+
       // Start the game immediately so player can interact
       this.startGameInternal(roomId);
 
-      // Start lobby waiting timer (2 minutes)
+      // Start lobby waiting timer (3 minutes)
       extended.lobbyTimer = setTimeout(() => {
         extended.lobbyLocked = true;
         logger.info(`Room ${roomId} lobby locked after waiting period`);
@@ -1023,7 +1029,7 @@ export class WebSocketRelayServer {
     }
   }
 
-  private startGameInternal(roomId: string): void {
+  private startGameInternal(roomId: string, isInitialBoarding = false): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
@@ -1034,7 +1040,8 @@ export class WebSocketRelayServer {
       return;
     }
 
-    room.phase = "playing";
+    room.phase = isInitialBoarding ? "lobby" : "playing";
+    const phaseValue = isInitialBoarding ? 1 : 2;
 
     // Assign impostors randomly
     const impostorCount = Math.min(
@@ -1059,7 +1066,7 @@ export class WebSocketRelayServer {
       votes: new Map(),
       deadBodies: [],
       currentRound: 1,
-      currentPhase: 2, // ActionCommit
+      currentPhase: phaseValue,
       phaseTimer: null,
       lobbyLocked: existingExtended?.lobbyLocked ?? false,
       lobbyTimer: existingExtended?.lobbyTimer ?? null,
@@ -1068,36 +1075,44 @@ export class WebSocketRelayServer {
 
     // Also register with GameStateManager
     this.gameStateManager.getOrCreateGame(roomId);
-    this.gameStateManager.updatePhase(roomId, 2, 1, Date.now() + 60000); // ActionCommit, round 1
+    this.gameStateManager.updatePhase(roomId, phaseValue, 1, Date.now() + 60000); 
     this.gameStateManager.assignImpostors(roomId, impostorAddresses);
 
-    // Assign tasks to players (locations 1-8, excluding cafeteria which is 0)
-    for (const player of room.players) {
-      if (!extended.impostors.has(player.address.toLowerCase())) {
-        const taskLocations = this.generateTaskLocations(10);
-        this.gameStateManager.assignTasks(
-          roomId,
-          player.address,
-          taskLocations,
-        );
-      }
+    // Assign tasks to players (if phase is 2)
+    if (phaseValue === 2) {
+        for (const player of room.players) {
+          if (!extended.impostors.has(player.address.toLowerCase())) {
+            const taskLocations = this.generateTaskLocations(10);
+            this.gameStateManager.assignTasks(
+              roomId,
+              player.address,
+              taskLocations,
+            );
+          }
+        }
     }
 
     logger.info(
-      `Game started in room ${roomId} with ${room.players.length} players, ${impostorCount} impostors: ${impostorAddresses.join(", ")}`,
+      `Game ${isInitialBoarding ? 'BOARDING' : 'ENGAGED'} in room ${roomId} with ${room.players.length} players`,
     );
 
     // Persist game start to database (background)
     const wagerAmount = wagerService.getWagerAmount();
-    databaseService.startGame(
-      roomId,
-      room.players.map((p) => ({
-        walletAddress: p.address,
-        isImpostor: extended.impostors.has(p.address.toLowerCase()),
-        colorId: p.colorId,
-        wagerAmount,
-      })),
-    );
+    
+    if (isInitialBoarding) {
+        const scheduledAt = Date.now() + LOBBY_WAITING_DURATION;
+        databaseService.createScheduledGame(roomId, scheduledAt, scheduledAt);
+    } else {
+        databaseService.startGame(
+          roomId,
+          room.players.map((p) => ({
+            walletAddress: p.address,
+            isImpostor: extended.impostors.has(p.address.toLowerCase()),
+            colorId: p.colorId,
+            wagerAmount,
+          })),
+        );
+    }
 
     // Create game on-chain (async, don't block game flow)
     // Skip on-chain creation if we have fewer than 4 players (contract minimum)
@@ -1123,36 +1138,36 @@ export class WebSocketRelayServer {
       );
     }
 
-    // Send role assignments and task locations to each player BEFORE phase change
-    // (AI agents need to know their role before the action phase triggers)
-    for (const [clientId, client] of this.clients) {
-      if (client.roomId !== roomId || !client.address) continue;
-      const isImpostor = extended.impostors.has(client.address.toLowerCase());
-      this.send(client, {
-        type: "server:role_assigned",
-        gameId: roomId,
-        role: isImpostor ? "impostor" : "crewmate",
-        impostors: isImpostor ? impostorAddresses : undefined,
-      });
-      // Send task locations to crewmates
-      if (!isImpostor) {
-        const taskLocs = this.gameStateManager.getTaskLocations(roomId, client.address);
-        if (taskLocs.length > 0) {
+    // Role and task assignments are only sent when phase is 2 (final)
+    if (phaseValue === 2) {
+        for (const [clientId, client] of this.clients) {
+          if (client.roomId !== roomId || !client.address) continue;
+          const isImpostor = extended.impostors.has(client.address.toLowerCase());
           this.send(client, {
-            type: "server:tasks_assigned",
+            type: "server:role_assigned",
             gameId: roomId,
-            taskLocations: taskLocs,
+            role: isImpostor ? "impostor" : "crewmate",
+            impostors: isImpostor ? impostorAddresses : undefined,
           });
+          if (!isImpostor) {
+            const taskLocs = this.gameStateManager.getTaskLocations(roomId, client.address);
+            if (taskLocs.length > 0) {
+              this.send(client, {
+                type: "server:tasks_assigned",
+                gameId: roomId,
+                taskLocations: taskLocs,
+              });
+            }
+          }
         }
-      }
     }
 
     // Broadcast game start (phase change)
     this.broadcastToRoom(roomId, {
       type: "server:phase_changed",
       gameId: roomId,
-      phase: 2, // ActionCommit
-      previousPhase: 0,
+      phase: phaseValue,
+      previousPhase: isInitialBoarding ? 0 : 1,
       round: 1,
       phaseEndTime: Date.now() + 60000,
       timestamp: Date.now(),

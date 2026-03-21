@@ -242,24 +242,42 @@ export function useGameServer(): UseGameServerReturn {
 
           case "server:game_state":
             // Full game state snapshot (sent when joining or game starts)
-            if (message.state && message.state.players) {
-              setCurrentRoom((prev) => {
-                if (!prev || prev.roomId !== message.gameId) return prev;
-                return {
-                  ...prev,
-                  phase: message.state.phase === 2 ? "playing" : prev.phase,
-                  players: message.state.players.map((p: any) => ({
-                    address: p.address,
-                    colorId: p.colorId,
-                    location: p.location,
-                    isAlive: p.isAlive,
-                    tasksCompleted: p.tasksCompleted || 0,
-                    totalTasks: p.totalTasks || 5,
-                    hasVoted: p.hasVoted || false,
-                  })),
-                };
-              });
-              addLog("start", "Game state updated", message.gameId);
+            if (message.state) {
+              const phaseMap: Record<number, "lobby" | "playing" | "ended"> = {
+                0: "lobby",
+                1: "lobby", // Roles assigned but still transition to playing
+                2: "playing",
+                3: "playing", // Discussion is part of active game
+                4: "playing", // Voting is part of active game
+                5: "ended"
+              };
+
+              const newPhase = phaseMap[message.state.phase] || "lobby";
+
+              if (message.state.players) {
+                setCurrentRoom((prev) => {
+                  if (!prev || prev.roomId !== message.gameId) return prev;
+                  return {
+                    ...prev,
+                    phase: newPhase,
+                    players: message.state.players.map((p: any) => ({
+                      address: p.address,
+                      colorId: p.colorId,
+                      location: p.location,
+                      isAlive: p.isAlive,
+                      tasksCompleted: p.tasksCompleted || 0,
+                      totalTasks: p.totalTasks || 5,
+                      hasVoted: p.hasVoted || false,
+                    })),
+                  };
+                });
+              }
+              
+              if (message.state.deadBodies) {
+                setDeadBodies(message.state.deadBodies);
+              }
+
+              addLog("start", "Game state synchronized", message.gameId);
             }
             break;
 

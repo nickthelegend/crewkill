@@ -1,11 +1,15 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
+import { api as convexApi } from "../../../../convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import { SpaceBackground } from "@/components/game/SpaceBackground";
 import { AmongUsSprite } from "@/components/game/AmongUsSprite";
+import { PredictionMarket } from "@/components/game/PredictionMarket";
 import { formatDistanceToNow } from "date-fns";
+import { useGameServer } from "@/hooks/useGameServer";
+import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 export default function RoomDetailsPage() {
@@ -13,139 +17,246 @@ export default function RoomDetailsPage() {
   const router = useRouter();
   const roomId = params.id as string;
 
-  const games = useQuery(api.crewkill.listGames, {}) || [];
-  const game = games.find((g) => g.roomId === roomId);
+  // Real-time WebSocket connection
+  const { 
+    isConnected, 
+    currentRoom, 
+    joinRoom, 
+    players: wsPlayers,
+    phase: wsPhase 
+  } = useGameServer();
 
-  if (!game) {
+  // Database persistent state
+  const games = useQuery(convexApi.crewkill.listGames, {}) || [];
+  const dbGame = games.find((g) => g.roomId === roomId);
+
+  // Auto-join room via WebSocket when entering this page
+  useEffect(() => {
+    if (isConnected && (!currentRoom || currentRoom.roomId !== roomId)) {
+      joinRoom(roomId, true);
+    }
+  }, [isConnected, roomId, currentRoom, joinRoom]);
+
+  if (!dbGame) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-white/20 font-black uppercase tracking-widest animate-pulse">Scanning Neural Network...</div>
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">Scanning Neural Network...</div>
       </div>
     );
   }
 
-  const isStarting = game.status === "CREATED";
-  const startAt = game.scheduledAt ? new Date(game.scheduledAt) : null;
-  const bettingEndsAt = game.bettingEndsAt ? new Date(game.bettingEndsAt) : null;
+  const startAt = dbGame.scheduledAt ? new Date(dbGame.scheduledAt) : null;
+  const bettingEndsAt = dbGame.bettingEndsAt ? new Date(dbGame.bettingEndsAt) : null;
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
+  const isLive = (currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && dbGame.status !== "COMPLETED";
 
   return (
     <SpaceBackground>
-      <div className="py-12 max-w-4xl mx-auto px-4">
-        <button 
-           onClick={() => router.back()}
-           className="mb-8 text-white/40 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"
-        >
-           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-           </svg>
-           Back to Command Center
-        </button>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-           {/* Main Info */}
-           <div className="lg:col-span-12">
-              <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-12 relative overflow-hidden">
-                 {/* Decorative elements */}
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-[100px] rounded-full -mr-32 -mt-32" />
-                 
-                 <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-                       <div>
-                          <div className="flex items-center gap-3 mb-4">
-                             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase ${
-                                game.status === "ACTIVE" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
-                             }`}>
-                                {game.status}
-                             </div>
-                             <div className="h-4 w-px bg-white/10" />
-                             <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">Room ID: {game.roomId}</span>
-                          </div>
-                          <h1 className="text-6xl md:text-7xl font-black italic tracking-tighter uppercase text-white leading-none">
-                             Arena <span className="text-red-500">{game.roomId.split("_").pop()?.toUpperCase()}</span>
-                          </h1>
-                       </div>
-                       
-                       <div className="flex items-center gap-4">
-                          {isBettingOpen ? (
-                             <Link 
-                                href={`/market?roomId=${game.roomId}`}
-                                className="px-10 py-5 bg-red-600 text-white hover:bg-red-500 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:scale-105 active:scale-95"
-                             >
-                                Predict Now
-                             </Link>
-                          ) : (
-                             <div className="px-10 py-5 bg-white/5 text-white/30 rounded-2xl text-sm font-black uppercase tracking-widest cursor-not-allowed grayscale">
-                                Betting Closed
-                             </div>
-                          )}
-                          {game.status === "ACTIVE" && (
-                             <Link 
-                                href={`/game/${game.roomId}/live`}
-                                className="px-10 py-5 bg-white text-black hover:bg-white/90 rounded-2xl text-sm font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-                             >
-                                Watch Live
-                             </Link>
-                          )}
-                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                       <DetailStat label="Deployment Time" value={startAt ? formatDistanceToNow(startAt, { addSuffix: true }) : "N/A"} />
-                       <DetailStat label="Betting Cutoff" value={bettingEndsAt ? formatDistanceToNow(bettingEndsAt, { addSuffix: true }) : "N/A"} />
-                       <DetailStat label="Pool Size" value={`${(parseFloat(game.totalPot || "0") / 1e9).toFixed(2)} OCT`} />
-                    </div>
-                 </div>
+      <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 relative z-10">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+            <motion.div 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+            >
+              <button 
+                onClick={() => router.push('/')}
+                className="mb-6 text-cyan-400 hover:text-cyan-300 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all group"
+              >
+                <svg className="w-3 h-3 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+                </svg>
+                Terminal Mainframe
+              </button>
+              
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase ${
+                  isLive ? "bg-red-500/20 text-red-500 border border-red-500/30" : "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                }`}>
+                  {isLive ? "● LIVE PROTOCOL" : dbGame.status === "COMPLETED" ? "MISSION_ENDED" : "RECRUITING AGENTS"}
+                </div>
+                <div className="h-4 w-px bg-white/10" />
+                <span className="text-white/30 font-mono text-[10px] uppercase tracking-widest">NODE_{dbGame.roomId.slice(-8)}</span>
               </div>
-           </div>
+              
+              <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-white leading-[0.9]">
+                Neural <span className="text-cyan-400">Arena</span><br/>
+                <span className="text-3xl md:text-5xl opacity-50 block mt-2">DEPLOYMENT_ALPHA_{dbGame._id.slice(-4).toUpperCase()}</span>
+              </h1>
+            </motion.div>
 
-           {/* Combatants */}
-           <div className="lg:col-span-8">
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8">
-                 <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                    Deployed Agents
-                 </h3>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                       <div key={i} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex items-center gap-4 group hover:bg-white/[0.06] transition-colors">
-                          <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center border border-white/10 group-hover:border-red-500/30 transition-colors">
-                             <AmongUsSprite colorId={i + (game.roomId.length % 10)} size={32} />
-                          </div>
-                          <div>
-                             <div className="text-xs font-black text-white uppercase group-hover:text-red-400">Alpha_Agent_{i + 1}</div>
-                             <div className="text-[9px] text-white/20 font-mono mt-1 uppercase">Ready for Deployment</div>
-                          </div>
-                       </div>
+            <motion.div 
+              className="flex flex-col items-end gap-4"
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+            >
+              {isLive && (
+                <Link 
+                  href={`/game/${roomId}/live`}
+                  className="group relative px-12 py-6 bg-red-600 hover:bg-red-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(220,38,38,0.4)] overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                  <span className="relative z-10 text-lg font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    Board Live Mission
+                  </span>
+                </Link>
+              )}
+              
+              <div className="text-right">
+                <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Current Pool</div>
+                <div className="text-4xl font-black text-white italic">{(parseFloat(dbGame.totalPot || "0") / 1e9).toFixed(2)} <span className="text-cyan-400">OCT</span></div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left: Market Info & Stats */}
+            <div className="lg:col-span-4 space-y-6 order-2 lg:order-1">
+              {/* Counter Section */}
+              <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-[50px] rounded-full -mr-16 -mt-16 group-hover:bg-cyan-500/10 transition-colors" />
+                
+                <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  Temporal Status
+                </h3>
+                
+                <div className="space-y-6">
+                  <DetailStat 
+                    label="Lobby Lock" 
+                    value={startAt ? formatDistanceToNow(startAt, { addSuffix: true }) : "IMMEDIATE"} 
+                    subvalue={startAt?.toLocaleTimeString()}
+                  />
+                  <DetailStat 
+                    label="Prediction Cutoff" 
+                    value={bettingEndsAt ? formatDistanceToNow(bettingEndsAt, { addSuffix: true }) : "CLOSED"} 
+                    subvalue={bettingEndsAt?.toLocaleTimeString()}
+                    highlight={isBettingOpen}
+                  />
+                </div>
+              </div>
+
+              {/* Participants Card */}
+              <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8">
+                <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                   <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                   Neural Participants ({currentRoom?.players.length || 0}/10)
+                </h3>
+                
+                <div className="space-y-3">
+                  <AnimatePresence mode="popLayout">
+                    {currentRoom?.players.map((p, idx) => (
+                      <motion.div 
+                        key={p.address}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="bg-white/[0.04] border border-white/5 rounded-xl p-3 flex items-center gap-4 group hover:bg-white/[0.08] transition-colors"
+                      >
+                         <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center border border-white/10 group-hover:border-cyan-500/30 transition-colors">
+                            <AmongUsSprite colorId={p.colorId} size={28} />
+                         </div>
+                         <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-black text-white uppercase truncate flex items-center gap-2">
+                               {p.address.slice(0, 10)}...
+                               {p.isAIAgent && <span className="text-[8px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">AI</span>}
+                            </div>
+                            <div className="text-[8px] text-white/20 font-mono mt-0.5 uppercase">SYNCING_NEURAL_LINK</div>
+                         </div>
+                         <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                      </motion.div>
                     ))}
-                 </div>
+                    {!currentRoom?.players.length && (
+                      <div className="text-center py-12 opacity-20 italic text-sm">Waiting for participants...</div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-           </div>
+            </div>
 
-           {/* Replay Info */}
-           <div className="lg:col-span-4 cursor-help">
-              <div className="bg-gradient-to-br from-red-600/10 to-transparent backdrop-blur-xl border border-red-500/20 rounded-[2.5rem] p-8 h-full">
-                 <h3 className="text-xs font-black text-red-400 uppercase tracking-[0.2em] mb-4">NFT Highlights</h3>
-                 <p className="text-[11px] text-white/50 leading-relaxed font-bold">
-                    This game will be immortalized as a Neural Highlights NFT on OneChain upon completion.
-                 </p>
-                 <div className="mt-8 relative aspect-video bg-black/60 rounded-2xl border border-white/5 flex flex-col items-center justify-center opacity-40">
-                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-white/20 animate-spin mb-4" />
-                    <span className="text-[9px] font-black uppercase tracking-widest">Generating Metadata...</span>
-                 </div>
+            {/* Right: The Prediction Market (Kalshi Style) */}
+            <div className="lg:col-span-8 order-1 lg:order-2">
+              <div className="bg-white/5 backdrop-blur-[100px] border border-white/10 rounded-[3rem] p-1 shadow-2xl overflow-hidden relative">
+                {/* Visual Header Decoration */}
+                <div className="h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
+                
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-black text-white italic tracking-tight uppercase">Prediction Market</h2>
+                      <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1 font-bold">Predict the Neural Outcome</p>
+                    </div>
+                    {isBettingOpen && (
+                      <div className="flex items-center gap-2 text-[10px] font-black text-cyan-400 bg-cyan-500/10 px-4 py-2 rounded-full border border-cyan-500/20">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                        MARKET_OPEN
+                      </div>
+                    )}
+                  </div>
+
+                  <PredictionMarket 
+                    gameId={dbGame._id}
+                    marketObjectId={dbGame.roomId} // Using RoomId as a mock Market ID for offline/dev
+                    gamePlayers={(currentRoom?.players || []).map(p => ({
+                      address: p.address,
+                      name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : "Human"
+                    }))}
+                    isResolved={dbGame.status === "COMPLETED"}
+                    actualImpostors={[]} // Hidden during lobby
+                    gamePhase={wsPhase}
+                  />
+                  
+                  {/* Market Sentiment Disclaimer */}
+                  <div className="mt-8 p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+                    <p className="text-[10px] text-white/30 leading-relaxed font-bold uppercase tracking-wider text-center">
+                      Market will settle automatically upon mission completion. 
+                      Impostor identities are cryptographically sealed until terminal resolution.
+                    </p>
+                  </div>
+                </div>
               </div>
-           </div>
+
+              {/* Market Chart Placeholder / Visual */}
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white/[0.03] border border-cyan-500/20 rounded-[2rem] p-8 relative overflow-hidden">
+                   <div className="text-xs font-black text-cyan-400 uppercase tracking-widest mb-4">Sentiment Index</div>
+                   <div className="h-32 flex items-end gap-2">
+                      {[...Array(12)].map((_, i) => (
+                        <motion.div 
+                          key={i}
+                          className="flex-1 bg-cyan-500/20 border-t-2 border-cyan-400"
+                          initial={{ height: 0 }}
+                          animate={{ height: `${20 + Math.random() * 80}%` }}
+                          transition={{ delay: i * 0.1, duration: 1 }}
+                        />
+                      ))}
+                   </div>
+                </div>
+                <div className="bg-white/[0.03] border border-white/10 rounded-[2rem] p-8 flex flex-col justify-center">
+                   <div className="text-xs font-black text-white/30 uppercase tracking-widest mb-2">Historical Accuracy</div>
+                   <div className="text-4xl font-black text-white">98.4%</div>
+                   <p className="text-[10px] text-white/20 mt-2 font-bold leading-tight">PREDICTIVE STABILITY ENHANCED VIA ONECHAIN NEURAL LINKS</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </SpaceBackground>
   );
 }
 
-function DetailStat({ label, value }: { label: string; value: string }) {
+function DetailStat({ label, value, subvalue, highlight = false }: { label: string; value: string; subvalue?: string, highlight?: boolean }) {
   return (
-    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
+    <div className="relative">
        <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">{label}</div>
-       <div className="text-xl font-black text-white truncate">{value}</div>
+       <div className={`text-xl font-black italic truncate ${highlight ? 'text-cyan-400' : 'text-white'}`}>{value}</div>
+       {subvalue && <div className="text-[9px] font-mono text-white/20 mt-1">{subvalue}</div>}
     </div>
   );
 }
