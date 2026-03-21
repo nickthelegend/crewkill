@@ -180,7 +180,7 @@ export const startGame = mutation({
     const game = await ctx.db
       .query("games")
       .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
-      .unique();
+      .first();
     if (!game) return null;
 
     await ctx.db.patch(game._id, {
@@ -199,7 +199,7 @@ export const getGameByRoomId = query({
     return await ctx.db
       .query("games")
       .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
-      .unique();
+      .first();
   },
 });
 
@@ -226,7 +226,7 @@ export const updateGamePlayers = mutation({
     const game = await ctx.db
       .query("games")
       .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
-      .unique();
+      .first();
     if (!game) return null;
 
     await ctx.db.patch(game._id, {
@@ -242,7 +242,7 @@ export const getBettingStatus = query({
     const game = await ctx.db
       .query("games")
       .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
-      .unique();
+      .first();
 
     if (!game) return { isOpen: false, error: "Game not found" };
 

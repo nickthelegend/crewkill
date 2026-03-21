@@ -1,6 +1,6 @@
 import { ConvexHttpClient } from "convex/browser";
 import { createLogger } from "../logger.js";
-import { v4 as uuidv4 } from 'uuid';
+import { WebSocketRelayServer } from "../WebSocketServer.js";
 
 const logger = createLogger("scheduler");
 
@@ -10,12 +10,14 @@ const logger = createLogger("scheduler");
  */
 export class SchedulerService {
   private convex: ConvexHttpClient;
+  private wsServer?: WebSocketRelayServer;
   private intervalMs: number = 10 * 60 * 1000; // 10 minutes
   private intervalId: NodeJS.Timeout | null = null;
   private bettingWindowMs: number = 3 * 60 * 1000; // 3 minutes betting window
 
-  constructor(convexUrl: string) {
+  constructor(convexUrl: string, wsServer?: WebSocketRelayServer) {
     this.convex = new ConvexHttpClient(convexUrl);
+    this.wsServer = wsServer;
   }
 
   async start() {
@@ -37,17 +39,9 @@ export class SchedulerService {
 
   private async checkAndSchedule() {
     try {
-      // 1. Calculate the next slot (top of the hour or bottom of the hour)
       const now = Date.now();
-      const thirtyMins = 30 * 60 * 1000;
-      const nextSlot = Math.ceil(now / thirtyMins) * thirtyMins;
-      
-      // If the next slot is too close (e.g. within 5 mins), schedule the one after that
-      // to ensure there's enough time for betting.
-      let targetSlot = nextSlot;
-      if (targetSlot - now < 5 * 60 * 1000) {
-        targetSlot += thirtyMins;
-      }
+      // For immediate verification during development
+      const targetSlot = Math.ceil(now / (5 * 60 * 1000)) * (5 * 60 * 1000); // 5 min slots
 
       // Check if a game is already scheduled for this slot or later
       // For now, we'll just check if there are any games in LOBBY phase
@@ -55,12 +49,14 @@ export class SchedulerService {
       // But we can simplify: if no game exists with scheduledAt >= targetSlot, we create one.
       
       // To keep it simple for this wave, we'll just ensure at least ONE upcoming game exists.
-      const games: any = await this.convex.query("crewkill:getGameByRoomId" as any, { roomId: `scheduled_${targetSlot}` });
+      const roomId = `scheduled_${targetSlot}`;
+      const games: any = await this.convex.query("crewkill:getGameByRoomId" as any, { roomId });
       
+      const missingInMemory = this.wsServer && !this.wsServer.getRooms().find(r => r.roomId === roomId);
+
       if (!games) {
         logger.info(`Scheduling new game for slot: ${new Date(targetSlot).toISOString()}`);
         
-        const roomId = `scheduled_${targetSlot}`;
         const bettingEndsAt = now + (3 * 60 * 1000); // Betting open for exactly 3 mins
 
         await this.convex.mutation("crewkill:createScheduledGame" as any, {
@@ -69,7 +65,14 @@ export class SchedulerService {
           bettingEndsAt,
         });
 
+        if (this.wsServer) {
+          this.wsServer.createRoom(undefined, 10, 2, "100000000", 0, roomId);
+        }
+
         logger.info(`Successfully created scheduled room: ${roomId}`);
+      } else if (missingInMemory && this.wsServer) {
+        logger.info(`Room ${roomId} exists in Convex but missing from memory. Syncing...`);
+        this.wsServer.createRoom(undefined, 10, 2, "100000000", 0, roomId);
       }
     } catch (err) {
       logger.error("Error in scheduler check:", err);

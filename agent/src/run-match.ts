@@ -126,10 +126,28 @@ async function runMatch() {
         await agents[0].createWebSocketRoom(gameObjectId);
         console.log(`Game created on-chain: ${gameObjectId}\n`);
     } else {
-        // Use a persistent random ID for this session match
-        gameObjectId = `OFFLINE-${Math.random().toString(36).slice(2, 8)}`;
-        console.log(`\nStarting local/off-chain match with ID: ${gameObjectId}\n`);
-        await agents[0].createWebSocketRoom(gameObjectId);
+        // Find a scheduled room if one exists
+        try {
+            const response = await fetch(`${process.env.WS_SERVER_URL?.replace('ws', 'http') || 'http://localhost:8080'}/api/rooms`);
+            const data = await response.json() as any;
+            console.log("DEBUG: Rooms from API:", data.rooms);
+            const rooms = data.rooms || [];
+            const scheduledRoom = (rooms as any[]).find((r: any) => r.roomId.startsWith('scheduled_'));
+            
+            if (scheduledRoom) {
+                gameObjectId = scheduledRoom.roomId;
+                console.log(`\nFound scheduled room! Joining: ${gameObjectId}\n`);
+            } else {
+                // Use a persistent random ID for this session match
+                gameObjectId = `OFFLINE-${Math.random().toString(36).slice(2, 8)}`;
+                console.log(`\nStarting local/off-chain match with ID: ${gameObjectId}\n`);
+                await agents[0].createWebSocketRoom(gameObjectId);
+            }
+        } catch (e) {
+            gameObjectId = `OFFLINE-${Math.random().toString(36).slice(2, 8)}`;
+            console.log(`\nFallback: Starting local/off-chain match with ID: ${gameObjectId}\n`);
+            await agents[0].createWebSocketRoom(gameObjectId);
+        }
     }
 
     // All agents join

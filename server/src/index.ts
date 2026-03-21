@@ -30,16 +30,17 @@ async function main() {
     keeper.start().catch(err => logger.error("Keeper start failed:", err));
   }
 
+  // Create WebSocket server
+  const wsServer = new WebSocketRelayServer({ port: WS_PORT, host: HOST });
+
   // Initialize Scheduler Service if enabled
   if (SCHEDULER_ENABLED) {
     const scheduler = new SchedulerService(
-      process.env.NEXT_PUBLIC_CONVEX_URL || "https://beaming-crocodile-136.convex.cloud"
+      process.env.NEXT_PUBLIC_CONVEX_URL || "https://beaming-crocodile-136.convex.cloud",
+      wsServer
     );
     scheduler.start().catch(err => logger.error("Scheduler start failed:", err));
   }
-
-  // Create WebSocket server
-  const wsServer = new WebSocketRelayServer({ port: WS_PORT, host: HOST });
 
   // Create HTTP API server (Express app)
   const apiServer = createApiServer(wsServer);
