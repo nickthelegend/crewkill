@@ -63,22 +63,27 @@ export abstract class BaseStrategy implements IStrategy {
   // ============ HELPER METHODS ============
 
   protected getAdjacentLocations(location: Location): Location[] {
-    const adjacencyMap: Record<Location, Location[]> = {
-      [Location.Cafeteria]: [Location.Admin, Location.MedBay, Location.UpperEngine],
+    const adjacencyMap: Record<number, Location[]> = {
+      [Location.Cafeteria]: [Location.Admin, Location.MedBay, Location.UpperEngine, Location.Weapons],
       [Location.Admin]: [Location.Cafeteria, Location.Storage],
-      [Location.Storage]: [Location.Admin, Location.Electrical, Location.LowerEngine],
+      [Location.Storage]: [Location.Admin, Location.Electrical, Location.LowerEngine, Location.Shields, Location.Communications],
       [Location.Electrical]: [Location.Storage, Location.LowerEngine],
-      [Location.MedBay]: [Location.Cafeteria, Location.UpperEngine, Location.Security],
-      [Location.UpperEngine]: [Location.Cafeteria, Location.MedBay, Location.Reactor],
-      [Location.LowerEngine]: [Location.Storage, Location.Electrical, Location.Security],
-      [Location.Security]: [Location.MedBay, Location.LowerEngine, Location.Reactor],
-      [Location.Reactor]: [Location.UpperEngine, Location.Security],
+      [Location.MedBay]: [Location.Cafeteria, Location.UpperEngine],
+      [Location.UpperEngine]: [Location.MedBay, Location.Reactor],
+      [Location.LowerEngine]: [Location.Reactor, Location.Electrical, Location.Security],
+      [Location.Security]: [Location.Reactor, Location.LowerEngine],
+      [Location.Reactor]: [Location.UpperEngine, Location.Security, Location.LowerEngine],
+      [Location.Weapons]: [Location.Cafeteria, Location.Navigation, Location.Shields],
+      [Location.Navigation]: [Location.Weapons, Location.Shields, Location.O2],
+      [Location.Shields]: [Location.Storage, Location.Navigation, Location.Weapons],
+      [Location.O2]: [Location.Navigation],
+      [Location.Communications]: [Location.Storage],
     };
     return adjacencyMap[location] || [];
   }
 
   protected getVentDestination(location: Location): Location | null {
-    const ventMap: Record<Location, Location | null> = {
+    const ventMap: Partial<Record<Location, Location | null>> = {
       [Location.Cafeteria]: Location.Admin,
       [Location.Admin]: Location.Cafeteria,
       [Location.Storage]: null,
@@ -88,6 +93,11 @@ export abstract class BaseStrategy implements IStrategy {
       [Location.LowerEngine]: null,
       [Location.Security]: Location.Reactor,
       [Location.Reactor]: Location.Security,
+      [Location.Weapons]: Location.Navigation,
+      [Location.Navigation]: Location.Weapons,
+      [Location.Shields]: null,
+      [Location.O2]: null,
+      [Location.Communications]: null,
     };
     return ventMap[location] ?? null;
   }
@@ -121,6 +131,11 @@ export abstract class BaseStrategy implements IStrategy {
       Location.UpperEngine,
       Location.LowerEngine,
       Location.Reactor,
+      Location.Weapons,
+      Location.Navigation,
+      Location.Shields,
+      Location.O2,
+      Location.Communications,
     ];
 
     // Simple pathfinding - return adjacent task room or random task room

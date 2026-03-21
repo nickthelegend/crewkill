@@ -13,6 +13,8 @@ function MarketContent() {
   const roomId = searchParams.get("roomId");
 
   const games = useQuery(api.crewkill.listGames, {});
+  const targetRoomId = roomId || (games || []).find(g => g.status === "CREATED")?.roomId;
+  const game = useQuery(api.crewkill.getGameByRoomId, targetRoomId ? { roomId: targetRoomId } : "skip");
   
   if (games === undefined) {
     return (
@@ -21,9 +23,6 @@ function MarketContent() {
        </div>
     );
   }
-
-  const targetRoomId = roomId || games.find(g => g.status === "CREATED")?.roomId;
-  const game = useQuery(api.crewkill.getGameByRoomId, targetRoomId ? { roomId: targetRoomId } : "skip");
 
   if (!targetRoomId) {
     return (

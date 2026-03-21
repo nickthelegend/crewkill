@@ -16,6 +16,11 @@ export enum Location {
   LowerEngine = 6,
   Security = 7,
   Reactor = 8,
+  Weapons = 9,
+  Navigation = 10,
+  Shields = 11,
+  O2 = 12,
+  Communications = 13,
 }
 
 export const LocationNames: Record<Location, string> = {
@@ -28,6 +33,11 @@ export const LocationNames: Record<Location, string> = {
   [Location.LowerEngine]: "Lower Engine",
   [Location.Security]: "Security",
   [Location.Reactor]: "Reactor",
+  [Location.Weapons]: "Weapons",
+  [Location.Navigation]: "Navigation",
+  [Location.Shields]: "Shields",
+  [Location.O2]: "O2",
+  [Location.Communications]: "Communications",
 };
 
 export enum ActionType {

@@ -807,6 +807,7 @@ interface PlayerPosition {
   currentWaypointIndex: number;
   isMoving: boolean;
   facingLeft: boolean;
+  lastLocation: Location;
 }
 
 export function ScrollableMap({
@@ -820,7 +821,6 @@ export function ScrollableMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [playerPositions, setPlayerPositions] = useState<Record<string, PlayerPosition>>({});
-  const [previousLocations, setPreviousLocations] = useState<Record<string, Location>>({});
   const [zoom, setZoom] = useState(0.4); 
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
@@ -830,69 +830,78 @@ export function ScrollableMap({
       const next = { ...prev };
       let changed = false;
 
-      players.forEach((player, idx) => {
-        // Only if player is alive and NOT already tracked
-        if (player.isAlive && !next[player.address]) {
-          const room = ROOMS[player.location];
-          const offsetX = ((idx % 3) - 1) * 60;
-          const offsetY = (Math.floor(idx / 3)) * 50;
+      // Track consistency of addresses in current room
+      const currentAddresses = new Set<string>(players.map(p => p.address as string));
 
-          next[player.address] = {
-            x: room.center.x + offsetX,
-            y: room.center.y + offsetY,
+      // 1. Cleanup: Remove players only if they are DEAD
+      // (Persist known alive players even if transiently missing from the list)
+      // to avoid flickering during state sync / split-second drops.
+
+      // 2. Integration: Add new players and detect movement
+      players.forEach((player, idx) => {
+        const addr = player.address as string;
+        
+        // If player is dead, they shouldn't be in this layer (handled by deadBodies)
+        if (!player.isAlive) {
+          if (next[addr]) {
+            delete next[addr];
+            changed = true;
+          }
+          return;
+        }
+
+        const room = ROOMS[player.location];
+        if (!room) return;
+
+        // Offset based on player index to prevent perfect overlapping in clump
+        const offsetX = ((idx % 3) - 1) * 60;
+        const offsetY = (Math.floor(idx / 3)) * 50;
+        const targetX = room.center.x + offsetX;
+        const targetY = room.center.y + offsetY;
+
+        // NEW PLAYER JOINED
+        if (!next[addr]) {
+          next[addr] = {
+            x: targetX,
+            y: targetY,
             waypoints: [],
             currentWaypointIndex: 0,
             isMoving: false,
             facingLeft: false,
+            lastLocation: player.location
           };
           changed = true;
-        }
-      });
+        } 
+        // EXISTING PLAYER CHANGED LOCATION
+        else if (next[addr].lastLocation !== player.location) {
+          const prevLoc = next[addr].lastLocation;
+          const currLoc = player.location;
+          
+          // Generate formal room-to-room path waypoints
+          const roomPath = findPath(prevLoc, currLoc);
+          
+          // CRITICAL: We want to walk FROM where we are NOW to the target
+          // Instead of snapping back to the center of the previous room.
+          // The formal path might start at the center of prevLoc, but we are moving.
+          // So we use the roomPath waypoints but keep our current x, y as the starting point.
+          
+          const finalPath = [...roomPath];
+          // Always end exactly at the offset position in the target room
+          finalPath.push({ x: targetX, y: targetY });
 
-      // Cleanup dead players from positions (they move to deadBodies layer)
-      players.forEach(player => {
-        if (!player.isAlive && next[player.address]) {
-          delete next[player.address];
+          next[addr] = {
+            ...next[addr],
+            waypoints: finalPath,
+            currentWaypointIndex: 0,
+            isMoving: true,
+            lastLocation: currLoc
+          };
           changed = true;
         }
       });
 
       return changed ? next : prev;
     });
-
-    // Handle room changes for movement
-    players.forEach((player, idx) => {
-      if (!player.isAlive) return;
-
-      const prevLoc = previousLocations[player.address];
-      const currLoc = player.location;
-
-      if (prevLoc !== undefined && prevLoc !== currLoc) {
-        const path = findPath(prevLoc, currLoc);
-        const room = ROOMS[currLoc];
-        const offsetX = ((idx % 3) - 1) * 60;
-        const offsetY = (Math.floor(idx / 3)) * 50;
-
-        path.push({ x: room.center.x + offsetX, y: room.center.y + offsetY });
-
-        setPlayerPositions(prev => {
-          if (!prev[player.address]) return prev;
-          return {
-            ...prev,
-            [player.address]: {
-              ...prev[player.address],
-              waypoints: path,
-              currentWaypointIndex: 0,
-              isMoving: true,
-            },
-          };
-        });
-      }
-    });
-
-    const newLocs: Record<string, Location> = {};
-    players.forEach(p => { if(p.isAlive) newLocs[p.address] = p.location; });
-    setPreviousLocations(newLocs);
   }, [players]);
 
   // Animation loop
