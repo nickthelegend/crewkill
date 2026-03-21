@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAccount } from "wagmi";
-import { usePrivy } from "@privy-io/react-auth";
+import { useCurrentAccount } from "@onelabs/dapp-kit";
 import {
   createOperatorKeyEntry,
   saveOperatorKey,
   type OperatorKey,
 } from "@/lib/operatorKeys";
-import { usePrivyEnabled } from "@/components/layout/Providers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -24,12 +22,9 @@ export function CreateAgentModal({
   onClose,
   onAgentCreated,
 }: CreateAgentModalProps) {
-  const privyEnabled = usePrivyEnabled();
-  const { user } = usePrivy();
-  const { address: wagmiAddress } = useAccount();
+  const currentAccount = useCurrentAccount();
+  const address = currentAccount?.address;
 
-  // Get address from Privy or wagmi depending on which is enabled
-  const address = privyEnabled ? user?.wallet?.address as `0x${string}` | undefined : wagmiAddress;
   const [createdAgent, setCreatedAgent] = useState<OperatorKey | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

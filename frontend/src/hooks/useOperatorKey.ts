@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { usePrivy } from "@privy-io/react-auth";
-import { useAccount } from "wagmi";
-import { usePrivyEnabled } from "@/components/layout/Providers";
+import { useCurrentAccount } from "@onelabs/dapp-kit";
 import { generateOperatorKey } from "@/lib/operatorKeys";
 import { api } from "@/lib/api";
 
@@ -15,18 +13,14 @@ export interface OperatorKeyData {
 }
 
 export function useOperatorKey() {
-  const privyEnabled = usePrivyEnabled();
-  const { authenticated, user, getAccessToken } = usePrivy();
-  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const currentAccount = useCurrentAccount();
+  const walletAddress = currentAccount?.address;
+  const isAuthOrConnected = !!currentAccount;
 
   const [operatorKey, setOperatorKey] = useState<OperatorKeyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
-
-  // Effective wallet address and connection status
-  const walletAddress = privyEnabled ? user?.wallet?.address : wagmiAddress;
-  const isAuthOrConnected = privyEnabled ? authenticated : wagmiConnected;
 
   // Load locally saved key immediately if possible (prevent flash)
   useEffect(() => {
@@ -141,27 +135,6 @@ export function useOperatorKey() {
           }
         }
 
-        if (privyEnabled) {
-          const token = await getAccessToken();
-          if (token) {
-            const result = await api.getActiveOperatorKey(token);
-            if (result.success && result.operatorKey) {
-              const keyData = {
-                operatorKey: result.operatorKey,
-                walletAddress: walletAddress.toLowerCase(),
-                createdAt: result.createdAt || Date.now(),
-              };
-              localStorage.setItem(
-                `${STORAGE_KEY}-${walletAddress.toLowerCase()}`,
-                JSON.stringify(keyData),
-              );
-              setOperatorKey(keyData);
-              setLoading(false);
-              return;
-            }
-          }
-        }
-
         await generateAndRegisterKey();
       } catch (e) {
         console.error(e);
@@ -174,8 +147,6 @@ export function useOperatorKey() {
   }, [
     walletAddress,
     initialized,
-    privyEnabled,
-    getAccessToken,
     validateKeyWithServer,
     generateAndRegisterKey,
   ]);

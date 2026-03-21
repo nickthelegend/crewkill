@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import { usePrivyEnabled } from "@/components/layout/Providers";
+import { useCurrentAccount } from "@onelabs/dapp-kit";
 import {
   MainMenu,
   VotingScreen,
@@ -36,6 +36,7 @@ export function HomeInner({
   userAddress,
 }: HomeInnerProps) {
   const [state, dispatch] = useHomeReducer();
+  const currentAccount = useCurrentAccount();
 
   // HTTP API for menu/lobby data (rooms, stats, leaderboard)
   const {
@@ -45,18 +46,13 @@ export function HomeInner({
     error: httpError,
   } = useServerData(5000);
 
-  // Authentication state
-  const clientPrivyEnabled = usePrivyEnabled();
-  const isAuthenticated = clientPrivyEnabled ? ready && authenticated : true;
+  // Authentication state — with dapp-kit, connected = wallet available
+  const isAuthenticated = !!currentAccount || authenticated;
 
-  // Sync with server privy status
+  // Sync with server privy status (simplified — always bypass)
   useEffect(() => {
-    api.getServerInfo().then(info => {
-      dispatch({ type: "SET_SERVER_PRIVY_ENABLED", enabled: info.privy.enabled });
-    }).catch(() => {
-      dispatch({ type: "SET_SERVER_PRIVY_ENABLED", enabled: clientPrivyEnabled });
-    });
-  }, [clientPrivyEnabled, dispatch]);
+    dispatch({ type: "SET_SERVER_PRIVY_ENABLED", enabled: false });
+  }, [dispatch]);
 
   // WebSocket for real-time gameplay
   const {
@@ -174,31 +170,8 @@ export function HomeInner({
   }, [currentRoom, leaveRoom, dispatch]);
 
   const handleCreateRoom = useCallback(async (max: number, imp: number, wager: string, aiAgentCount?: number) => {
-    if (clientPrivyEnabled && (!ready || !authenticated)) {
-      login();
-      return;
-    }
-
     try {
-      const shouldGetToken = clientPrivyEnabled && state.serverPrivyEnabled;
-      let token: string | null = "bypass";
-
-      if (shouldGetToken) {
-        try {
-          token = await getAccessToken();
-          if (!token) {
-            token = "bypass";
-          }
-        } catch (tErr) {
-          console.error("Error getting Privy token:", tErr);
-          token = "bypass";
-        }
-      }
-
-      if (!token) {
-        console.error("No valid token (real or bypass) found.");
-        return;
-      }
+      const token = "bypass";
 
       const result = await api.createRoom(token, {
         maxPlayers: max,
@@ -215,7 +188,7 @@ export function HomeInner({
     } catch (err) {
       console.error("Error in onCreate workflow:", err);
     }
-  }, [clientPrivyEnabled, ready, authenticated, login, state.serverPrivyEnabled, getAccessToken, dispatch]);
+  }, [dispatch]);
 
   return (
     <>

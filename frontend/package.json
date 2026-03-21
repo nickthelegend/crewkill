@@ -12,17 +12,17 @@
     "test:workers:verbose": "npx tsx src/test-workers/run-tests.ts --verbose"
   },
   "dependencies": {
+    "@mysten/sui": "^2.9.1",
+    "@onelabs/dapp-kit": "^0.15.6",
     "@privy-io/react-auth": "^3.13.1",
-    "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-query": "^5.91.3",
     "framer-motion": "^12.33.0",
     "howler": "^2.2.4",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "use-sound": "^5.0.0",
-    "viem": "^2.45.1",
-    "wagmi": "^3.4.2"
+    "use-sound": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

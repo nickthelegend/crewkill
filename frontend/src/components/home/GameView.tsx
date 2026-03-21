@@ -7,7 +7,7 @@ import {
   TaskBar,
   GameLogPanel,
 } from "@/components/game";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { ConnectWallet } from "@/components/wallet/ConnectWallet";
 import { OperatorKeyPanel } from "@/components/operator/OperatorKeyPanel";
 import {
   Player,
@@ -72,7 +72,7 @@ export function GameView({
           {/* Left side - minimal wallet indicator */}
           <div className="pointer-events-auto flex items-center gap-2">
             <div className="scale-90 origin-left">
-              <ConnectButton />
+              <ConnectWallet />
             </div>
           </div>
 

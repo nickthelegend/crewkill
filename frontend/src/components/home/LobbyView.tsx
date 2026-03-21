@@ -8,7 +8,7 @@ import {
   AgentCard,
   PredictWinner,
 } from "@/components/game";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { ConnectWallet } from "@/components/wallet/ConnectWallet";
 import { OperatorKeyPanel } from "@/components/operator/OperatorKeyPanel";
 import { Player, GameLog, PlayerColors } from "@/types/game";
 import type { RoomState } from "@/hooks/useGameServer";
@@ -108,7 +108,7 @@ export function LobbyView({
 
           {/* Right — Actions */}
           <div className="flex items-center gap-2">
-            <ConnectButton />
+            <ConnectWallet />
           </div>
         </motion.nav>
 

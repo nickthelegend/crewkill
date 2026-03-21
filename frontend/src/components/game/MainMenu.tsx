@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { usePrivy } from "@privy-io/react-auth";
-import { useAccount } from "wagmi";
+import { useCurrentAccount } from "@onelabs/dapp-kit";
 import { SpaceBackground } from "./SpaceBackground";
 import { AmongUsSprite } from "./AmongUsSprite";
 import { WalkingCharacters } from "./WalkingCharacters";
-import { ConnectButton } from "../wallet/ConnectButton";
+import { ConnectWallet } from "../wallet/ConnectWallet";
 import { OperatorKeyPanel } from "../operator/OperatorKeyPanel";
-import { usePrivyEnabled } from "@/components/layout/Providers";
 import type { RoomInfo, ServerStats, AgentStats } from "@/lib/api";
 
 const ONBOARDING_SKILL_URL = process.env.NEXT_PUBLIC_SKILL_URL || "https://amongus-onchain.vercel.app/onboard.md";
@@ -26,17 +24,9 @@ interface MainMenuProps {
 
 export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = [], stats, leaderboard = [] }: MainMenuProps) {
   const [copied, setCopied] = useState(false);
-  const privyEnabled = usePrivyEnabled();
+  const currentAccount = useCurrentAccount();
 
-  const { isConnected: wagmiConnected } = useAccount();
-  const privyResult = usePrivy();
-  const privyReady = privyEnabled ? privyResult.ready : false;
-  const authenticated = privyEnabled ? privyResult.authenticated : false;
-  const user = privyEnabled ? privyResult.user : null;
-
-  const isWalletConnected = privyEnabled
-    ? privyReady && authenticated && !!user?.wallet?.address
-    : wagmiConnected;
+  const isWalletConnected = !!currentAccount;
 
   const activeRooms = rooms.filter(r => r.phase === "playing");
   const totalPlayersInGame = rooms.reduce((sum, r) => sum + r.players.length, 0);
@@ -100,7 +90,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                 Dashboard
               </button>
             )}
-            <ConnectButton />
+            <ConnectWallet />
           </div>
         </motion.nav>
 
@@ -319,7 +309,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
 
         {/* Footer */}
         <div className="text-center py-2 text-white/30 text-xs font-medium tracking-wider">
-          Built on Base
+          Built on OneChain
         </div>
       </div>
     </SpaceBackground>

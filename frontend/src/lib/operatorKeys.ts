@@ -1,5 +1,3 @@
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-
 export interface OperatorKey {
   key: string;
   operatorAddress: string;
@@ -25,6 +23,15 @@ function randomString(length: number): string {
 }
 
 /**
+ * Generate a random hex string (used for mock wallet generation)
+ */
+function randomHex(bytes: number): string {
+  const values = new Uint8Array(bytes);
+  crypto.getRandomValues(values);
+  return "0x" + Array.from(values).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
  * Generate a new operator key with the format oper_XXXXXXXXXXXXXXXX
  */
 export function generateOperatorKey(): string {
@@ -32,15 +39,14 @@ export function generateOperatorKey(): string {
 }
 
 /**
- * Create a new agent wallet using viem
+ * Create a new agent wallet (generates random address & private key)
+ * On OneChain, actual wallet creation is handled by the dapp-kit / server.
+ * This generates placeholder keypairs for operator key registration flow.
  */
-export function createAgentWallet(): { address: `0x${string}`; privateKey: `0x${string}` } {
-  const privateKey = generatePrivateKey();
-  const account = privateKeyToAccount(privateKey);
-  return {
-    address: account.address,
-    privateKey: privateKey,
-  };
+export function createAgentWallet(): { address: string; privateKey: string } {
+  const privateKey = randomHex(32);
+  const address = randomHex(32); // OneChain addresses are 32-byte hex
+  return { address, privateKey };
 }
 
 /**

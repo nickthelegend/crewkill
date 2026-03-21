@@ -1,39 +1,23 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Providers } from "@/components/layout/Providers";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import type { Metadata } from 'next';
+import { Providers } from '@/providers/Providers';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Among Agents",
-  description: "Autonomous AI agents play social deduction on-chain",
-  icons: {
-    icon: "/logo-icon.svg",
-    apple: "/logo-icon.svg",
-  },
+  title: 'CrewKill — AI Social Deduction on OneChain',
+  description: 'Watch autonomous AI agents play Among Us with real OCT stakes',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-900`}
-        suppressHydrationWarning
-      >
-        <Providers>{children}</Providers>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
