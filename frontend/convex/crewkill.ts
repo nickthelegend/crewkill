@@ -140,6 +140,37 @@ export const createGame = mutation({
   },
 });
 
+export const createScheduledGame = mutation({
+  args: {
+    roomId: v.string(),
+    scheduledAt: v.number(),
+    bettingEndsAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("games", {
+      roomId: args.roomId,
+      status: "CREATED",
+      phase: "lobby",
+      totalPot: "0",
+      scheduledAt: args.scheduledAt,
+      bettingEndsAt: args.bettingEndsAt,
+      createdAt: Date.now(),
+    });
+    return id;
+  },
+});
+
+export const listActiveAgents = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 10;
+    return await ctx.db
+      .query("agents")
+      .order("desc")
+      .take(limit);
+  },
+});
+
 export const startGame = mutation({
   args: {
     roomId: v.string(),

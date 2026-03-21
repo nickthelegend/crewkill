@@ -5,6 +5,7 @@ import { logger } from "./logger.js";
 import { databaseService } from "./DatabaseService.js";
 
 import { KeeperService } from "./services/KeeperService.js";
+import { SchedulerService } from "./services/SchedulerService.js";
 
 // Render (and similar platforms) set PORT env var — single port mode
 const SINGLE_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
@@ -13,6 +14,7 @@ const API_PORT = parseInt(process.env.API_PORT || "8080", 10);
 const HOST = process.env.WS_HOST || "0.0.0.0";
 
 const KEEPER_ENABLED = process.env.KEEPER_ENABLED === "true";
+const SCHEDULER_ENABLED = process.env.SCHEDULER_ENABLED === "true";
 
 async function main() {
   // Connect to database
@@ -22,10 +24,18 @@ async function main() {
   if (KEEPER_ENABLED) {
     const keeper = new KeeperService(
       process.env.ONECHAIN_RPC || "https://rpc-testnet.onelabs.cc:443",
-      process.env.OPERATOR_PRIV_KEY || "", // Use deployer or operator key
+      process.env.OPERATOR_PRIV_KEY || "",
       process.env.NEXT_PUBLIC_CONVEX_URL || "https://beaming-crocodile-136.convex.cloud"
     );
     keeper.start().catch(err => logger.error("Keeper start failed:", err));
+  }
+
+  // Initialize Scheduler Service if enabled
+  if (SCHEDULER_ENABLED) {
+    const scheduler = new SchedulerService(
+      process.env.NEXT_PUBLIC_CONVEX_URL || "https://beaming-crocodile-136.convex.cloud"
+    );
+    scheduler.start().catch(err => logger.error("Scheduler start failed:", err));
   }
 
   // Create WebSocket server

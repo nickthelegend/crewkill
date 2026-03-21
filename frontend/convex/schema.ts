@@ -74,6 +74,8 @@ export default defineSchema({
     winningsPerPlayer: v.optional(v.string()),
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),
+    scheduledAt: v.optional(v.number()),
+    bettingEndsAt: v.optional(v.number()),
     createdAt: v.number(),
     settlementTxHash: v.optional(v.string()),
   }).index("by_roomId", ["roomId"])
