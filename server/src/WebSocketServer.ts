@@ -76,6 +76,22 @@ export class WebSocketRelayServer {
     this.config = config;
     this.gameStateManager = new GameStateManager();
     this.aiAgentManager = new ServerAgentManager();
+    
+    // Periodic state broadcast for smooth frontend updates
+    setInterval(() => {
+        this.rooms.forEach((room, roomId) => {
+            if (room.phase !== 'lobby' && room.phase !== 'ended') {
+                const gameState = this.gameStateManager.getGame(roomId);
+                if (gameState) {
+                    this.broadcastToRoom(roomId, {
+                        type: "server:game_state",
+                        gameId: roomId,
+                        state: gameState,
+                    });
+                }
+            }
+        });
+    }, 500);
   }
 
   start(): void {

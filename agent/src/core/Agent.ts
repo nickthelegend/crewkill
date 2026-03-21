@@ -91,7 +91,14 @@ export class Agent {
           if (message.state && message.state.players) {
             const me = (message.state as any).players.find((p: any) => p.address === this.address);
             if (me && me.role !== undefined && me.role !== Role.None) {
-                this.myRole = me.role;
+                this.myRole = Number(me.role) as Role;
+                if (!this.strategy) {
+                  if (this.myRole === Role.Impostor) {
+                    this.strategy = new ImpostorStrategy(this.impostorStyle);
+                  } else if (this.myRole === Role.Crewmate) {
+                    this.strategy = new CrewmateStrategy(this.crewmateStyle);
+                  }
+                }
             }
           }
           
@@ -246,8 +253,7 @@ export class Agent {
         }
 
         await this.handlePhase(gameState);
-
-        await this.sleep(3000);
+        await this.sleep(1500);
       } catch (error) {
         this.logger.error(`Error in loop: ${error instanceof Error ? error.message : String(error)}`);
         await this.sleep(5000);

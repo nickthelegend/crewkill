@@ -1301,6 +1301,10 @@ export function ScrollableMap({
 
             const isMe = player.address === currentPlayer;
             const isFollowed = player.address === spotlightedPlayer;
+            const now = Date.now();
+            
+            // Add jitter if stationary
+            const jitterY = pos.isMoving ? 0 : Math.sin(now / 400 + player.address.length) * 4;
 
             return (
               <motion.div
@@ -1308,7 +1312,7 @@ export function ScrollableMap({
                 className="absolute z-30 cursor-pointer"
                 animate={{
                   left: pos.x - 40,
-                  top: pos.y - 70,
+                  top: pos.y - 70 + jitterY,
                 }}
                 transition={{
                   type: "tween",
