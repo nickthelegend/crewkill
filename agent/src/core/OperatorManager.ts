@@ -1,6 +1,7 @@
-import { createWalletClient, http, parseEther, formatEther, type PublicClient } from "viem";
-import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
-import { baseSepolia } from "../chains.js";
+import { SuiClient } from '@onelabs/sui/client';
+import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
+import { Transaction } from '@onelabs/sui/transactions';
+import { ONECHAIN_RPC } from '../config.js';
 
 export interface OperatorConfig {
   operatorKey: string;
@@ -9,218 +10,122 @@ export interface OperatorConfig {
 
 export interface WithdrawResult {
   success: boolean;
-  txHash?: string;
+  txDigest?: string;
   error?: string;
 }
 
-/**
- * Validates operator key format
- */
 export function isValidOperatorKey(key: string): boolean {
   return /^oper_[A-Za-z0-9]{16}$/.test(key);
 }
 
-/**
- * OperatorManager handles operator key verification and fund withdrawals
- */
 export class OperatorManager {
   private operatorConfig: OperatorConfig | null = null;
-  private account: PrivateKeyAccount | null = null;
-  private publicClient: PublicClient | null = null;
+  private keypair: Ed25519Keypair | null = null;
+  private client: SuiClient | null = null;
 
   constructor() {}
 
-  /**
-   * Initialize the operator manager with config and agent wallet
-   */
   initialize(
     operatorKey: string,
     operatorAddress: string,
-    agentPrivateKey: string,
-    publicClient: PublicClient
+    agentPrivateKeyB64: string
   ): boolean {
     if (!isValidOperatorKey(operatorKey)) {
-      console.error("[OperatorManager] Invalid operator key format");
+      console.error('[OperatorManager] Invalid operator key format');
       return false;
     }
 
-    this.operatorConfig = {
-      operatorKey,
-      operatorAddress: operatorAddress.toLowerCase() as `0x${string}`,
-    };
+    this.operatorConfig = { operatorKey, operatorAddress };
+    this.keypair = Ed25519Keypair.fromSecretKey(
+      Buffer.from(agentPrivateKeyB64, 'base64')
+    );
+    this.client = new SuiClient({ url: ONECHAIN_RPC });
 
-    this.account = privateKeyToAccount(agentPrivateKey);
-    this.publicClient = publicClient;
-
-    console.log("[OperatorManager] Initialized with operator:", operatorAddress);
+    console.log('[OperatorManager] Initialized with operator:', operatorAddress);
     return true;
   }
 
-  /**
-   * Check if operator manager is initialized
-   */
   isInitialized(): boolean {
-    return this.operatorConfig !== null && this.account !== null;
+    return this.operatorConfig !== null && this.keypair !== null;
   }
 
-  /**
-   * Verify that a provided operator key matches the configured one
-   */
   verifyOperatorKey(key: string): boolean {
-    if (!this.operatorConfig) {
-      return false;
-    }
-    return this.operatorConfig.operatorKey === key;
+    return this.operatorConfig?.operatorKey === key;
   }
 
-  /**
-   * Get the configured operator address
-   */
   getOperatorAddress(): string | null {
     return this.operatorConfig?.operatorAddress ?? null;
   }
 
-  /**
-   * Get the agent's wallet address
-   */
   getAgentAddress(): string | null {
-    return this.account?.address ?? null;
+    return this.keypair?.getPublicKey().toSuiAddress() ?? null;
   }
 
-  /**
-   * Get the agent's balance
-   */
   async getAgentBalance(): Promise<bigint> {
-    if (!this.publicClient || !this.account) {
-      return 0n;
-    }
-    return await this.publicClient.getBalance({
-      address: this.account.address,
-    });
+    if (!this.client || !this.keypair) return 0n;
+    const addr = this.keypair.getPublicKey().toSuiAddress();
+    const coins = await this.client.getCoins({ owner: addr });
+    return coins.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
   }
 
-  /**
-   * Withdraw funds from agent wallet to operator wallet
-   * @param amount Amount to withdraw in wei, or "max" to withdraw all
-   * @param providedOperatorKey The operator key provided in the withdrawal request
-   */
   async withdraw(
-    amount: bigint | "max",
+    amountMist: bigint | 'max',
     providedOperatorKey: string
   ): Promise<WithdrawResult> {
-    // Verify operator key
     if (!this.verifyOperatorKey(providedOperatorKey)) {
-      return {
-        success: false,
-        error: "Invalid operator key",
-      };
+      return { success: false, error: 'Invalid operator key' };
     }
-
-    if (!this.account || !this.publicClient || !this.operatorConfig) {
-      return {
-        success: false,
-        error: "Operator manager not initialized",
-      };
+    if (!this.keypair || !this.client || !this.operatorConfig) {
+      return { success: false, error: 'Not initialized' };
     }
 
     try {
-      // Get current balance
       const balance = await this.getAgentBalance();
+      const GAS_BUDGET = 10_000_000n; // 0.01 OCT reserve for gas
 
-      // Calculate amount to send
-      let amountToSend: bigint;
-      if (amount === "max") {
-        // Estimate gas for a simple transfer
-        const gasPrice = await this.publicClient.getGasPrice();
-        const gasLimit = 21000n; // Standard ETH transfer
-        const gasCost = gasPrice * gasLimit;
+      const amount = amountMist === 'max'
+        ? balance > GAS_BUDGET ? balance - GAS_BUDGET : 0n
+        : amountMist;
 
-        if (balance <= gasCost) {
-          return {
-            success: false,
-            error: "Insufficient balance to cover gas",
-          };
-        }
-        amountToSend = balance - gasCost;
-      } else {
-        amountToSend = amount;
+      if (amount <= 0n) {
+        return { success: false, error: 'Nothing to withdraw' };
+      }
+      if (amount > balance) {
+        return { success: false, error: `Insufficient balance. Have ${balance} MIST` };
       }
 
-      if (amountToSend <= 0n) {
-        return {
-          success: false,
-          error: "Nothing to withdraw",
-        };
-      }
+      const tx = new Transaction();
+      const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(amount)]);
+      tx.transferObjects([coin], tx.pure.address(this.operatorConfig.operatorAddress));
 
-      if (amountToSend > balance) {
-        return {
-          success: false,
-          error: `Insufficient balance. Have ${formatEther(balance)} ETH, trying to withdraw ${formatEther(amountToSend)} ETH`,
-        };
-      }
-
-      console.log(
-        `[OperatorManager] Withdrawing ${formatEther(amountToSend)} ETH to operator ${this.operatorConfig.operatorAddress}`
-      );
-
-      // Create wallet client for this transaction
-      const walletClient = createWalletClient({
-        account: this.account,
-        chain: baseSepolia,
-        transport: http(),
+      const result = await this.client.signAndExecuteTransaction({
+        signer: this.keypair,
+        transaction: tx,
+        options: { showEffects: true },
       });
 
-      // Send transaction (type assertion needed due to viem version compatibility)
-      const txHash = await walletClient.sendTransaction({
-        to: this.operatorConfig.operatorAddress,
-        value: amountToSend,
-      } as any);
-
-      console.log(`[OperatorManager] Withdrawal tx sent: ${txHash}`);
-
-      // Wait for confirmation
-      const receipt = await this.publicClient.waitForTransactionReceipt({
-        hash: txHash,
-      });
-
-      if (receipt.status === "success") {
-        console.log(`[OperatorManager] Withdrawal confirmed in block ${receipt.blockNumber}`);
-        return {
-          success: true,
-          txHash,
-        };
+      if (result.effects?.status?.status === 'success') {
+        console.log(`[OperatorManager] Withdrawal confirmed: ${result.digest}`);
+        return { success: true, txDigest: result.digest };
       } else {
-        return {
-          success: false,
-          txHash,
-          error: "Transaction reverted",
-        };
+        return { success: false, error: 'Transaction failed', txDigest: result.digest };
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("[OperatorManager] Withdrawal failed:", errorMessage);
-      return {
-        success: false,
-        error: errorMessage,
-      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[OperatorManager] Withdrawal failed:', msg);
+      return { success: false, error: msg };
     }
   }
 
-  /**
-   * Handle an incoming withdrawal request message
-   */
   async handleWithdrawRequest(
     operatorKey: string,
-    amount?: string
+    amountOCT?: string
   ): Promise<WithdrawResult> {
-    const withdrawAmount = amount === "max" || !amount
-      ? "max"
-      : parseEther(amount);
-
-    return this.withdraw(withdrawAmount, operatorKey);
+    const amount = amountOCT === 'max' || !amountOCT
+      ? 'max'
+      : BigInt(Math.round(parseFloat(amountOCT) * 1_000_000_000));
+    return this.withdraw(amount, operatorKey);
   }
 }
 
-// Export singleton instance
 export const operatorManager = new OperatorManager();

@@ -8,8 +8,6 @@ import {
   ActionCommitment,
   Location,
   SabotageType,
-  MessageType,
-  AccuseReason,
 } from '../types.js';
 
 export class ActionSubmitter {
@@ -57,6 +55,44 @@ export class ActionSubmitter {
     return { commitment, action, salt };
   }
 
+  // ============ CREATE GAME ============
+
+  async createGame(): Promise<string> {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::create_game`,
+      arguments: [
+        tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
+        tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
+        tx.pure.u64(GAME_CONFIG.MAX_PLAYERS),
+        tx.pure.u64(GAME_CONFIG.WAGER_AMOUNT_MIST),
+        tx.pure.u64(GAME_CONFIG.TASKS_REQUIRED),
+        tx.object(CONTRACT_CONFIG.CLOCK_ID),
+      ],
+    });
+    
+    const result = await this.client.signAndExecuteTransaction({
+      signer: this.keypair,
+      transaction: tx,
+      options: { showEffects: true, showObjectChanges: true },
+    });
+
+    if (result.effects?.status?.status !== 'success') {
+      throw new Error(`Game creation failed: ${JSON.stringify(result.effects?.status)}`);
+    }
+
+    // Find the shared Game object in objectChanges
+    const createdObject = result.objectChanges?.find(
+        (change: any) => change.type === 'created' && change.objectType.includes('::game_settlement::Game')
+    );
+
+    if (!createdObject || !('objectId' in createdObject)) {
+        throw new Error('Game ID not found in transaction results');
+    }
+
+    return createdObject.objectId;
+  }
+
   // ============ REGISTER ============
 
   async registerAgent(): Promise<string> {
@@ -96,6 +132,20 @@ export class ActionSubmitter {
         tx.object(gameObjectId),
         tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID),
       ],
+    });
+    return this._execute(tx);
+  }
+
+  // ============ START GAME ============
+
+  async startGame(gameObjectId: string): Promise<string> {
+    const tx = new Transaction();
+    tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::start_game`,
+        arguments: [
+            tx.object(gameObjectId),
+            tx.object(CONTRACT_CONFIG.CLOCK_ID),
+        ],
     });
     return this._execute(tx);
   }

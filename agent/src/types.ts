@@ -56,12 +56,12 @@ export enum SabotageType {
 
 export enum GamePhase {
   Lobby = 0,
-  RoleAssignment = 1,
+  Starting = 1,
   ActionCommit = 2,
   ActionReveal = 3,
   Discussion = 4,
   Voting = 5,
-  Resolution = 6,
+  VoteResult = 6,
   Ended = 7,
 }
 
@@ -102,6 +102,19 @@ export interface DeadBody {
   reported: boolean;
 }
 
+export interface GameState {
+  gameObjectId: string;
+  phase: GamePhase;
+  round: bigint;
+  players: string[];
+  ended: boolean;
+  winner: number;
+  maxPlayers: number;
+  wagerAmount: bigint;
+  tasksRequired: number;
+  activeSabotage: SabotageType;
+}
+
 export interface DiscussionMessage {
   sender: string;
   msgType: MessageType;
@@ -115,19 +128,6 @@ export interface VoteRecord {
   voter: string;
   suspect: string;
   timestamp: bigint;
-}
-
-export interface GameState {
-  gameObjectId: string;
-  phase: GamePhase;
-  round: bigint;
-  players: string[];
-  ended: boolean;
-  winner: number;
-  maxPlayers: number;
-  wagerAmount: bigint;
-  tasksRequired: number;
-  activeSabotage: SabotageType;
 }
 
 export interface Action {
@@ -162,15 +162,15 @@ export interface SuspicionReason {
 // ============ AGENT TYPES ============
 
 export interface AgentConfig {
-  privateKey: string;
-  rpcUrl: string;
+  privateKeyB64: string;
   agentName: string;
   strategyType: "crewmate" | "impostor" | "adaptive";
+  riskTolerance: number;
 }
 
 export interface AgentStats {
-  gamesPlayed: number;
-  gamesWon: number;
-  totalKills: number;
+  wins: number;
+  losses: number;
+  kills: number;
   tasksCompleted: number;
 }
