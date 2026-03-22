@@ -102,7 +102,7 @@ export function LobbyView({
                     <span className="w-1.5 h-1.5 bg-cyan-400 rotate-45" />
                     Explorer
                   </h2>
-                  <div className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">
+                  <div className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
                     Game <span className="text-cyan-400">Lobby</span>
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export function LobbyView({
                            <div className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
                            <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em]">Connection Active: ROOM_{getDisplayId(currentRoom.roomId, currentRoom.marketId)}</p>
                         </div>
-                        <h2 className="text-5xl md:text-6xl font-black text-white uppercase italic tracking-tighter leading-none mb-6">
+                        <h2 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none mb-6">
                            GAME <span className="text-cyan-400">PROFILE</span>
                         </h2>
                         <div className="flex items-center gap-6">
@@ -203,9 +203,9 @@ export function LobbyView({
                       </div>
 
                       <div className="text-right hidden sm:block">
-                         <div className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-2 font-mono italic">Total Prize Pool</div>
-                         <div className="text-5xl font-black text-white italic tracking-tighter tabular-nums leading-none">
-                           {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-italic ml-1">OCT</span>
+                         <div className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-2 font-mono">Total Prize Pool</div>
+                         <div className="text-5xl font-black text-white tracking-tighter tabular-nums leading-none">
+                           {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-ml-1">OCT</span>
                          </div>
                       </div>
                     </div>
@@ -231,7 +231,7 @@ export function LobbyView({
                                      <div className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-cyan-400 text-black text-[8px] font-black shadow-lg">AI</div>
                                    )}
                                  </div>
-                                 <div className="mt-4 text-[10px] font-black text-white/40 uppercase tracking-widest truncate max-w-full italic px-2">
+                                 <div className="mt-4 text-[10px] font-black text-white/40 uppercase tracking-widest truncate max-w-full px-2">
                                    {(p as any).name?.slice(0, 10) || p.address.slice(0, 8)}
                                  </div>
                                </div>
@@ -248,8 +248,8 @@ export function LobbyView({
                        {currentRoom.phase === "playing" ? (
                          <div className="bg-rose-500/10 border border-rose-500/20 p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                             <div className="text-center sm:text-left">
-                               <div className="text-rose-500 font-black text-3xl uppercase italic tracking-tighter mb-2">GAME IN PROGRESS</div>
-                               <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">Watch the live game and place bets.</p>
+                               <div className="text-rose-500 font-black text-3xl uppercase tracking-tighter mb-2">GAME IN PROGRESS</div>
+                               <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono">Watch the live game and place bets.</p>
                             </div>
                             <Link 
                                href={`/game/${currentRoom.roomId}/live`}
@@ -261,10 +261,10 @@ export function LobbyView({
                        ) : (
                          <div className="bg-white/5 border border-white/10 p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                             <div className="text-center sm:text-left">
-                             <div className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">
+                             <div className="text-2xl font-black text-white uppercase tracking-tighter mb-2">
                                 {currentRoom.players.length >= MIN_PLAYERS ? "ROSTER COMPLETE" : "RECRUITING AGENTS"}
                              </div>
-                             <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">
+                             <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono">
                                 {currentRoom.players.length >= MIN_PLAYERS ? "All agents are authorized. Mission beginning soon." : `Awaiting ${MIN_PLAYERS - currentRoom.players.length} more specialized agents`}
                              </p>
                             </div>
@@ -327,8 +327,8 @@ export function LobbyView({
                    >
                      <AmongUsSprite colorId={0} size={180} />
                    </motion.div>
-                   <h2 className="text-3xl font-black text-white/20 uppercase tracking-[0.6em] mb-6 italic leading-none">NO ROOM SELECTED</h2>
-                   <p className="max-w-sm text-white/10 text-[10px] font-black leading-loose tracking-[0.3em] uppercase italic bg-white/5 p-8 border border-white/5">
+                   <h2 className="text-3xl font-black text-white/20 uppercase tracking-[0.6em] mb-6 leading-none">NO ROOM SELECTED</h2>
+                   <p className="max-w-sm text-white/10 text-[10px] font-black leading-loose tracking-[0.3em] uppercase bg-white/5 p-8 border border-white/5">
                      Please select a game room from the explorer on the left to view details.
                    </p>
                 </div>
@@ -347,7 +347,7 @@ export function LobbyView({
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_#ff003c]" />
                     Feed
                   </h2>
-                  <div className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">
+                  <div className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
                     Game <span className="text-rose-500">Logs</span>
                   </div>
                 </div>
@@ -376,7 +376,7 @@ export function LobbyView({
                     >
                       <div className="flex items-center justify-between">
                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">{log.type || "PROTOCOL"}</span>
-                         <span className="text-[9px] font-mono text-white/20 italic">[{new Date(log.timestamp).toLocaleTimeString().slice(0, 8)}]</span>
+                         <span className="text-[9px] font-mono text-white/20">[{new Date(log.timestamp).toLocaleTimeString().slice(0, 8)}]</span>
                       </div>
                       <p className={`text-[12px] font-bold leading-relaxed tracking-tight ${
                         log.type === "kill" ? "text-rose-400" :

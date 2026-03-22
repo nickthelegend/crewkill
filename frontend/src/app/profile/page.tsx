@@ -23,7 +23,7 @@ export default function ProfilePage() {
             <div className="mb-8 opacity-20 filter grayscale">
               <AmongUsSprite colorId={0} size={150} />
             </div>
-            <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-4">ACCESS DENIED</h2>
+            <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4">ACCESS DENIED</h2>
             <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.3em] leading-loose">
               Please connect your wallet to authorize access to your player profile.
             </p>
@@ -57,7 +57,7 @@ export default function ProfilePage() {
             
             <div className="flex-1 text-center md:text-left relative">
                <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                  <h1 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter uppercase leading-none">
+                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">
                     {address.slice(0, 6)}<span className="text-cyan-400">...</span>{address.slice(-4)}
                   </h1>
                   <div className="inline-flex px-4 py-1.2 bg-cyan-400 text-black text-[10px] font-black uppercase rounded-full shadow-lg self-center md:self-auto">
@@ -68,12 +68,12 @@ export default function ProfilePage() {
                <div className="flex flex-wrap items-center justify-center md:justify-start gap-8">
                   <div>
                      <div className="text-[9px] text-white/30 uppercase font-black tracking-widest mb-1">Player Rank</div>
-                     <div className="text-2xl font-black text-white italic tracking-tighter">LEVEL {rank}</div>
+                     <div className="text-2xl font-black text-white tracking-tighter">LEVEL {rank}</div>
                   </div>
                   <div className="h-10 w-px bg-white/10 hidden sm:block" />
                   <div>
                      <div className="text-[9px] text-white/30 uppercase font-black tracking-widest mb-1">Experience Points</div>
-                     <div className="text-2xl font-black text-white italic tracking-tighter">{profile?.xp || 0} <span className="text-xs text-white/20 not-italic">XP</span></div>
+                     <div className="text-2xl font-black text-white tracking-tighter">{profile?.xp || 0} <span className="text-xs text-white/20 not-italic">XP</span></div>
                   </div>
                </div>
             </div>
@@ -92,7 +92,7 @@ export default function ProfilePage() {
                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_#10b981]" />
                    PREDICTIONS WON
                 </div>
-                <div className="text-7xl font-black text-white italic tracking-tighter tabular-nums leading-none">
+                <div className="text-7xl font-black text-white tracking-tighter tabular-nums leading-none">
                    {profile?.wins || 0}
                 </div>
              </div>
@@ -124,7 +124,7 @@ export default function ProfilePage() {
           >
              <div className="flex items-center gap-3 mb-8">
                 <div className="h-0.5 w-10 bg-yellow-400" />
-                <h2 className="text-sm font-black text-white uppercase tracking-[0.4em] italic mb-0">Prediction History</h2>
+                <h2 className="text-sm font-black text-white uppercase tracking-[0.4em] mb-0">Prediction History</h2>
              </div>
              
              <div className="space-y-4">
@@ -176,7 +176,7 @@ export default function ProfilePage() {
           >
              <div className="flex items-center gap-3 mb-8">
                 <div className="h-0.5 w-10 bg-purple-500" />
-                <h2 className="text-sm font-black text-white uppercase tracking-[0.4em] italic mb-0">Game Replays</h2>
+                <h2 className="text-sm font-black text-white uppercase tracking-[0.4em] mb-0">Game Replays</h2>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                          <div className="opacity-10 scale-150 rotate-12">
                            <AmongUsSprite colorId={i % 12} size={100} />
                          </div>
-                         <div className="relative z-20 text-xs font-black text-white/40 tracking-[0.5em] uppercase italic group-hover:text-purple-400 transition-colors">
+                         <div className="relative z-20 text-xs font-black text-white/40 tracking-[0.5em] uppercase group-hover:text-purple-400 transition-colors">
                             MATCH_{replay.gameId.slice(0, 4)}
                          </div>
                       </div>

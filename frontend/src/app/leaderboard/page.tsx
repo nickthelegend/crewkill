@@ -13,7 +13,7 @@ export default function LeaderboardPage() {
       <div className="py-12 max-w-5xl mx-auto px-4">
         <header className="mb-12 flex items-center justify-between">
           <div>
-            <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none text-white">
+            <h1 className="text-5xl font-black tracking-tighter uppercase leading-none text-white">
               Top <span className="text-red-500">Players</span>
             </h1>
             <p className="text-white/40 font-mono tracking-widest text-xs mt-4 uppercase">
@@ -42,7 +42,7 @@ export default function LeaderboardPage() {
               {agents.map((agent, i) => (
                 <tr key={agent.walletAddress} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-8 py-6">
-                    <span className={`text-xl font-black italic ${i < 3 ? "text-red-500" : "text-white/10"}`}>
+                    <span className={`text-xl font-black ${i < 3 ? "text-red-500" : "text-white/10"}`}>
                       #{i + 1}
                     </span>
                   </td>

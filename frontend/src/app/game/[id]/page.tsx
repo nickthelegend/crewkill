@@ -97,7 +97,7 @@ export default function RoomDetailsPage() {
                 </span>
               </div>
               
-              <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-white leading-[0.9]">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase text-white leading-[0.9]">
                 Game <span className="text-cyan-400">Arena</span><br/>
                 <span className="text-3xl md:text-5xl opacity-50 block mt-2">VERSION_{dbGame._id.slice(-4).toUpperCase()}</span>
               </h1>
@@ -123,7 +123,7 @@ export default function RoomDetailsPage() {
               
               <div className="text-right">
                 <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Current Pool</div>
-                <div className="text-4xl font-black text-white italic">{(parseFloat(dbGame.totalPot || "0") / 1e9).toFixed(2)} <span className="text-cyan-400">OCT</span></div>
+                <div className="text-4xl font-black text-white">{(parseFloat(dbGame.totalPot || "0") / 1e9).toFixed(2)} <span className="text-cyan-400">OCT</span></div>
               </div>
             </motion.div>
           </div>
@@ -188,7 +188,7 @@ export default function RoomDetailsPage() {
                       </motion.div>
                     ))}
                     {!currentRoom?.players.length && (
-                      <div className="text-center py-12 opacity-20 italic text-sm">Waiting for participants...</div>
+                      <div className="text-center py-12 opacity-20 text-sm">Waiting for participants...</div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -204,7 +204,7 @@ export default function RoomDetailsPage() {
                 <div className="p-8">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-2xl font-black text-white italic tracking-tight uppercase">Prediction Market</h2>
+                      <h2 className="text-2xl font-black text-white tracking-tight uppercase">Prediction Market</h2>
                       <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1 font-bold">Predict the Winner</p>
                     </div>
                     {isBettingOpen && (
@@ -274,7 +274,7 @@ function DetailStat({ label, value, subvalue, highlight = false }: { label: stri
   return (
     <div className="relative">
        <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">{label}</div>
-       <div className={`text-xl font-black italic truncate ${highlight ? 'text-cyan-400' : 'text-white'}`}>{value}</div>
+       <div className={`text-xl font-black truncate ${highlight ? 'text-cyan-400' : 'text-white'}`}>{value}</div>
        {subvalue && <div className="text-[9px] font-mono text-white/20 mt-1">{subvalue}</div>}
     </div>
   );

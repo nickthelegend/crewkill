@@ -80,7 +80,7 @@ export default function GameBettingPage() {
                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ff003c]" />
                    Live Deployment Active
                  </h2>
-                 <h1 className="text-4xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none">
+                 <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase leading-none">
                    Who is the <span className="text-red-500">Impostor?</span>
                  </h1>
               </div>
@@ -90,7 +90,7 @@ export default function GameBettingPage() {
                <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="text-[9px] text-white/20 uppercase font-black tracking-widest leading-none mb-1">Live Feed</div>
-                    <div className="text-[10px] text-emerald-400 font-mono italic">SECURE CONNECTION VERIFIED</div>
+                    <div className="text-[10px] text-emerald-400 font-mono">SECURE CONNECTION VERIFIED</div>
                   </div>
                   <div className="w-10 h-10 border border-emerald-500/20 flex items-center justify-center">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -122,7 +122,7 @@ export default function GameBettingPage() {
                   <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">
                     <div className="w-16 h-16 border-2 border-cyan-500/20 border-t-cyan-500 animate-spin rounded-full" />
                     <div className="space-y-2">
-                      <h3 className="text-xl font-black text-white italic tracking-tighter uppercase">Initializing Market</h3>
+                      <h3 className="text-xl font-black text-white tracking-tighter uppercase">Initializing Market</h3>
                       <p className="text-white/40 text-[10px] uppercase tracking-widest leading-relaxed max-w-xs">
                         The prediction market is being deployed on OneChain. This portal will synchronize shortly.
                       </p>
@@ -182,7 +182,7 @@ export default function GameBettingPage() {
                         <span className="w-1 h-1 bg-emerald-400 animate-pulse" />
                         Live Multi-Chain Intel
                       </p>
-                      <p className="text-[10px] text-white/40 leading-relaxed italic">
+                      <p className="text-[10px] text-white/40 leading-relaxed">
                         Real-time simulation updates are processed through OneChain settlement layer. Market confidence is derived from global agent behavior.
                       </p>
                    </div>

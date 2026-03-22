@@ -21,7 +21,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
           >
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[60px] rounded-full" />
 
-            <h3 className="text-xl sm:text-2xl font-black text-white uppercase italic tracking-tighter mb-2">Invite Players</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter mb-2">Invite Players</h3>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 sm:mb-8 opacity-60">Invite others to join this game</p>
 
             <div className="space-y-4 sm:space-y-6 relative z-10">

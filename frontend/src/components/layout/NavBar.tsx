@@ -72,7 +72,7 @@ export function NavBar() {
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1 h-1 bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
-            <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono italic">SYSTEM_ONLINE</span>
+            <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono">SYSTEM_ONLINE</span>
           </div>
           <span className="text-[8px] text-white/10 font-mono tracking-widest uppercase">Secure Connection Verified</span>
         </div>

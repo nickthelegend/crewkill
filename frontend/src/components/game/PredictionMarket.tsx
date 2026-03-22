@@ -434,8 +434,8 @@ export function PredictionMarket({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-none py-1">
         <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Total Pot</div>
-          <div className="text-4xl font-black text-white italic tracking-tighter tabular-nums">
-            {(totalPot / 1_000_000_000).toFixed(2)} <span className="text-red-500 text-sm not-italic ml-1">OCT</span>
+          <div className="text-4xl font-black text-white tracking-tighter tabular-nums">
+            {(totalPot / 1_000_000_000).toFixed(2)} <span className="text-red-500 text-sm not-ml-1">OCT</span>
           </div>
         </div>
         <div className="p-8 bg-black/20 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5">
@@ -447,7 +447,7 @@ export function PredictionMarket({
         </div>
         <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Players</div>
-          <div className="text-sm font-black text-emerald-400 uppercase tracking-widest italic">{gamePlayers.length} Members</div>
+          <div className="text-sm font-black text-emerald-400 uppercase tracking-widest">{gamePlayers.length} Members</div>
         </div>
       </div>
 
@@ -489,9 +489,9 @@ export function PredictionMarket({
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="text-2xl font-black text-white uppercase italic tracking-tighter truncate">{player.name}</span>
+                    <span className="text-2xl font-black text-white uppercase tracking-tighter truncate">{player.name}</span>
                     {isUserPick && (
-                      <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none italic uppercase">Betting Active</span>
+                      <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none uppercase">Betting Active</span>
                     )}
                   </div>
                   <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em] flex items-center gap-4">
@@ -505,7 +505,7 @@ export function PredictionMarket({
               <div className="flex items-center gap-10 relative z-10 mt-8 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
                 <div className="text-right">
                   <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Confidence</div>
-                  <div className="text-2xl font-black text-white italic tracking-tighter">{prob}%</div>
+                  <div className="text-2xl font-black text-white tracking-tighter">{prob}%</div>
                 </div>
                 
                 <div className="flex gap-1 bg-black/40 p-1 border border-white/5 rounded-none">
@@ -516,14 +516,14 @@ export function PredictionMarket({
                       }`}
                    >
                       <span className="text-[9px] opacity-40 mb-1 tracking-widest font-mono">BUY_YES</span>
-                      <span className="text-lg tabular-nums tracking-tighter italic">{price}¢</span>
+                      <span className="text-lg tabular-nums tracking-tighter">{price}¢</span>
                    </button>
                    <button 
                       disabled={true}
                       className="px-8 py-4 rounded-none text-xs font-black uppercase text-white/10 border border-white/5 cursor-not-allowed flex flex-col items-center min-w-[100px]"
                    >
                       <span className="text-[9px] opacity-30 mb-1 tracking-widest font-mono">BUY_NO</span>
-                      <span className="text-lg tabular-nums tracking-tighter italic opacity-30">{100 - price}¢</span>
+                      <span className="text-lg tabular-nums tracking-tighter opacity-30">{100 - price}¢</span>
                    </button>
                 </div>
               </div>
@@ -549,7 +549,7 @@ export function PredictionMarket({
                        <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
                        <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Place Your Bet</h4>
                     </div>
-                    <div className="text-4xl font-black text-white uppercase italic tracking-tighter">
+                    <div className="text-4xl font-black text-white uppercase tracking-tighter">
                       {(gamePlayers.find(p => p.address === selectedSuspect)?.name || "NODE").toUpperCase()}
                     </div>
                   </div>
@@ -560,7 +560,7 @@ export function PredictionMarket({
                       value={betAmount}
                       onChange={(e) => setBetAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full bg-black/40 border-b-2 border-white/10 focus:border-red-500/50 py-6 px-1 text-4xl font-black text-white italic outline-none transition-all tabular-nums"
+                      className="w-full bg-black/40 border-b-2 border-white/10 focus:border-red-500/50 py-6 px-1 text-4xl font-black text-white outline-none transition-all tabular-nums"
                     />
                     <div className="absolute right-0 bottom-6 font-black text-red-500 tracking-tighter text-xl">OCT</div>
                   </div>
@@ -570,11 +570,11 @@ export function PredictionMarket({
                    <div className="flex justify-between md:justify-end gap-10 bg-white/5 p-6 border border-white/5">
                       <div className="text-right">
                          <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Limit Price</div>
-                         <div className="text-xl font-black text-white tabular-nums italic">{(suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 0)}¢</div>
+                         <div className="text-xl font-black text-white tabular-nums">{(suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 0)}¢</div>
                       </div>
                       <div className="text-right">
                          <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Est Payout</div>
-                         <div className="text-xl font-black text-emerald-400 tabular-nums italic">{(Number(betAmount) * 100 / Math.max(1, (suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 1))).toFixed(2)} OCT</div>
+                         <div className="text-xl font-black text-emerald-400 tabular-nums">{(Number(betAmount) * 100 / Math.max(1, (suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 1))).toFixed(2)} OCT</div>
                       </div>
                    </div>
 
@@ -627,7 +627,7 @@ export function PredictionMarket({
             {userBet.correct ? "🏆" : "💀"}
           </motion.div>
           <div>
-            <h3 className="text-5xl font-black text-white italic uppercase tracking-tighter mb-4">
+            <h3 className="text-5xl font-black text-white uppercase tracking-tighter mb-4">
               {userBet.correct ? "Prediction Correct" : "Prediction Wrong"}
             </h3>
             <p className="text-white/20 text-[10px] font-mono tracking-[0.4em] uppercase max-w-md mx-auto leading-relaxed">

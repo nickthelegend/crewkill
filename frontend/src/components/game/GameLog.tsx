@@ -107,7 +107,7 @@ export function GameLogPanel({ logs, maxHeight = "400px" }: GameLogProps) {
                       {formatTime(log.timestamp)}
                     </span>
                     {log.round !== undefined && (
-                      <span className="text-[9px] font-black italic text-white/10 uppercase tracking-[0.2em]">
+                      <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.2em]">
                         RD {log.round}
                       </span>
                     )}

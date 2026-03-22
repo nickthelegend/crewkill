@@ -111,7 +111,7 @@ export function GameView({
                  <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"}`} />
                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{isConnected ? "SYNCED" : "DESYNC"}</span>
                  <div className="h-4 w-px bg-white/10 mx-1" />
-                  <span className="text-[11px] font-black text-white uppercase italic tracking-[0.2em]">
+                  <span className="text-[11px] font-black text-white uppercase tracking-[0.2em]">
                     ROOM_#{(activeRoom?.roomId || "LOBBY").slice(-6).toUpperCase()}
                   </span>
               </div>
@@ -149,7 +149,7 @@ export function GameView({
                     <div className="w-1 h-1 rounded-full bg-yellow-400" /> TOTAL POT
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-yellow-400 italic tracking-tighter leading-none">
+                    <span className="text-4xl font-black text-yellow-400 tracking-tighter leading-none">
                       {(Number(activeRoom.wagerAmount) * activePlayers.length / 1e18).toFixed(3)}
                     </span>
                     <span className="text-xs font-black text-yellow-400/40 uppercase tracking-widest">OCT</span>
@@ -294,13 +294,13 @@ export function GameView({
            <div className="flex items-center gap-4 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-2xl px-6 py-3">
               <div className="flex flex-col">
                 <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Telemetry</span>
-                <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest italic">Stable</span>
+                <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Stable</span>
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="text-right">
                 <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Latent Signals</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-sm font-black text-white italic tracking-tighter">0.42</span>
+                  <span className="text-sm font-black text-white tracking-tighter">0.42</span>
                   <span className="text-[8px] font-black text-white/40 uppercase">ms</span>
                 </div>
               </div>

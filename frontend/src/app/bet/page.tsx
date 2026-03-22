@@ -50,7 +50,7 @@ export default function PredictionMarketDirectory() {
               </svg>
               Back Home
             </Link>
-            <h1 className="text-6xl md:text-8xl font-black text-white uppercase italic tracking-tighter leading-none mb-4">
+            <h1 className="text-6xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none mb-4">
               Prediction <span className="text-cyan-400">Market</span>
             </h1>
             <p className="text-sm font-black text-white/40 uppercase tracking-[0.3em]">
@@ -61,7 +61,7 @@ export default function PredictionMarketDirectory() {
           {/* Live Section */}
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-              <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase flex items-center gap-3">
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
                 <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ff003c]" />
                 Live Markets
               </h2>
@@ -86,7 +86,7 @@ export default function PredictionMarketDirectory() {
           {/* Past Section */}
           <div>
             <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-              <h2 className="text-2xl font-black text-white/60 italic tracking-tighter uppercase">
+              <h2 className="text-2xl font-black text-white/60 tracking-tighter uppercase">
                 Resolved Markets
               </h2>
               <span className="text-[10px] font-black uppercase tracking-widest text-white/30">
@@ -136,7 +136,7 @@ function MarketCard({ game, getDisplayId, index, isLive = false }: { game: any, 
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 flex items-center gap-2">
                GAMES &gt; CREWKILL &gt; #{displayId}
             </span>
-            <h3 className="text-xl font-black text-white italic tracking-tighter leading-tight mt-1">
+            <h3 className="text-xl font-black text-white tracking-tighter leading-tight mt-1">
               Who is the Impostor?
             </h3>
           </div>
@@ -145,8 +145,8 @@ function MarketCard({ game, getDisplayId, index, isLive = false }: { game: any, 
         <div className="flex items-end justify-between mt-8">
           <div>
              <div className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">Total Pot</div>
-             <div className="text-2xl font-black text-white italic tracking-tighter">
-               {totalPot > 0 ? totalPot.toFixed(2) : "0.00"} <span className="text-cyan-400 text-sm not-italic ml-1">OCT</span>
+             <div className="text-2xl font-black text-white tracking-tighter">
+               {totalPot > 0 ? totalPot.toFixed(2) : "0.00"} <span className="text-cyan-400 text-sm not-ml-1">OCT</span>
              </div>
           </div>
           <div className="flex -space-x-3">

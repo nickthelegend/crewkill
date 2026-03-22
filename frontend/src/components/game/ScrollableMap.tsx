@@ -1754,7 +1754,7 @@ function SabotageOverlay({
                animate={{ scale: 1, y: 0 }}
                className="bg-red-600/20 p-12 rounded-[3rem] border-2 border-red-500/50 backdrop-blur-3xl flex flex-col items-center"
              >
-               <div className="text-8xl font-black italic text-white uppercase tracking-tighter mb-4">
+               <div className="text-8xl font-black text-white uppercase tracking-tighter mb-4">
                  {gamePhase === 4 ? "DISCUSSION" : "VOTING"}
                </div>
                <div className="text-xl font-black text-red-500 uppercase tracking-[0.5em] animate-pulse">

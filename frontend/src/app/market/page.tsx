@@ -37,7 +37,7 @@ function MarketContent() {
             <div className="h-0.5 w-12 bg-red-500" />
             <p className="text-white/40 font-mono tracking-[0.3em] text-[10px] uppercase">OneChain Prediction Network</p>
           </div>
-          <h1 className="text-7xl md:text-8xl font-black italic tracking-tighter uppercase leading-none text-white">
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter uppercase leading-none text-white">
             MARKET <span className="text-red-500">FLOOR</span>
           </h1>
           <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] mt-8 uppercase whitespace-nowrap overflow-hidden">
@@ -50,7 +50,7 @@ function MarketContent() {
       <section className="mb-24">
         <div className="flex items-center gap-4 mb-10">
            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-           <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Live & Upcoming Matches</h2>
+           <h2 className="text-xl font-black text-white uppercase tracking-tighter">Live & Upcoming Matches</h2>
         </div>
 
         {activeGames.length === 0 ? (
@@ -70,7 +70,7 @@ function MarketContent() {
       <section>
         <div className="flex items-center gap-4 mb-10">
            <div className="w-2 h-2 rounded-full bg-white/20" />
-           <h2 className="text-xl font-black text-white/40 italic uppercase tracking-tighter">Resolved Markets</h2>
+           <h2 className="text-xl font-black text-white/40 uppercase tracking-tighter">Resolved Markets</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-100">
@@ -118,7 +118,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
           </div>
         </div>
 
-        <h3 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none mb-3 group-hover:text-red-500 transition-colors">
+        <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-3 group-hover:text-red-500 transition-colors">
            Confidence <span className="text-red-500">Market</span>
         </h3>
         <p className="text-white/40 text-[10px] uppercase font-black tracking-widest opacity-60">Settling on OneChain Network</p>
@@ -147,8 +147,8 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
 
            <div className="text-right">
               <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Total Stake</div>
-              <div className="text-3xl font-black text-white tabular-nums italic tracking-tighter">
-                {pot.toFixed(2)} <span className="text-red-500 text-sm not-italic ml-0.5">OCT</span>
+              <div className="text-3xl font-black text-white tabular-nums tracking-tighter">
+                {pot.toFixed(2)} <span className="text-red-500 text-sm not-ml-0.5">OCT</span>
               </div>
            </div>
         </div>

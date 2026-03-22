@@ -64,7 +64,7 @@ export default function LiveRoomPage() {
            <div className="absolute inset-0 border border-cyan-500/20 animate-pulse" />
            <div className="text-3xl grayscale opacity-30">⏳</div>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter uppercase leading-none mb-4">
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none mb-4">
            GAME NOT <span className="text-cyan-500">STARTED</span>
         </h1>
         <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em] max-w-sm mb-12 leading-relaxed">
