@@ -218,15 +218,15 @@ export default function RoomDetailsPage() {
                   <PredictionMarket 
                     gameId={dbGame._id}
                     marketObjectId={dbGame.marketId || dbGame.roomId}
-                    gamePlayers={(currentRoom?.players || []).map(p => ({
+                    gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
                       address: p.address,
-                      name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : "Human",
-                      isAlive: p.isAlive,
+                      name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : (p.name || `Human ${p.address.slice(-4)}`),
+                      isAlive: p.isAlive ?? true,
                       colorId: p.colorId
                     }))}
                     isResolved={dbGame.status === "COMPLETED"}
                     actualImpostors={[]} // Hidden during lobby
-                    gamePhase={wsPhase}
+                    gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 2 : 0)}
                   />
                   
                   {/* Market Sentiment Disclaimer */}

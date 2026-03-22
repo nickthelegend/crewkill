@@ -301,16 +301,19 @@ export function LobbyView({
                   </div>
                   
                   {/* Predictor Section (Integrated at bottom of scroll) */}
-                  {currentRoom.players.length >= MIN_PLAYERS && currentRoom.phase === "lobby" && (
-                     <div className="p-10 lg:p-14 bg-black/40">
-                        <div className="flex items-center gap-3 mb-10">
+                  {currentRoom.phase === "lobby" && (
+                     <div className="p-10 lg:p-14 bg-black/40 flex flex-col items-center justify-center border border-white/5 mt-4">
+                        <div className="flex items-center gap-3 mb-6">
                            <div className="h-0.5 w-10 bg-yellow-500" />
-                           <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Prediction Market</h3>
+                           <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Prediction Market Open</h3>
                         </div>
-                        <PredictWinner
-                          onPredict={(team) => console.log("Predicted:", team)}
-                          disabled={currentRoom.phase !== "lobby"}
-                        />
+                        <Link 
+                          href={`/game/${currentRoom.roomId}/bet`}
+                          className="px-12 py-6 bg-red-600 hover:bg-red-500 text-white text-sm font-black uppercase tracking-[0.2em] transition-all shadow-[0_20px_40px_rgba(255,0,0,0.2)] flex items-center gap-3"
+                        >
+                          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                          ENTER MARKET FLOOR
+                        </Link>
                      </div>
                   )}
                 </div>

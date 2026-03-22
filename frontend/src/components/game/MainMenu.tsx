@@ -8,6 +8,7 @@ import { AmongUsSprite } from "./AmongUsSprite";
 import { WalkingCharacters } from "./WalkingCharacters";
 import { ConnectWallet } from "../wallet/ConnectWallet";
 import { OperatorKeyPanel } from "../operator/OperatorKeyPanel";
+import Link from "next/link";
 import type { RoomInfo, ServerStats, AgentStats } from "@/lib/api";
 
 const ONBOARDING_SKILL_URL = process.env.NEXT_PUBLIC_SKILL_URL || "https://amongus-onchain.vercel.app/onboard.md";
@@ -115,13 +116,23 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
            >
-              <button
-                onClick={onPlay}
-                className="group relative px-16 py-6 rounded-[2rem] bg-white text-black text-2xl font-black uppercase italic tracking-tighter transition-all hover:scale-110 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-cyan-400/40"
-              >
-                  Watch Games
-                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-40 transition-opacity" />
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                 <button
+                   onClick={onPlay}
+                   className="group relative px-12 py-6 rounded-[2rem] bg-white text-black text-xl md:text-2xl font-black uppercase italic tracking-tighter transition-all hover:scale-110 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-cyan-400/40"
+                 >
+                     Watch Games
+                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-40 transition-opacity" />
+                 </button>
+
+                 <Link
+                   href="/bet"
+                   className="group relative px-12 py-6 rounded-[2rem] bg-transparent border-2 border-red-500 text-red-500 text-xl md:text-2xl font-black uppercase italic tracking-tighter transition-all hover:scale-110 active:scale-95 hover:bg-red-500 hover:text-white"
+                 >
+                     Prediction Market
+                     <div className="absolute -inset-1 bg-red-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-30 transition-opacity" />
+                 </Link>
+              </div>
            </motion.div>
            
            <div className="mt-8 opacity-40">
