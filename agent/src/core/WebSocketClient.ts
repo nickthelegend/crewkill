@@ -121,7 +121,7 @@ export class WebSocketClient extends EventEmitter {
         gameId: roomId,
         killer: this.config.agentAddress,
         victim: action.target,
-        location: 0, // Should use current location
+        location: action.location ?? 0, 
         round,
       });
     } else if (action.type === ActionType.Sabotage && action.sabotage) {
@@ -135,7 +135,7 @@ export class WebSocketClient extends EventEmitter {
         type: "agent:report_body",
         gameId: roomId,
         reporter: this.config.agentAddress,
-        bodyLocation: 0, // Should use current location
+        bodyLocation: action.location ?? 0, 
         round,
       });
     } else if (action.type === ActionType.CallMeeting) {

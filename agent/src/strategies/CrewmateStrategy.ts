@@ -32,7 +32,7 @@ export class CrewmateStrategy extends BaseStrategy {
       (b) => b.location === myLocation && !b.reported
     );
     if (bodyHere) {
-      return { type: ActionType.Report };
+      return { type: ActionType.Report, location: myLocation };
     }
 
     // Priority 2: Handle based on style
@@ -61,7 +61,7 @@ export class CrewmateStrategy extends BaseStrategy {
     if (assignedTasks.includes(myLocation) && myPlayer.tasksCompleted < myPlayer.totalTasks) {
       const taskId = this.nextTaskId;
       this.nextTaskId = (this.nextTaskId + 1) % myPlayer.totalTasks;
-      return { type: ActionType.DoTask, taskId };
+      return { type: ActionType.DoTask, taskId, location: myLocation };
     }
 
     // Otherwise, move towards next assigned task room
@@ -172,7 +172,7 @@ export class CrewmateStrategy extends BaseStrategy {
       this.emergencyMeetingsUsed < this.maxEmergencyMeetings
     ) {
       this.emergencyMeetingsUsed++;
-      return { type: ActionType.CallMeeting };
+      return { type: ActionType.CallMeeting, location: myLocation };
     }
 
     // Otherwise focus on tasks

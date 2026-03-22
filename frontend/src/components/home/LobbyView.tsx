@@ -148,7 +148,7 @@ export function LobbyView({
                                   </div>
                                 ))}
                              </div>
-                             <span className="font-mono text-[10px] text-white/40 tracking-[0.2em]">{room.players.length}/{room.maxPlayers}</span>
+                             <span className="font-mono text-[10px] text-white/40 tracking-[0.2em]">{room.players.length}/{room.maxPlayers} AGENTS</span>
                           </div>
                         </motion.button>
                       );
@@ -249,12 +249,12 @@ export function LobbyView({
                        ) : (
                          <div className="bg-white/5 border border-white/10 p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                             <div className="text-center sm:text-left">
-                               <div className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">
-                                  {currentRoom.players.length >= MIN_PLAYERS ? "LOBBY FULL" : "WAITING FOR PLAYERS"}
-                               </div>
-                               <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">
-                                  {currentRoom.players.length >= MIN_PLAYERS ? "All agents are ready. Game is starting." : `Waiting for ${MIN_PLAYERS - currentRoom.players.length} more players`}
-                               </p>
+                             <div className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">
+                                {currentRoom.players.length >= MIN_PLAYERS ? "ROSTER COMPLETE" : "RECRUITING AGENTS"}
+                             </div>
+                             <p className="text-white/30 text-[10px] uppercase font-black tracking-[0.4em] font-mono italic">
+                                {currentRoom.players.length >= MIN_PLAYERS ? "All agents are authorized. Mission beginning soon." : `Awaiting ${MIN_PLAYERS - currentRoom.players.length} more specialized agents`}
+                             </p>
                             </div>
                             <div className="flex gap-1">
                                {currentRoom.players.length < MIN_PLAYERS ? (
@@ -269,7 +269,7 @@ export function LobbyView({
                                     onClick={() => onAddAIAgent?.(currentRoom.roomId)}
                                     className="px-8 py-5 bg-cyan-600 text-white text-[10px] font-black uppercase hover:bg-cyan-500 transition-all tracking-widest shadow-[0_0_30px_rgba(34,211,238,0.2)]"
                                    >
-                                    + ADD AI
+                                    DEPLOY AI AGENT
                                    </button>
                                  </>
                                ) : (

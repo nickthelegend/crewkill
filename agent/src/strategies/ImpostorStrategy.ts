@@ -101,21 +101,21 @@ export class ImpostorStrategy extends BaseStrategy {
       return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
     }
 
-    // Look for isolated targets
+    // Look for targets
     const target = this.findKillTarget(context);
     if (target && this.canKill(context)) {
-      // Check if truly isolated (no one else nearby)
+      // LOOSENED: Allow killing even if one witness is present (high risk, but for testing we want action)
       const playersHere = this.getPlayersAtLocation(alivePlayers, myLocation);
-      if (playersHere.length === 2) {
-        // Just us and target
+      if (playersHere.length <= 3) {
+        // We, the target, and at most 1 witness
         this.lastKillRound = gameState.round;
-        return { type: ActionType.Kill, target: target.address };
+        return { type: ActionType.Kill, target: target.address, location: myLocation };
       }
     }
 
     // Fake tasks or move to find isolated target
     if (Math.random() > 0.6) {
-      return { type: ActionType.FakeTask };
+      return { type: ActionType.FakeTask, location: myLocation };
     }
 
     // Move towards isolated areas
@@ -136,7 +136,7 @@ export class ImpostorStrategy extends BaseStrategy {
 
     // Self-report to throw off suspicion
     if (bodyHere && Math.random() > 0.5) {
-      return { type: ActionType.Report };
+      return { type: ActionType.Report, location: myLocation };
     }
 
     // Kill whenever possible
@@ -147,7 +147,7 @@ export class ImpostorStrategy extends BaseStrategy {
     if (playersHere.length > 0 && this.canKill(context)) {
       const target = this.randomChoice(playersHere);
       this.lastKillRound = gameState.round;
-      return { type: ActionType.Kill, target: target.address };
+      return { type: ActionType.Kill, target: target.address, location: myLocation };
     }
 
     // Move to find targets
@@ -179,13 +179,13 @@ export class ImpostorStrategy extends BaseStrategy {
       const target = this.findKillTarget(context);
       if (target && this.canKill(context)) {
         this.lastKillRound = gameState.round;
-        return { type: ActionType.Kill, target: target.address };
+        return { type: ActionType.Kill, target: target.address, location: myLocation };
       }
     }
 
     // Fake tasks otherwise
     if (Math.random() > 0.5) {
-      return { type: ActionType.FakeTask };
+      return { type: ActionType.FakeTask, location: myLocation };
     }
 
     const adjacent = this.getAdjacentLocations(myLocation);
@@ -214,7 +214,7 @@ export class ImpostorStrategy extends BaseStrategy {
     // Mid-late game: betray
     if (bodyHere) {
       // Self-report to seem innocent
-      return { type: ActionType.Report };
+      return { type: ActionType.Report, location: myLocation };
     }
 
     // Target players who trust us (we were with them)
@@ -246,7 +246,7 @@ export class ImpostorStrategy extends BaseStrategy {
       if (playersHere.length > 0) {
         this.framesTarget = this.randomChoice(playersHere).address;
       }
-      return { type: ActionType.Report };
+      return { type: ActionType.Report, location: myLocation };
     }
 
     // Kill and frame
@@ -260,13 +260,13 @@ export class ImpostorStrategy extends BaseStrategy {
         // Kill one, frame another
         this.framesTarget = playersHere.find((p) => p.address !== target.address)?.address || null;
         this.lastKillRound = gameState.round;
-        return { type: ActionType.Kill, target: target.address };
+        return { type: ActionType.Kill, target: target.address, location: myLocation };
       }
     }
 
     // Move and fake tasks
     if (Math.random() > 0.5) {
-      return { type: ActionType.FakeTask };
+      return { type: ActionType.FakeTask, location: myLocation };
     }
 
     const adjacent = this.getAdjacentLocations(myLocation);

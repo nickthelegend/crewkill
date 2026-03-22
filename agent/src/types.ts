@@ -144,6 +144,7 @@ export interface Action {
   type: ActionType;
   target?: string;
   destination?: Location;
+  location?: Location; // NEW: The current location where the action is performed
   taskId?: number;
   sabotage?: SabotageType;
 }
