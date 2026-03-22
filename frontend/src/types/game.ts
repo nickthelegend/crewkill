@@ -73,6 +73,7 @@ export enum SabotageType {
 
 export interface Player {
   address: `0x${string}`;
+  name: string;
   colorId: number;
   role: Role;
   location: Location;

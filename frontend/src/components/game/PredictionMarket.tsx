@@ -16,6 +16,13 @@ interface Player {
   name: string; 
   isAlive?: boolean;
   colorId?: number;
+  agentPersona?: {
+    emoji: string;
+    title: string;
+    playstyle: string;
+    crewmateDesc?: string;
+    impostorDesc?: string;
+  };
 }
 
 interface SuspectPool {
@@ -377,18 +384,47 @@ export function PredictionMarket({
            })}
         </div>
 
-        <div className="flex flex-wrap gap-8">
-           {gamePlayers.map((p, i) => {
-              const colors = [
-                'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 
-                'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-rose-500',
-                'bg-indigo-500', 'bg-amber-500'
-              ];
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 py-4">
+           {gamePlayers.map((player) => {
+              const isSelected = selectedSuspect === player.address;
               return (
-                 <div key={p.address} className="flex items-center gap-2">
-                    <div className={`w-2 h-2 ${colors[i % colors.length]}`} />
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-wider">{p.name || 'Agent'}</span>
-                 </div>
+                 <button
+                    key={player.address}
+                    disabled={!isOpen}
+                    onClick={() => setSelectedSuspect(player.address)}
+                    className="text-left group pointer-events-auto"
+                 >
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      isSelected ? "bg-red-500/20 border-red-500 ring-1 ring-red-500/20" : "bg-white/5 border-white/10 hover:border-white/20"
+                    }`}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 border border-white/10 bg-black flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform">
+                           <AmongUsSprite colorId={player.colorId ?? 1} size={28} isGhost={!player.isAlive} />
+                           {player.agentPersona?.emoji && (
+                             <div className="absolute top-0 right-0 text-[10px] bg-black/60 px-1 rounded-bl">
+                               {player.agentPersona.emoji}
+                             </div>
+                           )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-black text-white truncate uppercase tracking-tight">{player.name}</span>
+                            {player.agentPersona?.playstyle && (
+                              <span className="text-[7px] font-mono text-cyan-400 border border-cyan-400/30 px-1 rounded-none uppercase">
+                                 {player.agentPersona.playstyle}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center gap-2">
+                            {player.agentPersona?.title || (player.isAlive ? "Active Agent" : "Deceased")}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
+                        )}
+                      </div>
+                    </div>
+                 </button>
               );
            })}
         </div>

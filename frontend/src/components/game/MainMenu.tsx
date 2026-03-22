@@ -78,19 +78,19 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                  </motion.div>
 
                  <div className="flex flex-col items-center">
-                     <div className="relative w-[300px] h-[80px] sm:w-[500px] sm:h-[130px] md:w-[700px] md:h-[180px]">
+                     <div className="relative w-[350px] h-[100px] sm:w-[600px] sm:h-[160px] md:w-[850px] md:h-[220px]">
                         <Image 
                           src="/text-logo.png" 
                           alt="CrewKill" 
                           fill 
-                          className="object-contain"
+                          className="object-contain scale-110"
                           priority
                         />
                      </div>
-                    <div className="mt-2 flex items-center gap-4">
-                       <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-400/50" />
-                       <span className="text-cyan-400 text-xs sm:text-sm font-black tracking-[1em] uppercase">Social Deduction Game</span>
-                       <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-400/50" />
+                    <div className="mt-4 flex items-center gap-6">
+                       <div className="h-px w-20 bg-gradient-to-r from-transparent to-cyan-400/50" />
+                       <span className="text-cyan-400 text-sm sm:text-base font-black tracking-[1.2em] uppercase">Social Deduction Game</span>
+                       <div className="h-px w-20 bg-gradient-to-l from-transparent to-cyan-400/50" />
                     </div>
                  </div>
 

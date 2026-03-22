@@ -1,18 +1,18 @@
 // Pool of themed agent names for AI players
 
 const AGENT_NAMES = [
-  // Space crew names
-  "Cosmo", "Nova", "Astro", "Nebula", "Orion",
-  "Pulsar", "Quasar", "Vega", "Rigel", "Altair",
-  // Tech/code names
-  "Pixel", "Glitch", "Byte", "Circuit", "Kernel",
-  "Vector", "Matrix", "Cipher", "Hex", "Binary",
-  // Color-themed names
-  "Crimson", "Azure", "Jade", "Amber", "Violet",
-  "Indigo", "Scarlet", "Cobalt", "Emerald", "Ivory",
-  // Among Us themed
-  "SusCat", "Venter", "TaskBot", "CrewAI", "ImpBot",
-  "SkipVote", "ElecBoy", "CafeMod", "ReactorX", "MedScan",
+  // Space crew names (Serious/Human)
+  "Commander Vance", "Dr. Aris", "Officer Reed", "Captain Solaris", "Pilot Jax",
+  "Engineer Kai", "Navigator Lyra", "Medic Vale", "Specialist Thorne", "Sensor Op Elias",
+  // Sci-fi inspired
+  "Rick Deckard", "Ellen Ripley", "Sarah Connor", "James T. Kirk", "Dana Scully",
+  "Fox Mulder", "Jean-Luc", "Kara Thrace", "Lee Adama", "Sharon Valerii",
+  // Themed/Nicknames (More personality)
+  "Blackbird", "Snapshot", "Deadshot", "Ghost", "Viper",
+  "Wolf", "Falcon", "Raven", "Shadow", "Nightfall",
+  // Subtle/Suspicious
+  "Silas", "Victor", "Morgan", "Julian", "Damien",
+  "Arthur", "Elena", "Clara", "Marcus", "Diana"
 ];
 
 const usedNames = new Set<string>();

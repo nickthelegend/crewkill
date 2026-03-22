@@ -106,8 +106,12 @@ export class ContractService {
   }
 
   async createMarket(gameId: string, playerAddresses: string[]): Promise<string | null> {
-    if (!this.operatorKeypair) return null;
+    if (!this.operatorKeypair) {
+      logger.error("Cannot create market: Operator keypair missing");
+      return null;
+    }
     try {
+      logger.info(`Creating prediction market for room ${gameId} with ${playerAddresses.length} players...`);
       const tx = new Transaction();
       // Deterministically hash room ID to valid Sui Address
       const hashedId = crypto.createHash('sha256').update(gameId).digest('hex');
@@ -121,22 +125,30 @@ export class ContractService {
           tx.pure.vector('address', playerAddresses),
         ],
       });
+
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
         transaction: tx,
         options: { showEvents: true } 
       });
       
+      if (result.effects?.status.status !== 'success') {
+        logger.error(`Prediction market creation TX failed: ${result.effects?.status.error}`);
+        return null;
+      }
+
       const event = result.events?.find(e => e.type.includes('::MarketCreated'));
       const marketId = (event?.parsedJson as any)?.market_id;
       
       if (marketId) {
-        logger.info(`Prediction market created: ${marketId} for game ${gameId}`);
+        logger.info(`Prediction market created SUCCESSFULLY: ${marketId} for game ${gameId}`);
         return marketId;
       }
+      
+      logger.error(`Market ID not found in event for game ${gameId}. Result type: ${JSON.stringify(result.events?.map(e => e.type))}`);
       return null;
     } catch (error) {
-      logger.error(`Failed to create market for game ${gameId}:`, error);
+      logger.error(`Critical error creating market for game ${gameId}:`, error);
       return null;
     }
   }

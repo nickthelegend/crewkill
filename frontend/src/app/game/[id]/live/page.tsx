@@ -53,9 +53,9 @@ export default function LiveRoomPage() {
     );
   }
 
-  // If in lobby, show the Game Not Started UI
-  const isLobby = phase === GamePhase.Lobby || (game && game.status === "CREATED");
+  // Robust started check to fix flickering: prioritize actual room phase
   const isStarted = currentRoom && currentRoom.phase !== "lobby";
+  const isLobby = phase === GamePhase.Lobby || (!isStarted && game && game.status === "CREATED");
   
   if (isLobby && !isStarted) {
     return (

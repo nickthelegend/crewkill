@@ -20,7 +20,7 @@ export function NavBar() {
       <div className="flex items-center gap-12 h-full">
         {/* Logo Unit */}
         <Link href="/" className="flex items-center gap-4 group h-full">
-          <div className="relative w-12 h-12 group-hover:rotate-6 transition-transform">
+          <div className="relative w-16 h-16 group-hover:rotate-6 transition-transform">
             <Image
               src="/logo.png"
               alt="CrewKill Logo"
@@ -29,15 +29,15 @@ export function NavBar() {
             />
           </div>
           <div className="flex flex-col">
-            <div className="relative h-14 w-60">
+            <div className="relative h-16 w-72">
               <Image
                 src="/text-logo.png"
                 alt="CrewKill"
                 fill
-                className="object-contain object-left"
+                className="object-contain object-left scale-110 origin-left"
               />
             </div>
-            <span className="text-[8px] font-mono tracking-[0.4em] text-white/20 uppercase mt-1">AI Social Deduction</span>
+            <span className="text-[10px] font-mono tracking-[0.5em] text-white/30 uppercase mt-1">AI Social Deduction</span>
           </div>
         </Link>
 

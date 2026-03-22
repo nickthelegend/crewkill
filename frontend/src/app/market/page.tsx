@@ -6,6 +6,7 @@ import { SpaceBackground } from "@/components/game/SpaceBackground";
 import { Suspense, useMemo } from "react";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
+import { AmongUsSprite } from "@/components/game/AmongUsSprite";
 
 function MarketContent() {
   const router = useRouter();
@@ -84,61 +85,78 @@ function MarketContent() {
 
 function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick: () => void, isPast?: boolean }) {
   const players = game.players || [];
-  const pot = 0; // In a full impl, we'd query the total pot from Sui or Convex
+  const pot = parseFloat(game.totalPot || "0") / 1e9;
 
   return (
     <motion.div 
       whileHover={{ y: -5 }}
       onClick={onClick}
-      className={`group cursor-pointer border transition-all p-8 flex flex-col justify-between min-h-[300px] ${
-        isPast ? "bg-white/[0.02] border-white/5" : "bg-white/5 border-white/10 hover:border-red-500/50 hover:bg-white/[0.08]"
+      className={`group cursor-pointer border transition-all p-10 flex flex-col justify-between min-h-[350px] relative overflow-hidden ${
+        isPast ? "bg-white/[0.02] border-white/5 opacity-60" : "bg-white/[0.04] border-white/10 hover:border-red-500/50 hover:bg-white/[0.08]"
       }`}
     >
+      {/* Visual background accent */}
+      {!isPast && (
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/10 blur-[60px] rounded-full group-hover:bg-red-500/20 transition-all duration-700" />
+      )}
+
       <div>
-        <div className="flex justify-between items-start mb-8">
-          <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/10">
-            ROOM#{(game.roomId || "").slice(-6).toUpperCase()}
+        <div className="flex justify-between items-start mb-10">
+          <div className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] bg-white/5 px-4 py-1.5 border border-white/10">
+            ROOM#{(game.roomId || "").slice(-8).toUpperCase()}
           </div>
-          <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 ${
-            game.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
-            game.status === "CREATED" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" :
-            "bg-white/5 text-white/20 border border-white/10"
+          <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 border rounded-none flex items-center gap-2 ${
+            game.status === "ACTIVE" || game.phase === "playing" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
+            game.status === "CREATED" || game.phase === "lobby" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
+            "bg-white/5 text-white/20 border-white/10"
           }`}>
-            {game.status}
+            <span className={`w-1.5 h-1.5 rounded-full ${
+               (game.status === "ACTIVE" || game.phase === "playing") ? "bg-emerald-400 animate-pulse" : 
+               (game.status === "CREATED" || game.phase === "lobby") ? "bg-cyan-400 animate-pulse" : "bg-white/20"
+            }`} />
+            {game.phase === "playing" ? "GAME_ACTIVE" : game.status}
           </div>
         </div>
 
-        <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
-           Who is the <span className="text-red-500">Impostor?</span>
+        <h3 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none mb-3 group-hover:text-red-500 transition-colors">
+           Confidence <span className="text-red-500">Market</span>
         </h3>
-        <p className="text-white/40 text-[10px] uppercase font-black tracking-widest mb-6">Match Floor Confidence Market</p>
+        <p className="text-white/40 text-[10px] uppercase font-black tracking-widest opacity-60">Settling on OneChain Network</p>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-end border-t border-white/5 pt-6">
-           <div>
-              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1">Participants</div>
-              <div className="flex -space-x-2">
-                 {players.slice(0, 5).map((p: any, i: number) => (
-                   <div key={i} className={`w-6 h-6 rounded-full border border-black ${i % 2 === 0 ? "bg-red-500" : "bg-blue-500"}`} />
-                 ))}
-                 {players.length > 5 && (
-                   <div className="w-6 h-6 rounded-full bg-white/10 border border-black flex items-center justify-center text-[8px] text-white font-black">+{players.length - 5}</div>
-                 )}
+      <div className="space-y-8">
+        <div className="flex justify-between items-end border-t border-white/10 pt-10">
+           <div className="space-y-4">
+              <div className="flex flex-col gap-1">
+                <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1">Participants</div>
+                <div className="flex -space-x-3">
+                   {players.slice(0, 6).map((p: any, i: number) => (
+                     <div key={i} className={`w-9 h-9 border border-white/10 bg-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-1 relative z-[${10-i}]`}>
+                        <AmongUsSprite colorId={p.colorId ?? (i % 12)} size={22} isGhost={!p.isAlive} />
+                        {!p.isAlive && <div className="absolute inset-0 bg-red-600/30 backdrop-grayscale" />}
+                     </div>
+                   ))}
+                   {players.length > 6 && (
+                     <div className="w-9 h-9 bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-white font-black z-0">
+                        +{players.length - 6}
+                     </div>
+                   )}
+                </div>
               </div>
            </div>
+
            <div className="text-right">
-              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1">Created</div>
-              <div className="text-[10px] font-mono text-white/60 lowercase italic">
-                {formatDistanceToNow(game._creationTime)} ago
+              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Total Stake</div>
+              <div className="text-3xl font-black text-white tabular-nums italic tracking-tighter">
+                {pot.toFixed(2)} <span className="text-red-500 text-sm not-italic ml-0.5">OCT</span>
               </div>
            </div>
         </div>
         
-        <button className={`w-full py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all border ${
-          isPast ? "border-white/10 text-white/20" : "bg-red-600 text-white border-red-600 group-hover:bg-red-500 shadow-[0_10px_20px_rgba(255,0,0,0.1)]"
+        <button className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.4em] transition-all border shadow-lg ${
+          isPast ? "border-white/10 text-white/20 cursor-default" : "bg-white text-black border-white group-hover:bg-red-500 group-hover:text-white group-hover:border-red-500 shadow-white/5"
         }`}>
-          {isPast ? "View Results" : "Enter Market"}
+          {isPast ? "MARKET CLOSED" : "JOIN FLOOR"}
         </button>
       </div>
     </motion.div>

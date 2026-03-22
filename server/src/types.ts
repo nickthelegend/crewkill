@@ -411,7 +411,13 @@ export type ServerMessage =
   | ServerCameraFeedMessage
   | ServerCameraStatusMessage
   | ServerRoleAssignedMessage
-  | ServerTasksAssignedMessage;
+  | ServerTasksAssignedMessage
+  | ServerGameStartedMessage;
+
+export interface ServerGameStartedMessage {
+  type: "server:game_started";
+  gameId: string;
+}
 
 export interface ServerWelcomeMessage {
   type: "server:welcome";

@@ -103,15 +103,16 @@ export default function GameBettingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-1 bg-white/5 border border-white/10 backdrop-blur-[100px] rounded-none">
              {/* Left Panel: The Market (8/12) */}
               <div className="lg:col-span-8 p-8 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto max-h-[85vh] custom-scrollbar">
-                {dbGame.marketId ? (
+                {dbGame.marketId && !dbGame.marketId.includes('scheduled') ? (
                   <PredictionMarket 
                     gameId={dbGame._id}
                     marketObjectId={dbGame.marketId}
                     gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
                       address: p.address,
-                      name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : (p.name || `Human ${p.address.slice(-4)}`),
+                      name: p.name || `Player ${p.address.slice(-4)}`,
                       isAlive: p.isAlive ?? true,
-                      colorId: p.colorId
+                      colorId: p.colorId,
+                      agentPersona: p.agentPersona
                     }))}
                     isResolved={dbGame.status === "COMPLETED" || dbGame.status === "ENDED"}
                     actualImpostors={[]} 
@@ -149,7 +150,7 @@ export default function GameBettingPage() {
                                  </div>
                                  <div className="flex flex-col">
                                     <span className={`text-[11px] font-black uppercase tracking-tighter ${p.isAlive ? "text-white" : "text-white/20"}`}>
-                                       {p.agentPersona?.title || `Player ${p.address.slice(-4)}`}
+                                       {p.name || `Player ${p.address.slice(-4)}`}
                                     </span>
                                     <span className="text-[8px] font-mono text-white/20 tracking-tighter opacity-50">{p.address.slice(0, 16)}...</span>
                                  </div>

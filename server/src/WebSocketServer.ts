@@ -467,7 +467,7 @@ export class WebSocketRelayServer {
       );
       return {
         address: p.address,
-        name: p.isAIAgent ? (p.agentPersona?.title || client?.name || p.address.slice(0, 8)) : (client?.name || p.address.slice(0, 8)),
+        name: client?.name || p.address.slice(0, 8),
         colorId: p.colorId,
         isAIAgent: p.isAIAgent,
         agentPersona: p.agentPersona,
@@ -685,6 +685,11 @@ export class WebSocketRelayServer {
 
         // Sync to Convex
         this.updateConvexPlayers(roomId);
+
+        // Robust market check: If room should have a market but doesn't, try to create it
+        if (room.players.length >= MIN_PLAYERS_TO_START && !room.marketId) {
+          this.ensureMarketDeployment(roomId);
+        }
 
         // Trigger auto-start logic
         this.onPlayerJoinedRoom(roomId);
@@ -954,14 +959,7 @@ export class WebSocketRelayServer {
         (databaseService as any).createScheduledGame(roomId, scheduledAt, bettingEndsAt);
 
         // Create prediction market on-chain (async)
-        contractService.createMarket(roomId, room.players.map(p => p.address))
-          .then(marketId => {
-             if (marketId) {
-                (databaseService as any).updateGameMarketId(roomId, marketId);
-                room.marketId = marketId;
-             }
-          })
-          .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
+        this.ensureMarketDeployment(roomId);
 
         // Start the game immediately so player can interact
         this.startGameInternal(roomId);
@@ -1106,7 +1104,54 @@ export class WebSocketRelayServer {
       return;
     }
 
-    room.phase = isInitialBoarding ? "lobby" : "playing";
+    // Set playing state
+    room.phase = "playing";
+    this.broadcastToRoom(roomId, {
+      type: "server:game_started",
+      gameId: roomId,
+    });
+
+    // Final check for market - if still missing, try one last time
+    if (!room.marketId) {
+        this.ensureMarketDeployment(roomId);
+    }
+
+    logger.info(`Game started in room ${roomId}`);
+  }
+
+  private async ensureMarketDeployment(roomId: string): Promise<void> {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    // Check database first in case it's already there but not in memory
+    try {
+        const dbGame = await databaseService.getGameByRoomId(roomId);
+        if (dbGame?.marketId) {
+           room.marketId = dbGame.marketId;
+           return;
+        }
+    } catch (err) {
+        logger.error(`Error checking DB for market in ${roomId}:`, err);
+    }
+
+    if (room.players.length < MIN_PLAYERS_TO_START) return;
+
+    logger.info(`Ensuring market deployment for room ${roomId}...`);
+    try {
+        const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
+        if (marketId) {
+            await databaseService.updateGameMarketId(roomId, marketId);
+            room.marketId = marketId;
+            logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
+        }
+    } catch (err) {
+        logger.error(`Failed to ensure market for ${roomId}:`, err);
+    }
+  }
+
+  private startGame(roomId: string, isInitialBoarding = false): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
     const phaseValue = isInitialBoarding ? 1 : 2;
 
     // Assign impostors randomly

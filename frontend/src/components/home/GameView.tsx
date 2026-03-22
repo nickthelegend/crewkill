@@ -199,7 +199,7 @@ export function GameView({
                             <div className="flex-1 text-left min-w-0">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-[11px] font-black text-white truncate uppercase tracking-tight">
-                                  {PlayerColors[player.colorId]?.name || `Agent ${player.colorId}`}
+                                  {player.name || PlayerColors[player.colorId]?.name || `Agent ${player.colorId}`}
                                 </span>
                                 {!player.isAlive && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded">Terminated</span>}
                               </div>
@@ -271,7 +271,10 @@ export function GameView({
                    marketObjectId={marketObjectId}
                    gamePlayers={activePlayers.map((p) => ({
                      address: p.address,
-                     name: `Agent ${p.address.slice(0, 6)}...${p.address.slice(-4)}`,
+                     name: p.name || `Agent ${p.address.slice(0, 6)}...`,
+                     isAlive: p.isAlive,
+                     colorId: p.colorId,
+                     agentPersona: p.agentPersona
                    }))}
                    isResolved={gamePhase === 7} // PHASE_ENDED is 7 in aligned Move
                    actualImpostors={actualImpostors}
