@@ -821,139 +821,150 @@ export function ScrollableMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [playerPositions, setPlayerPositions] = useState<Record<string, PlayerPosition>>({});
+  const playerPositionsRef = useRef<Record<string, PlayerPosition>>({});
   const [zoom, setZoom] = useState(0.4); 
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
-  // Sync player positions when players array changes
+  // Persist the last known non-empty player list to prevent flicker on state drops
+  const [lastKnownPlayers, setLastKnownPlayers] = useState(players);
   useEffect(() => {
-    setPlayerPositions(prev => {
-      const next = { ...prev };
-      let changed = false;
+    if (players.length > 0) {
+      setLastKnownPlayers(players);
+    }
+  }, [players]);
 
-      // Track consistency of addresses in current room
-      const currentAddresses = new Set<string>(players.map(p => p.address as string));
+  // Sync player positions when lastKnownPlayers array changes
+  useEffect(() => {
+    // Snapshot authoritative ref as our local working copy
+    const next = { ...playerPositionsRef.current };
+    let changed = false;
 
-      // 1. Cleanup: Remove players only if they are DEAD
-      // (Persist known alive players even if transiently missing from the list)
-      // to avoid flickering during state sync / split-second drops.
+    // Detect logic-level changes and integrate new players
+    lastKnownPlayers.forEach((player, idx) => {
+      const addr = player.address as string;
+      
+      // Cleanup dead players
+      if (!player.isAlive) {
+        if (next[addr]) {
+          delete next[addr];
+          changed = true;
+        }
+        return;
+      }
 
-      // 2. Integration: Add new players and detect movement
-      players.forEach((player, idx) => {
-        const addr = player.address as string;
+      const room = ROOMS[player.location];
+      if (!room) return;
+
+      const offsetX = ((idx % 3) - 1) * 60;
+      const offsetY = (Math.floor(idx / 3)) * 50;
+      const targetX = room.center.x + offsetX;
+      const targetY = room.center.y + offsetY;
+
+      // 1. Initial Spawn
+      if (!next[addr]) {
+        next[addr] = {
+          x: targetX,
+          y: targetY,
+          waypoints: [],
+          currentWaypointIndex: 0,
+          isMoving: false,
+          facingLeft: false,
+          lastLocation: player.location
+        };
+        changed = true;
+      } 
+      // 2. Continuous Pathfinding Logic
+      else if (next[addr].lastLocation !== player.location) {
+        const prevLoc = next[addr].lastLocation;
+        const currLoc = player.location;
+        const roomPath = findPath(prevLoc, currLoc);
         
-        // If player is dead, they shouldn't be in this layer (handled by deadBodies)
-        if (!player.isAlive) {
-          if (next[addr]) {
-            delete next[addr];
-            changed = true;
-          }
+        // Parallel lane logic: apply offset to all intermediate waypoints
+        const finalPath = roomPath.map(p => ({
+          x: p.x + offsetX,
+          y: p.y + offsetY
+        }));
+        
+        // Add final destination in room
+        finalPath.push({ x: targetX, y: targetY });
+
+        // CRITICAL: Instructions update, no snapping
+        next[addr] = {
+          ...next[addr],
+          waypoints: finalPath,
+          currentWaypointIndex: 0,
+          isMoving: true,
+          lastLocation: currLoc
+        };
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      playerPositionsRef.current = next;
+      setPlayerPositions({ ...next });
+    }
+  }, [players]);
+
+  // Animation loop (authoritative physics engine)
+  useEffect(() => {
+    const speed = 10;
+    const interval = setInterval(() => {
+      // 1. Working copy from physics ref
+      const current = { ...playerPositionsRef.current };
+      let hasChanges = false;
+
+      // 2. Resolve physics for every active entity
+      Object.keys(current).forEach(addr => {
+        const pos = current[addr];
+        if (!pos?.isMoving || pos.waypoints.length === 0) return;
+
+        const target = pos.waypoints[pos.currentWaypointIndex];
+        if (!target) {
+          current[addr] = { ...pos, isMoving: false, waypoints: [] };
+          hasChanges = true;
           return;
         }
 
-        const room = ROOMS[player.location];
-        if (!room) return;
+        const dx = target.x - pos.x;
+        const dy = target.y - pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Offset based on player index to prevent perfect overlapping in clump
-        const offsetX = ((idx % 3) - 1) * 60;
-        const offsetY = (Math.floor(idx / 3)) * 50;
-        const targetX = room.center.x + offsetX;
-        const targetY = room.center.y + offsetY;
-
-        // NEW PLAYER JOINED
-        if (!next[addr]) {
-          next[addr] = {
-            x: targetX,
-            y: targetY,
-            waypoints: [],
-            currentWaypointIndex: 0,
-            isMoving: false,
-            facingLeft: false,
-            lastLocation: player.location
+        if (dist < speed) {
+          // Snap logic for waypoints
+          if (pos.currentWaypointIndex >= pos.waypoints.length - 1) {
+            current[addr] = { ...pos, x: target.x, y: target.y, isMoving: false, waypoints: [] };
+          } else {
+            current[addr] = { ...pos, x: target.x, y: target.y, currentWaypointIndex: pos.currentWaypointIndex + 1 };
+          }
+          hasChanges = true;
+        } else {
+          // Continuous vector movement
+          current[addr] = {
+            ...pos,
+            x: pos.x + (dx / dist) * speed,
+            y: pos.y + (dy / dist) * speed,
+            facingLeft: dx < 0,
           };
-          changed = true;
-        } 
-        // EXISTING PLAYER CHANGED LOCATION
-        else if (next[addr].lastLocation !== player.location) {
-          const prevLoc = next[addr].lastLocation;
-          const currLoc = player.location;
-          
-          // Generate formal room-to-room path waypoints
-          const roomPath = findPath(prevLoc, currLoc);
-          
-          // CRITICAL: We want to walk FROM where we are NOW to the target
-          // Instead of snapping back to the center of the previous room.
-          // The formal path might start at the center of prevLoc, but we are moving.
-          // So we use the roomPath waypoints but keep our current x, y as the starting point.
-          
-          const finalPath = [...roomPath];
-          // Always end exactly at the offset position in the target room
-          finalPath.push({ x: targetX, y: targetY });
-
-          next[addr] = {
-            ...next[addr],
-            waypoints: finalPath,
-            currentWaypointIndex: 0,
-            isMoving: true,
-            lastLocation: currLoc
-          };
-          changed = true;
+          hasChanges = true;
         }
       });
 
-      return changed ? next : prev;
-    });
-  }, [players]);
-
-  // Animation loop
-  useEffect(() => {
-    const speed = 6;
-    const interval = setInterval(() => {
-      setPlayerPositions(prev => {
-        const next = { ...prev };
-        let hasChanges = false;
-
-        Object.keys(next).forEach(addr => {
-          const pos = next[addr];
-          if (!pos?.isMoving || pos.waypoints.length === 0) return;
-
-          const target = pos.waypoints[pos.currentWaypointIndex];
-          if (!target) {
-            next[addr] = { ...pos, isMoving: false, waypoints: [] };
-            hasChanges = true;
-            return;
-          }
-
-          const dx = target.x - pos.x;
-          const dy = target.y - pos.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          hasChanges = true;
-          if (dist < speed) {
-            if (pos.currentWaypointIndex >= pos.waypoints.length - 1) {
-              next[addr] = { ...pos, x: target.x, y: target.y, isMoving: false, waypoints: [] };
-            } else {
-              next[addr] = { ...pos, x: target.x, y: target.y, currentWaypointIndex: pos.currentWaypointIndex + 1 };
-            }
-          } else {
-            next[addr] = {
-              ...pos,
-              x: pos.x + (dx / dist) * speed,
-              y: pos.y + (dy / dist) * speed,
-              facingLeft: dx < 0,
-            };
-          }
-        });
-
-        return hasChanges ? next : prev;
-      });
+      if (hasChanges) {
+        // 3. Re-synchronize authoritative ref and React render state
+        playerPositionsRef.current = current;
+        setPlayerPositions(current);
+      }
     }, 16);
+
     return () => clearInterval(interval);
   }, []);
 
+
   // Center camera on spotlighted/followed player
-  const currentPlayerData = players.find(p => p.address === currentPlayer);
+  const currentPlayerData = lastKnownPlayers.find(p => p.address === currentPlayer);
   const followedPlayer = spotlightedPlayer
-    ? players.find(p => p.address === spotlightedPlayer)
+    ? lastKnownPlayers.find(p => p.address === spotlightedPlayer)
     : currentPlayerData;
 
   // Auto-pan to followed player
@@ -1304,7 +1315,7 @@ export function ScrollableMap({
           })}
 
           {/* Players */}
-          {players.filter(p => p.isAlive).map(player => {
+          {lastKnownPlayers.filter(p => p.isAlive).map(player => {
             const pos = playerPositions[player.address];
             if (!pos) return null;
 
@@ -1434,7 +1445,7 @@ export function ScrollableMap({
           })}
 
           {/* Player dots with glow */}
-          {players.filter(p => p.isAlive).map(player => {
+          {lastKnownPlayers.filter(p => p.isAlive).map(player => {
             const pos = playerPositions[player.address];
             if (!pos) return null;
             const isSpotlighted = player.address === spotlightedPlayer;

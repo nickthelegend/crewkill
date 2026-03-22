@@ -9,6 +9,7 @@ import {
 } from "@/components/game";
 import { ConnectWallet } from "@/components/wallet/ConnectWallet";
 import { OperatorKeyPanel } from "@/components/operator/OperatorKeyPanel";
+import { useState, useEffect } from "react";
 import {
   Player,
   GameLog,
@@ -63,11 +64,24 @@ export function GameView({
   gamePhase = 0,
   actualImpostors = [],
 }: GameViewProps) {
+  // Persistence layer to prevent HUD flickering during WebSocket blips
+  const [stablePlayers, setStablePlayers] = useState<Player[]>(players);
+  const [stableRoom, setStableRoom] = useState<RoomState | null>(currentRoom);
+
+  useEffect(() => {
+    if (players.length > 0) setStablePlayers(players);
+    if (currentRoom) setStableRoom(currentRoom);
+  }, [players, currentRoom]);
+
+  // Use stable data for rendering
+  const activePlayers = stablePlayers;
+  const activeRoom = stableRoom;
+
   return (
     <div key="game" className="fixed inset-0 bg-black font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Fullscreen Map */}
       <ScrollableMap
-        players={players}
+        players={activePlayers}
         deadBodies={deadBodies}
         currentPlayer={currentPlayer || ("0x0" as `0x${string}`)}
         onPlayerMove={() => {}} // Spectators don't move
@@ -94,7 +108,7 @@ export function GameView({
                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{isConnected ? "SYNCED" : "DESYNC"}</span>
                  <div className="h-4 w-px bg-white/10 mx-1" />
                  <span className="text-sm font-black text-white uppercase italic tracking-tighter">
-                   {currentRoom?.roomId || "ORBIT_01"}
+                   {activeRoom?.roomId || "ORBIT_01"}
                  </span>
               </div>
            </div>
@@ -105,7 +119,7 @@ export function GameView({
            </div>
 
            <div className="pointer-events-auto flex items-center gap-3">
-              {currentRoom && (
+              {activeRoom && (
                 <button
                   onClick={() => onShowInviteModal(true)}
                   className="px-6 py-3 rounded-2xl bg-cyan-400 text-black text-xs font-black uppercase tracking-widest hover:bg-cyan-300 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)]"
@@ -121,7 +135,7 @@ export function GameView({
         <div className="absolute top-24 right-6 bottom-24 w-72 flex flex-col gap-4">
             
             {/* PRIZE POOL */}
-            {currentRoom?.wagerAmount && players.length > 0 && (
+            {activeRoom?.wagerAmount && activePlayers.length > 0 && (
               <motion.div 
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -132,7 +146,7 @@ export function GameView({
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-yellow-400 italic tracking-tighter leading-none">
-                      {(Number(currentRoom.wagerAmount) * players.length / 1e18).toFixed(3)}
+                      {(Number(activeRoom.wagerAmount) * activePlayers.length / 1e18).toFixed(3)}
                     </span>
                     <span className="text-xs font-black text-yellow-400/40 uppercase tracking-widest">OCT</span>
                   </div>
@@ -148,12 +162,12 @@ export function GameView({
             >
                <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
                   <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Players</span>
-                  <span className="text-[10px] font-black text-emerald-400/60 uppercase">{players.filter(p => p.isAlive).length}/{players.length}</span>
+                  <span className="text-[10px] font-black text-emerald-400/60 uppercase">{activePlayers.filter(p => p.isAlive).length}/{activePlayers.length}</span>
                </div>
                
                <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                   <div className="space-y-1">
-                    {players.map((player) => {
+                    {activePlayers.map((player) => {
                       const isSpotlighted = player.address === spotlightedPlayer;
                       const isInfoOpen = player.address === selectedAgentInfo;
                       return (
@@ -241,7 +255,7 @@ export function GameView({
                  <PredictionMarket
                    gameId={gameObjectId}
                    marketObjectId={marketObjectId}
-                   gamePlayers={players.map((p) => ({
+                   gamePlayers={activePlayers.map((p) => ({
                      address: p.address,
                      name: `Agent ${p.address.slice(0, 6)}...${p.address.slice(-4)}`,
                    }))}
@@ -278,8 +292,8 @@ export function GameView({
 
       {/* Game Invite Modal */}
       <InviteModal
-        isOpen={showInviteModal && !!currentRoom}
-        roomId={currentRoom?.roomId ?? ""}
+        isOpen={showInviteModal && !!activeRoom}
+        roomId={activeRoom?.roomId ?? ""}
         onClose={() => onShowInviteModal(false)}
       />
     </div>
