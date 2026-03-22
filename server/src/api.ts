@@ -4,7 +4,7 @@ import { createLogger } from "./logger.js";
 import { wagerService } from "./WagerService.js";
 import type { WebSocketRelayServer } from "./WebSocketServer.js";
 import { databaseService } from "./DatabaseService.js";
-import { Operator } from "@prisma/client";
+// Removed Prisma import as we migrated to Convex
 
 const logger = createLogger("api");
 
@@ -19,7 +19,7 @@ function extractBearerToken(req: Request): string | null {
 
 // Middleware to require operator authentication
 interface AuthenticatedRequest extends Request {
-  operator?: Operator;
+  operator?: any; // Convex operator type
 }
 
 async function requireOperatorAuth(
@@ -141,13 +141,92 @@ export function createApiServer(
     });
   });
 
+  // ============ SYSTEM CONTROL (Operator Only) ============
+
+  // Create a new room on-chain and fill it with AI agents
+  app.post("/api/system/create-full-room", requireOperatorAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const { count = 9, maxPlayers = 10, impostorCount = 2, wagerAmount } = req.body;
+    
+    try {
+      logger.info(`System request: Creating full room with ${count} AI agents...`);
+      const result = await wsServer.createRoom(
+        undefined, // System created
+        maxPlayers,
+        impostorCount,
+        wagerAmount,
+        count
+      );
+
+      if ("error" in result) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
+
+      res.json({
+        success: true,
+        roomId: result.roomId,
+        creationDigest: result.creationDigest,
+        players: result.players.length,
+      });
+    } catch (err) {
+      logger.error("System room creation failed:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Manually force-start a game for an existing room
+  app.post("/api/system/start-game", requireOperatorAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const { roomId } = req.body;
+    
+    if (!roomId) {
+      res.status(400).json({ error: "roomId required" });
+      return;
+    }
+
+    try {
+      const room = wsServer.getRooms().find(r => r.roomId === roomId);
+      if (!room) {
+        res.status(404).json({ error: "Room not found" });
+        return;
+      }
+
+      logger.info(`System request: Manually starting game for room ${roomId}`);
+      // Using any cast to access private/internal if needed, though startGameInternal is usually handled via methods
+      await (wsServer as any).startGameInternal(roomId);
+      
+      res.json({ success: true, roomId });
+    } catch (err) {
+      logger.error("System start game failed:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Add more AI agents to an existing room
+  app.post("/api/system/add-agents", requireOperatorAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const { roomId, count = 1 } = req.body;
+    
+    if (!roomId) {
+      res.status(400).json({ error: "roomId required" });
+      return;
+    }
+
+    try {
+      logger.info(`System request: Adding ${count} agents to room ${roomId}`);
+      (wsServer as any).spawnAIAgentsForRoom(roomId, count);
+      res.json({ success: true, roomId });
+    } catch (err) {
+      logger.error("System add agents failed:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ============ SERVER INFO ============
 
   app.get("/api/server", (_req: Request, res: Response) => {
     const stats = wsServer.getStats();
 
     res.json({
-      version: "1.1.0",
+      version: "1.2.0",
       network: "OneChain",
       wager: {
         amountMist: wagerService.getWagerAmount().toString(),

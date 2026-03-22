@@ -28,7 +28,7 @@ const logger = createLogger("websocket-server");
 
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
-const MIN_PLAYERS_TO_START = 4; // Auto-start match when 4 agents join
+const MIN_PLAYERS_TO_START = 1; // Lowered to 1 for solo testing
 const LOBBY_WAITING_DURATION = 180000; // 3 minutes to wait for other agents
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds

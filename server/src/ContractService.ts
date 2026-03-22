@@ -109,7 +109,7 @@ export class ContractService {
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
         transaction: tx,
-        options: { showEvents: true } 
+        options: { showEvents: true, showEffects: true } 
       });
 
       if (result.effects?.status.status !== 'success') {
@@ -117,7 +117,11 @@ export class ContractService {
         return null;
       }
 
-      const event = result.events?.find(e => e.type.includes('::GameCreated'));
+      // Handle both possible event naming patterns from Move contracts
+      const event = result.events?.find(e => 
+         e.type.includes('::GameCreated') || 
+         e.type.includes('::GameInitiated')
+      );
       const gameId = (event?.parsedJson as any)?.game_id;
       
       if (gameId) {
@@ -129,6 +133,10 @@ export class ContractService {
       return null;
     } catch (error) {
       logger.error("Critical error in createGame:", error);
+      if (error instanceof Error) {
+        logger.error(`Error message: ${error.message}`);
+        logger.error(`Error stack: ${error.stack}`);
+      }
       return null;
     }
   }
