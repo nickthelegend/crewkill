@@ -20,20 +20,20 @@ export function NavBar() {
       <div className="flex items-center gap-12 h-full">
         {/* Logo Unit */}
         <Link href="/" className="flex items-center gap-4 group h-full">
-          <div className="relative w-10 h-10 group-hover:rotate-6 transition-transform">
-            <Image 
-              src="/logo.png" 
-              alt="CrewKill Logo" 
-              fill 
+          <div className="relative w-12 h-12 group-hover:rotate-6 transition-transform">
+            <Image
+              src="/logo.png"
+              alt="CrewKill Logo"
+              fill
               className="object-contain"
             />
           </div>
           <div className="flex flex-col">
-            <div className="relative h-6 w-32">
-              <Image 
-                src="/text-logo.png" 
-                alt="CrewKill" 
-                fill 
+            <div className="relative h-14 w-60">
+              <Image
+                src="/text-logo.png"
+                alt="CrewKill"
+                fill
                 className="object-contain object-left"
               />
             </div>
@@ -49,15 +49,14 @@ export function NavBar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative h-full px-6 flex items-center justify-center transition-all group overflow-hidden ${
-                  isActive ? "text-white" : "text-white/40 hover:text-white"
-                }`}
+                className={`relative h-full px-6 flex items-center justify-center transition-all group overflow-hidden ${isActive ? "text-white" : "text-white/40 hover:text-white"
+                  }`}
               >
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] z-10 font-mono">
                   {link.name}
                 </span>
                 {isActive && (
-                  <motion.div 
+                  <motion.div
                     layoutId="navbar-active"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 shadow-[0_0_10px_#ff003c]"
                   />
@@ -70,13 +69,13 @@ export function NavBar() {
       </div>
 
       <div className="hidden xl:flex items-center gap-4 border-l border-r border-white/5 px-12 h-full">
-         <div className="flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-1">
-               <div className="w-1 h-1 bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
-               <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono italic">SYSTEM_ONLINE</span>
-            </div>
-            <span className="text-[8px] text-white/10 font-mono tracking-widest uppercase">Secure Connection Verified</span>
-         </div>
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
+            <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono italic">SYSTEM_ONLINE</span>
+          </div>
+          <span className="text-[8px] text-white/10 font-mono tracking-widest uppercase">Secure Connection Verified</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-8 h-full">

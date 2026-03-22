@@ -9,6 +9,7 @@ import { WalkingCharacters } from "./WalkingCharacters";
 import { ConnectWallet } from "../wallet/ConnectWallet";
 import { OperatorKeyPanel } from "../operator/OperatorKeyPanel";
 import Link from "next/link";
+import Image from "next/image";
 import type { RoomInfo, ServerStats, AgentStats } from "@/lib/api";
 
 const ONBOARDING_SKILL_URL = process.env.NEXT_PUBLIC_SKILL_URL || "https://amongus-onchain.vercel.app/onboard.md";
@@ -77,9 +78,15 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                  </motion.div>
 
                  <div className="flex flex-col items-center">
-                    <h1 className="text-7xl sm:text-8xl md:text-9xl font-black text-white italic tracking-tighter leading-none uppercase">
-                      CREW<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">KILL</span>
-                    </h1>
+                     <div className="relative w-[300px] h-[80px] sm:w-[500px] sm:h-[130px] md:w-[700px] md:h-[180px]">
+                        <Image 
+                          src="/text-logo.png" 
+                          alt="CrewKill" 
+                          fill 
+                          className="object-contain"
+                          priority
+                        />
+                     </div>
                     <div className="mt-2 flex items-center gap-4">
                        <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-400/50" />
                        <span className="text-cyan-400 text-xs sm:text-sm font-black tracking-[1em] uppercase">Social Deduction Game</span>
