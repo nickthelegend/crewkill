@@ -483,14 +483,29 @@ export class WebSocketRelayServer {
     colorId?: number,
     asSpectator?: boolean,
   ): void {
-    const room = this.rooms.get(roomId);
+    let room = this.rooms.get(roomId);
     if (!room) {
-      this.sendError(client, "ROOM_NOT_FOUND", `Room ${roomId} not found`);
-      return;
+      if (roomId.startsWith("scheduled_")) {
+        // Auto-create room for scheduled games if it doesn't exist
+        logger.info(`Auto-creating room for scheduled game: ${roomId}`);
+        const result = this.createRoom(undefined, 10, 2, "100000000", 10, roomId);
+        
+        if ("error" in result) {
+          this.sendError(client, "ROOM_CREATION_FAILED", result.error);
+          return;
+        }
+        room = result;
+      } else {
+        this.sendError(client, "ROOM_NOT_FOUND", `Room ${roomId} not found`);
+        return;
+      }
     }
 
+    // Now 'room' is guaranteed to exist
+    const activeRoom = room!;
+
     // Check if room has ended - prevent any new joins (except spectators viewing results)
-    if (room.phase === "ended" && !asSpectator) {
+    if (activeRoom.phase === "ended" && !asSpectator) {
       this.sendError(
         client,
         "GAME_ENDED",
@@ -896,40 +911,71 @@ export class WebSocketRelayServer {
 
     // If first player joins (and we're in lobby), start session if reached min players
     if (room.players.length >= MIN_PLAYERS_TO_START && room.phase === "lobby") {
-      const scheduledAt = Date.now() + LOBBY_WAITING_DURATION;
-      const bettingEndsAt = scheduledAt; // Betting ends when lobby locks
+      if (roomId.startsWith("scheduled_")) {
+        const scheduledTimeMs = parseInt(roomId.split("_")[1] || "0", 10);
+        const now = Date.now();
+        const waitMs = Math.max(0, scheduledTimeMs - now);
+        
+        logger.info(`Scheduled room ${roomId} reached minimum players. Waiting ${waitMs / 1000}s to start game.`);
+        
+        // Create prediction market on-chain immediately so betting can begin!
+        contractService.createMarket(roomId, room.players.map(p => p.address))
+          .then(marketId => {
+             if (marketId) {
+                (databaseService as any).updateGameMarketId(roomId, marketId);
+                room.marketId = marketId;
+             }
+          })
+          .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
 
-      logger.info(
-        `Reached minimum players (${room.players.length}/${MIN_PLAYERS_TO_START}) for room ${roomId}, starting game and opening lobby for ${LOBBY_WAITING_DURATION / 1000}s`,
-      );
+        // Start countdown to actual game start
+        setTimeout(() => {
+          logger.info(`Scheduled time reached for room ${roomId}. Starting game.`);
+          this.startGameInternal(roomId);
+          extended.lobbyLocked = true;
+          this.reassignRolesAfterLobby(roomId);
+          this.broadcastToRoom(roomId, {
+            type: "server:lobby_locked",
+            gameId: roomId,
+            message: "Lobby is now locked. Game has begun.",
+          });
+        }, waitMs);
+      } else {
+        const scheduledAt = Date.now() + LOBBY_WAITING_DURATION;
+        const bettingEndsAt = scheduledAt; // Betting ends when lobby locks
 
-      // Persist scheduled game start to database (async)
-      (databaseService as any).createScheduledGame(roomId, scheduledAt, bettingEndsAt);
+        logger.info(
+          `Reached minimum players (${room.players.length}/${MIN_PLAYERS_TO_START}) for dynamic room ${roomId}, starting game and opening lobby for ${LOBBY_WAITING_DURATION / 1000}s`,
+        );
 
-      // Create prediction market on-chain (async)
-      contractService.createMarket(roomId, room.players.map(p => p.address))
-        .then(marketId => {
-           if (marketId) {
-              (databaseService as any).updateGameMarketId(roomId, marketId);
-              room.marketId = marketId;
-           }
-        })
-        .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
+        // Persist scheduled game start to database (async)
+        (databaseService as any).createScheduledGame(roomId, scheduledAt, bettingEndsAt);
 
-      // Start the game immediately so player can interact
-      this.startGameInternal(roomId);
+        // Create prediction market on-chain (async)
+        contractService.createMarket(roomId, room.players.map(p => p.address))
+          .then(marketId => {
+             if (marketId) {
+                (databaseService as any).updateGameMarketId(roomId, marketId);
+                room.marketId = marketId;
+             }
+          })
+          .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
 
-      // Start lobby waiting timer (3 minutes)
-      extended.lobbyTimer = setTimeout(() => {
-        extended.lobbyLocked = true;
-        logger.info(`Room ${roomId} lobby locked after waiting period`);
-        this.reassignRolesAfterLobby(roomId);
-        this.broadcastToRoom(roomId, {
-          type: "server:lobby_locked",
-          gameId: roomId,
-          message: "Lobby is now locked. No more players can join.",
-        });
-      }, LOBBY_WAITING_DURATION);
+        // Start the game immediately so player can interact
+        this.startGameInternal(roomId);
+
+        // Start lobby waiting timer (3 minutes)
+        extended.lobbyTimer = setTimeout(() => {
+          extended.lobbyLocked = true;
+          logger.info(`Room ${roomId} lobby locked after waiting period`);
+          this.reassignRolesAfterLobby(roomId);
+          this.broadcastToRoom(roomId, {
+            type: "server:lobby_locked",
+            gameId: roomId,
+            message: "Lobby is now locked. No more players can join.",
+          });
+        }, LOBBY_WAITING_DURATION);
+      }
 
       return;
     }
@@ -1465,7 +1511,6 @@ export class WebSocketRelayServer {
     if (!room) return;
 
     const previousPhase = room.phase === "lobby" ? 0 : 2;
-
     if (phase === 7) {
       room.phase = "ended";
     }

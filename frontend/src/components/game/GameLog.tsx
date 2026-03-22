@@ -65,13 +65,13 @@ export function GameLogPanel({ logs, maxHeight = "400px" }: GameLogProps) {
 
   return (
     <motion.div
-      className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden"
+      className="bg-black/40 rounded-none border border-white/10 overflow-hidden"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
     >
       {/* Header */}
-      <div className="bg-slate-700/50 px-4 py-2 border-b border-slate-600">
-        <h3 className="text-white font-bold">Game Log</h3>
+      <div className="bg-white/5 px-6 py-4 border-b border-white/10">
+        <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Game Simulation Intel</h3>
       </div>
 
       {/* Log entries */}
@@ -89,27 +89,26 @@ export function GameLogPanel({ logs, maxHeight = "400px" }: GameLogProps) {
             logs.map((log, index) => (
               <motion.div
                 key={`${log.timestamp}-${index}`}
-                className={`
-                  flex items-start gap-2 p-2 rounded-lg border
-                  ${logColors[log.type]}
-                `}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -10 }}
+                className={`flex items-start gap-4 p-4 rounded-none border-l-2 ${logColors[log.type]}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="mt-0.5">{logIcons[log.type]}</div>
+                <div className="mt-0.5 w-6 h-6 flex items-center justify-center bg-black/40 border border-white/5">
+                  {logIcons[log.type]}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-200 leading-tight">
+                  <p className="text-[11px] font-black text-white/80 uppercase tracking-tight leading-snug">
                     {log.message}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-slate-500">
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-[9px] font-mono text-white/20 tracking-tighter">
                       {formatTime(log.timestamp)}
                     </span>
                     {log.round !== undefined && (
-                      <span className="text-xs text-slate-600">
-                        Round {log.round.toString()}
+                      <span className="text-[9px] font-black italic text-white/10 uppercase tracking-[0.2em]">
+                        RD {log.round}
                       </span>
                     )}
                   </div>

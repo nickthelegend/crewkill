@@ -69,7 +69,7 @@ export function PredictionMarket({
     if (IS_OFFLINE) {
         const pot = convexBets.reduce((sum, b) => sum + b.amountMist, 0);
         setTotalPot(pot);
-        setIsOpen(gamePhase < 2);
+        setIsOpen(gamePhase < 7);
 
         const pools: SuspectPool[] = gamePlayers.map((p) => {
           const amount = convexBets.filter(b => b.selection.toLowerCase() === p.address.toLowerCase())
@@ -274,7 +274,8 @@ export function PredictionMarket({
     }
   }
 
-  const bettingOpen = isOpen && gamePhase < 2 && !userBet;
+  // Allow betting until the game ends (Phase 7)
+  const bettingOpen = isOpen && gamePhase < 7;
 
   if (gamePlayers.length === 0) {
     return (

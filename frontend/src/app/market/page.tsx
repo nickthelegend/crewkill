@@ -1,97 +1,147 @@
 "use client"
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useSearchParams } from "next/navigation";
-import { PredictionMarket } from "@/components/game/PredictionMarket";
+import { useRouter } from "next/navigation";
 import { SpaceBackground } from "@/components/game/SpaceBackground";
-import { Suspense } from "react";
-import { MARKET_REGISTRY_ID } from "@/lib/onechain";
+import { Suspense, useMemo } from "react";
 import { motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 
 function MarketContent() {
-  const searchParams = useSearchParams();
-  const roomId = searchParams.get("roomId");
-
-  const games = useQuery(api.crewkill.listGames, {});
-  const targetRoomId = roomId || (games || []).find(g => g.status === "CREATED")?.roomId;
-  const game = useQuery(api.crewkill.getGameByRoomId, targetRoomId ? { roomId: targetRoomId } : "skip");
+  const router = useRouter();
+  const allGames = useQuery(api.crewkill.listGames, {}) || [];
   
-  if (games === undefined) {
+  // Categorize games: Active/Upcoming vs Past
+  const activeGames = useMemo(() => {
+    return allGames.filter(g => g.status !== "COMPLETED" && g.status !== "ENDED").sort((a, b) => b._creationTime - a._creationTime);
+  }, [allGames]);
+
+  const pastGames = useMemo(() => {
+    return allGames.filter(g => g.status === "COMPLETED" || g.status === "ENDED").sort((a, b) => b._creationTime - a._creationTime);
+  }, [allGames]);
+
+  if (allGames === undefined) {
     return (
-       <div className="min-h-[60vh] flex items-center justify-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">
+       <div className="min-h-screen flex items-center justify-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">
           Scanning Active Sectors...
        </div>
     );
   }
 
-  if (!targetRoomId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-        <motion.div 
-          className="w-32 h-32 rounded-none border border-white/10 flex items-center justify-center mb-12 relative group"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-        >
-          <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
-          <svg className="w-12 h-12 text-white/10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M11 5.882V19.297A7.477 7.477 0 005.188 17.07Q2.594 17.07 1 18.06V5.79q1.594-.99 4.188-.99a7.405 7.405 0 015.812 2.082zM13 5.882V19.297a7.477 7.477 0 015.812-2.227q2.594 0 4.188.99V5.79q-1.594-.99-4.188-.99a7.405 7.405 0 00-5.812 2.082z" />
-          </svg>
-        </motion.div>
-        <h2 className="text-5xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none mb-6">MARKET <span className="text-red-500">CLOSED</span></h2>
-        <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] max-w-sm uppercase leading-relaxed">No active prediction markets detected. Create a game first to start betting.</p>
-      </div>
-    );
-  }
-
-  if (game === undefined) {
-    return (
-       <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-6">
-             <div className="w-16 h-16 border-2 border-t-red-500 border-white/5 animate-spin rounded-full" />
-             <div className="text-[10px] font-black tracking-[0.4em] text-white/30 uppercase animate-pulse">Fetching Game State...</div>
-          </div>
-       </div>
-    );
-  }
-
-  const gamePlayers = (game?.players || []).map(p => ({
-    address: p.address,
-    name: p.name,
-  }));
-
   return (
-    <div className="py-20 md:py-32 max-w-7xl mx-auto px-6">
+    <div className="py-20 md:py-32 max-w-7xl mx-auto px-6 relative z-10">
       <header className="mb-20">
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-        >
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
           <div className="flex items-center gap-4 mb-6">
             <div className="h-0.5 w-12 bg-red-500" />
-            <p className="text-white/40 font-mono tracking-[0.3em] text-[10px] uppercase">
-              SECTOR: {targetRoomId?.slice(-12).toUpperCase() || "LINK_PENDING"}
-            </p>
+            <p className="text-white/40 font-mono tracking-[0.3em] text-[10px] uppercase">OneChain Prediction Network</p>
           </div>
           <h1 className="text-7xl md:text-8xl font-black italic tracking-tighter uppercase leading-none text-white">
-            PREDICTION <span className="text-red-500">MARKET</span>
+            MARKET <span className="text-red-500">FLOOR</span>
           </h1>
           <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] mt-8 uppercase whitespace-nowrap overflow-hidden">
-            Welcome to the market floor • Select a player to bet on • 
+            Select an active match to place your confidence bets • Real-time odds updated via OneChain
           </p>
         </motion.div>
       </header>
 
-      <div className="flex justify-center">
-        <PredictionMarket 
-          gameId={game?._id || ""}
-          marketObjectId={MARKET_REGISTRY_ID}
-          gamePlayers={gamePlayers}
-          isResolved={game?.status === "DONE" || game?.status === "ENDED"}
-          actualImpostors={[]} 
-          gamePhase={game?.status === "CREATED" ? 0 : 2}
-        />
-      </div>
+      {/* Live Categories */}
+      <section className="mb-24">
+        <div className="flex items-center gap-4 mb-10">
+           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+           <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Live & Upcoming Matches</h2>
+        </div>
+
+        {activeGames.length === 0 ? (
+          <div className="p-12 border border-white/5 bg-white/[0.02] text-center rounded-none">
+             <p className="text-white/20 font-mono text-[10px] uppercase tracking-[0.3em]">No active matches found. Create one from the terminal.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+            {activeGames.map((game) => (
+              <GameMarketCard key={game._id} game={game} onClick={() => router.push(`/game/${game.roomId}/bet`)} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Past Markets */}
+      <section>
+        <div className="flex items-center gap-4 mb-10">
+           <div className="w-2 h-2 rounded-full bg-white/20" />
+           <h2 className="text-xl font-black text-white/40 italic uppercase tracking-tighter">Resolved Markets</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-100">
+           {pastGames.slice(0, 6).map((game) => (
+             <GameMarketCard key={game._id} game={game} isPast onClick={() => router.push(`/game/${game.roomId}/bet`)} />
+           ))}
+        </div>
+      </section>
     </div>
+  );
+}
+
+function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick: () => void, isPast?: boolean }) {
+  const players = game.players || [];
+  const pot = 0; // In a full impl, we'd query the total pot from Sui or Convex
+
+  return (
+    <motion.div 
+      whileHover={{ y: -5 }}
+      onClick={onClick}
+      className={`group cursor-pointer border transition-all p-8 flex flex-col justify-between min-h-[300px] ${
+        isPast ? "bg-white/[0.02] border-white/5" : "bg-white/5 border-white/10 hover:border-red-500/50 hover:bg-white/[0.08]"
+      }`}
+    >
+      <div>
+        <div className="flex justify-between items-start mb-8">
+          <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/10">
+            ROOM#{(game.roomId || "").slice(-6).toUpperCase()}
+          </div>
+          <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 ${
+            game.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
+            game.status === "CREATED" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" :
+            "bg-white/5 text-white/20 border border-white/10"
+          }`}>
+            {game.status}
+          </div>
+        </div>
+
+        <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
+           Who is the <span className="text-red-500">Impostor?</span>
+        </h3>
+        <p className="text-white/40 text-[10px] uppercase font-black tracking-widest mb-6">Match Floor Confidence Market</p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex justify-between items-end border-t border-white/5 pt-6">
+           <div>
+              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1">Participants</div>
+              <div className="flex -space-x-2">
+                 {players.slice(0, 5).map((p: any, i: number) => (
+                   <div key={i} className={`w-6 h-6 rounded-full border border-black ${i % 2 === 0 ? "bg-red-500" : "bg-blue-500"}`} />
+                 ))}
+                 {players.length > 5 && (
+                   <div className="w-6 h-6 rounded-full bg-white/10 border border-black flex items-center justify-center text-[8px] text-white font-black">+{players.length - 5}</div>
+                 )}
+              </div>
+           </div>
+           <div className="text-right">
+              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1">Created</div>
+              <div className="text-[10px] font-mono text-white/60 lowercase italic">
+                {formatDistanceToNow(game._creationTime)} ago
+              </div>
+           </div>
+        </div>
+        
+        <button className={`w-full py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all border ${
+          isPast ? "border-white/10 text-white/20" : "bg-red-600 text-white border-red-600 group-hover:bg-red-500 shadow-[0_10px_20px_rgba(255,0,0,0.1)]"
+        }`}>
+          {isPast ? "View Results" : "Enter Market"}
+        </button>
+      </div>
+    </motion.div>
   );
 }
 

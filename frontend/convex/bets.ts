@@ -20,11 +20,7 @@ export const placeBet = mutation({
       throw new Error(`Game not found: ${args.gameId}`);
     }
 
-    if (game.bettingEndsAt && Date.now() >= game.bettingEndsAt) {
-      throw new Error("Betting is closed for this game (3 mins before start)");
-    }
-
-    if (game.status !== "CREATED") {
+    if (game.status === "COMPLETED" || game.status === "ENDED" || game.status === "SETTLED") {
       throw new Error(`Betting is closed for games in ${game.status} status`);
     }
 

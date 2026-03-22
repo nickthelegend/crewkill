@@ -6,9 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 import { SpaceBackground } from "@/components/game/SpaceBackground";
 import { PredictionMarket } from "@/components/game/PredictionMarket";
 import { useGameServer } from "@/hooks/useGameServer";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { GameLogPanel, TaskBar } from "@/components/game";
 
 export default function GameBettingPage() {
   const params = useParams();
@@ -20,7 +21,11 @@ export default function GameBettingPage() {
     isConnected, 
     currentRoom, 
     joinRoom, 
-    phase: wsPhase 
+    phase: wsPhase,
+    players,
+    logs,
+    tasksCompleted,
+    totalTasks
   } = useGameServer();
 
   // Database persistent state
@@ -57,71 +62,128 @@ export default function GameBettingPage() {
     );
   }
 
-  const isLive = (currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && dbGame.status !== "COMPLETED";
-
   return (
     <SpaceBackground>
       <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 relative z-10 w-full font-sans">
-        <div className="max-w-[1200px] mx-auto">
-          {/* Top Navbar Style (Polymarket match) */}
-          <div className="flex items-center gap-6 mb-12 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 overflow-x-auto pb-4 custom-scrollbar">
-            <Link href="/bet" className="hover:text-cyan-400 transition-colors shrink-0">Prediction Markets</Link>
-            <span className="shrink-0">&gt;</span>
-            <Link href="/" className="hover:text-cyan-400 transition-colors shrink-0">Crewkill</Link>
-            <span className="shrink-0">&gt;</span>
-            <span className="text-white shrink-0">Room #{displayId.slice(-8).toUpperCase()}</span>
-          </div>
-
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-              <button 
-                onClick={() => router.push(`/game/${actualRoomId}`)}
-                className="mb-6 text-cyan-400 hover:text-cyan-300 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all group"
-              >
-                <svg className="w-3 h-3 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Game Lobby
-              </button>
-
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500 flex items-center justify-center p-2 mb-2">
-                  <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-black">
-                     <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM12.5 13H15V14H9V13L11 9H8.5V8H14.5L12.5 13Z" fill="currentColor"/>
-                  </svg>
-                </div>
-                <div>
-                   <h2 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Games • Crewkill • Room #{displayId.slice(-6).toUpperCase()}</h2>
-                   <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter uppercase leading-none mt-1">
-                     Who is the Impostor?
-                   </h1>
-                </div>
+        <div className="max-w-[1500px] mx-auto">
+          {/* Dashboard Header */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12">
+            <div>
+              <div className="flex items-center gap-6 mb-8 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 overflow-x-auto custom-scrollbar">
+                <Link href="/market" className="hover:text-red-500 transition-colors shrink-0">Prediction Markets</Link>
+                <span className="shrink-0">&gt;</span>
+                <span className="text-white shrink-0">Room #{displayId.slice(-8).toUpperCase()}</span>
               </div>
-            </motion.div>
+              
+              <div className="flex flex-col gap-1">
+                 <h2 className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] mb-2 flex items-center gap-3">
+                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ff003c]" />
+                   Live Deployment Active
+                 </h2>
+                 <h1 className="text-4xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none">
+                   Who is the <span className="text-red-500">Impostor?</span>
+                 </h1>
+              </div>
+            </div>
 
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/30 text-right">
-              Welcome to the market floor
-              <div className="mt-1 text-white">Select a player to bet on</div>
+            <div className="flex flex-col gap-4 items-end">
+               <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-[9px] text-white/20 uppercase font-black tracking-widest leading-none mb-1">Live Feed</div>
+                    <div className="text-[10px] text-emerald-400 font-mono italic">SECURE CONNECTION VERIFIED</div>
+                  </div>
+                  <div className="w-10 h-10 border border-emerald-500/20 flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  </div>
+               </div>
+               <TaskBar completed={tasksCompleted} total={totalTasks} />
             </div>
           </div>
 
-          {/* Full Width Prediction Market Component */}
-          <div className="bg-white/5 backdrop-blur-[100px] border border-white/10 rounded-[3rem] p-1 shadow-2xl relative">
-            <div className="p-8">
-              <PredictionMarket 
-                gameId={dbGame._id}
-                marketObjectId={dbGame.marketId || dbGame.roomId}
-                gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
-                  address: p.address,
-                  name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : (p.name || `Human ${p.address.slice(-4)}`),
-                  isAlive: p.isAlive ?? true,
-                  colorId: p.colorId
-                }))}
-                isResolved={dbGame.status === "COMPLETED"}
-                actualImpostors={[]} 
-                gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 2 : 0)}
-              />
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-1 bg-white/5 border border-white/10 backdrop-blur-[100px] rounded-none">
+             {/* Left Panel: The Market (8/12) */}
+             <div className="lg:col-span-8 p-8 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto max-h-[85vh] custom-scrollbar">
+                <PredictionMarket 
+                  gameId={dbGame._id}
+                  marketObjectId={dbGame.marketId || dbGame.roomId}
+                  gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
+                    address: p.address,
+                    name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : (p.name || `Human ${p.address.slice(-4)}`),
+                    isAlive: p.isAlive ?? true,
+                    colorId: p.colorId
+                  }))}
+                  isResolved={dbGame.status === "COMPLETED" || dbGame.status === "ENDED"}
+                  actualImpostors={[]} 
+                  gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 7 : 0)}
+                />
+             </div>
+
+             {/* Right Panel: Live Intel & Roster (4/12) */}
+             <div className="lg:col-span-4 flex flex-col bg-black/40 overflow-hidden max-h-[85vh]">
+                {/* Scrollable Intel Area */}
+                <div className="flex-1 overflow-y-auto p-8 space-y-12 custom-scrollbar">
+                   {/* Roster Segment */}
+                   <section>
+                      <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mb-8 flex items-center gap-3">
+                         <span className="w-1 h-1 bg-red-500" />
+                         Live Roster Status
+                      </h3>
+                      <div className="grid grid-cols-1 gap-1">
+                         {players.map((p, idx) => (
+                           <div key={p.address} className="flex items-center justify-between p-4 border border-white/5 bg-white/[0.02]">
+                              <div className="flex items-center gap-4">
+                                 <div className={`w-8 h-8 ${p.isAlive ? "bg-red-500/10" : "bg-red-500/80"} border border-white/10 flex items-center justify-center transition-colors`}>
+                                    <span className={`text-[8px] font-mono ${p.isAlive ? "text-white/40" : "text-white font-black"}`}>{p.isAlive ? `#${idx + 1}` : "XXX"}</span>
+                                 </div>
+                                 <div className="flex flex-col">
+                                    <span className={`text-[11px] font-black uppercase tracking-tighter ${p.isAlive ? "text-white" : "text-white/20"}`}>
+                                       {p.agentPersona?.title || `Player ${p.address.slice(-4)}`}
+                                    </span>
+                                    <span className="text-[8px] font-mono text-white/20 tracking-tighter opacity-50">{p.address.slice(0, 16)}...</span>
+                                 </div>
+                              </div>
+                              <span className={`text-[9px] font-black uppercase tracking-widest ${p.isAlive ? "text-emerald-400" : "text-red-500"}`}>
+                                 {p.isAlive ? "ACTIVE" : "DEAD"}
+                              </span>
+                           </div>
+                         ))}
+                      </div>
+                   </section>
+
+                   {/* Live Communications (Logs) */}
+                   <section>
+                      <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mb-8 flex items-center gap-3">
+                         <span className="w-1 h-1 bg-red-500" />
+                         Communications Feed
+                      </h3>
+                      <div className="border border-white/5 bg-black/40">
+                         <GameLogPanel logs={logs} maxHeight="350px" />
+                      </div>
+                   </section>
+                </div>
+
+                {/* Fixed Footer Actions */}
+                <div className="p-8 border-t border-white/5 bg-black/60">
+                   <div className="p-6 border border-emerald-500/20 bg-emerald-500/5 mb-6">
+                      <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span className="w-1 h-1 bg-emerald-400 animate-pulse" />
+                        Live Multi-Chain Intel
+                      </p>
+                      <p className="text-[10px] text-white/40 leading-relaxed italic">
+                        Real-time simulation updates are processed through OneChain settlement layer. Market confidence is derived from global agent behavior.
+                      </p>
+                   </div>
+                   <button 
+                      onClick={() => router.push(`/game/${actualRoomId}/live`)}
+                      className="w-full py-6 bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4"
+                   >
+                      Switch to Live Map Feed
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                   </button>
+                </div>
+             </div>
           </div>
         </div>
       </div>
