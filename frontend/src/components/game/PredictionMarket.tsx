@@ -14,6 +14,8 @@ const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 interface Player {
   address: string;
   name: string; 
+  isAlive?: boolean;
+  colorId?: number;
 }
 
 interface SuspectPool {
@@ -388,10 +390,17 @@ export function PredictionMarket({
             >
               {/* Profile */}
               <div className="flex items-center gap-8 relative z-10 flex-1 w-full sm:w-auto">
-                <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all ${
+                <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all relative ${
                   isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
                 }`}>
-                  <AmongUsSprite colorId={idx + (gameId.length % 12)} size={48} />
+                  <AmongUsSprite 
+                    colorId={player.colorId ?? (idx + (gameId.length % 12))} 
+                    size={48} 
+                    isGhost={!player.isAlive}
+                  />
+                  {!player.isAlive && (
+                    <div className="absolute inset-x-0 bottom-0 bg-red-600/80 text-[8px] font-black text-white text-center uppercase py-0.5">DEAD</div>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 mb-1">
@@ -400,7 +409,10 @@ export function PredictionMarket({
                       <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none italic uppercase">Betting Active</span>
                     )}
                   </div>
-                  <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em]">Address: {player.address.slice(0, 16)}...</div>
+                  <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em] flex items-center gap-4">
+                    <span>Address: {player.address.slice(0, 16)}...</span>
+                    {!player.isAlive && <span className="text-red-500/50 font-black">● CASE_CLOSED</span>}
+                  </div>
                 </div>
               </div>
 

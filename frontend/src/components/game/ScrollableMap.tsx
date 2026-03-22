@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Player, Location, LocationNames, DeadBody as DeadBodyType, PlayerColors } from "@/types/game";
 import { AmongUsSprite, DeadBodySprite } from "./AmongUsSprite";
 
@@ -12,6 +12,8 @@ interface ScrollableMapProps {
   onPlayerMove?: (location: Location) => void;
   spotlightedPlayer?: `0x${string}` | null;
   onSpotlightPlayer?: (address: `0x${string}` | null) => void;
+  activeSabotage?: number;
+  gamePhase?: number;
 }
 
 const MAP_WIDTH = 10500;
@@ -799,6 +801,38 @@ function findPath(from: Location, to: Location): { x: number; y: number }[] {
   return [];
 }
 
+// Deduplicate consecutive identical waypoints
+function deduplicateWaypoints(path: { x: number; y: number }[]): { x: number; y: number }[] {
+  if (path.length <= 1) return path;
+  const result = [path[0]];
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1];
+    const curr = path[i];
+    if (Math.abs(prev.x - curr.x) > 1 || Math.abs(prev.y - curr.y) > 1) {
+      result.push(curr);
+    }
+  }
+  return result;
+}
+
+
+
+// Helper for stable lane offsets based on address
+function getStableIndex(address: string): number {
+  if (!address) return 0;
+  let hash = 0;
+  for (let i = 0; i < address.length; i++) {
+    hash = ((hash << 5) - hash) + address.charCodeAt(i);
+    hash |= 0; 
+  }
+  return Math.abs(hash);
+}
+
+// Check if two locations are directly connected in the corridor graph
+function areLocationsAdjacent(loc1: Location, loc2: Location): boolean {
+  if (loc1 === loc2) return true;
+  return ROOM_CONNECTIONS[loc1]?.some(conn => conn.to === loc2) || false;
+}
 
 interface PlayerPosition {
   x: number;
@@ -808,6 +842,7 @@ interface PlayerPosition {
   isMoving: boolean;
   facingLeft: boolean;
   lastLocation: Location;
+  stableIdx: number;
 }
 
 export function ScrollableMap({
@@ -817,6 +852,8 @@ export function ScrollableMap({
   onPlayerMove,
   spotlightedPlayer,
   onSpotlightPlayer,
+  activeSabotage = 0,
+  gamePhase = 0,
 }: ScrollableMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -824,26 +861,55 @@ export function ScrollableMap({
   const playerPositionsRef = useRef<Record<string, PlayerPosition>>({});
   const [zoom, setZoom] = useState(0.4); 
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [lastDeadBodiesCount, setLastDeadBodiesCount] = useState(deadBodies.length);
+  const [killFlash, setKillFlash] = useState<Location | null>(null);
+  const [taskSuccess, setTaskSuccess] = useState<string | null>(null); 
 
-  // Persist the last known non-empty player list to prevent flicker on state drops
-  const [lastKnownPlayers, setLastKnownPlayers] = useState(players);
+  // 1. Maintain a persistent list of players to prevent UI flicker when WebSocket state is empty
+  const [lastKnownPlayers, setLastKnownPlayers] = useState<Player[]>([]);
+  
+  // Update lastKnownPlayers immediately when players prop changes
   useEffect(() => {
-    if (players.length > 0) {
+    if (players && players.length > 0) {
       setLastKnownPlayers(players);
     }
   }, [players]);
 
-  // Sync player positions when lastKnownPlayers array changes
+  // Detect new kills for flash effect
   useEffect(() => {
-    // Snapshot authoritative ref as our local working copy
+    if (deadBodies.length > lastDeadBodiesCount) {
+      const newBody = deadBodies[deadBodies.length - 1];
+      setKillFlash(newBody.location);
+      setTimeout(() => setKillFlash(null), 500);
+      setLastDeadBodiesCount(deadBodies.length);
+    } else if (deadBodies.length < lastDeadBodiesCount) {
+      setLastDeadBodiesCount(deadBodies.length);
+    }
+  }, [deadBodies, lastDeadBodiesCount]);
+
+  // Detect task completions for success pulse
+  useEffect(() => {
+    players.forEach(p => {
+      const prevP = lastKnownPlayers.find(lp => lp.address === p.address);
+      if (prevP && p.tasksCompleted > prevP.tasksCompleted) {
+        setTaskSuccess(p.address);
+        setTimeout(() => setTaskSuccess(null), 2000);
+      }
+    });
+  }, [players, lastKnownPlayers]);
+
+  // 2. Synchronize physics engine (playerPositionsRef) with authoritative players list
+  useEffect(() => {
     const next = { ...playerPositionsRef.current };
     let changed = false;
 
-    // Detect logic-level changes and integrate new players
-    lastKnownPlayers.forEach((player, idx) => {
+    // Use current players prop primarily, but fall back to lastKnownPlayers if prop is empty
+    const sourcePlayers = players.length > 0 ? players : lastKnownPlayers;
+
+    sourcePlayers.forEach((player) => {
       const addr = player.address as string;
       
-      // Cleanup dead players
+      // Cleanup dead players from visual tracking
       if (!player.isAlive) {
         if (next[addr]) {
           delete next[addr];
@@ -855,12 +921,13 @@ export function ScrollableMap({
       const room = ROOMS[player.location];
       if (!room) return;
 
-      const offsetX = ((idx % 3) - 1) * 60;
-      const offsetY = (Math.floor(idx / 3)) * 50;
+      const stableIdx = getStableIndex(addr);
+      const offsetX = ((stableIdx % 3) - 1) * 60;
+      const offsetY = (Math.floor(stableIdx / 3) % 2) * 50;
       const targetX = room.center.x + offsetX;
       const targetY = room.center.y + offsetY;
 
-      // 1. Initial Spawn
+      // Case A: New player appears (Initial Spawn)
       if (!next[addr]) {
         next[addr] = {
           x: targetX,
@@ -869,33 +936,71 @@ export function ScrollableMap({
           currentWaypointIndex: 0,
           isMoving: false,
           facingLeft: false,
-          lastLocation: player.location
+          lastLocation: player.location,
+          stableIdx
         };
         changed = true;
       } 
-      // 2. Continuous Pathfinding Logic
+      // Case B: Player moved to a new room
       else if (next[addr].lastLocation !== player.location) {
         const prevLoc = next[addr].lastLocation;
         const currLoc = player.location;
-        const roomPath = findPath(prevLoc, currLoc);
         
-        // Parallel lane logic: apply offset to all intermediate waypoints
-        const finalPath = roomPath.map(p => ({
-          x: p.x + offsetX,
-          y: p.y + offsetY
-        }));
-        
-        // Add final destination in room
-        finalPath.push({ x: targetX, y: targetY });
+        // TELEPORT DETECTION: If rooms are NOT adjacent, snap instead of walking
+        // Also snap if it's the beginning of the game or a meeting was just called (everyone at Cafeteria)
+        const isTeleport = !areLocationsAdjacent(prevLoc, currLoc) || currLoc === Location.Cafeteria;
 
-        // CRITICAL: Instructions update, no snapping
-        next[addr] = {
-          ...next[addr],
-          waypoints: finalPath,
-          currentWaypointIndex: 0,
-          isMoving: true,
-          lastLocation: currLoc
-        };
+        if (isTeleport) {
+           next[addr] = {
+             ...next[addr],
+             x: targetX,
+             y: targetY,
+             waypoints: [],
+             isMoving: false,
+             lastLocation: currLoc
+           };
+        } else {
+          // Normal walking pathfinding
+          const roomPath = findPath(prevLoc, currLoc);
+          
+          // Apply corridor offsets for parallel lanes
+          const offsetPath = roomPath.map(p => ({
+            x: p.x + offsetX,
+            y: p.y + offsetY
+          }));
+          
+          // Add final destination inside the room
+          offsetPath.push({ x: targetX, y: targetY });
+
+          // Deduplicate to avoid stutter at waypoint transition
+          const finalPath = deduplicateWaypoints(offsetPath);
+
+          // Determine starting waypoint: if we are already moving, we should skip 
+          // waypoints that take us backwards to the start of the current room
+          let startIdx = 0;
+          if (next[addr].isMoving && finalPath.length > 1) {
+             // If first waypoint is where we supposedly started but we're already away from it, skip it
+             const distToFirst = Math.sqrt(Math.pow(next[addr].x - finalPath[0].x, 2) + Math.pow(next[addr].y - finalPath[0].y, 2));
+             if (distToFirst < 50) startIdx = 1;
+          }
+
+          next[addr] = {
+            ...next[addr],
+            waypoints: finalPath,
+            currentWaypointIndex: startIdx,
+            isMoving: true,
+            lastLocation: currLoc
+          };
+        }
+        changed = true;
+      }
+    });
+
+    // Cleanup players who are no longer in the source list (e.g. left room)
+    Object.keys(next).forEach(addr => {
+      const stillExists = sourcePlayers.find(p => p.address === addr);
+      if (!stillExists) {
+        delete next[addr];
         changed = true;
       }
     });
@@ -904,7 +1009,7 @@ export function ScrollableMap({
       playerPositionsRef.current = next;
       setPlayerPositions({ ...next });
     }
-  }, [players]);
+  }, [players, lastKnownPlayers]);
 
   // Animation loop (authoritative physics engine)
   useEffect(() => {
@@ -980,20 +1085,31 @@ export function ScrollableMap({
     setPan({ x: targetX, y: targetY });
   }, [followedPlayer?.location, spotlightedPlayer, zoom]);
 
-  // Continuous smooth follow
+  // 4. Smooth Camera Follow with LERP
+  const panRef = useRef(pan);
+  useEffect(() => { panRef.current = pan; }, [pan]);
+
   useEffect(() => {
     if (!spotlightedPlayer) return;
+    
     const interval = setInterval(() => {
-      const pos = playerPositions[spotlightedPlayer];
-      if (pos?.isMoving && containerRef.current) {
-        setPan(prev => ({
-          x: -pos.x * zoom + containerRef.current!.clientWidth / 2,
-          y: -pos.y * zoom + containerRef.current!.clientHeight / 2,
-        }));
-      }
-    }, 30);
+      const pos = playerPositionsRef.current[spotlightedPlayer];
+      if (!pos || !containerRef.current) return;
+
+      const targetPanX = -pos.x * zoom + containerRef.current.clientWidth / 2;
+      const targetPanY = -pos.y * zoom + containerRef.current.clientHeight / 2;
+      
+      // LERP factor (0.15 = 15% move towards target every 16ms)
+      const lerp = 0.15;
+      
+      setPan(prev => ({
+        x: prev.x + (targetPanX - prev.x) * lerp,
+        y: prev.y + (targetPanY - prev.y) * lerp,
+      }));
+    }, 16); 
+    
     return () => clearInterval(interval);
-  }, [spotlightedPlayer, playerPositions, zoom]);
+  }, [spotlightedPlayer, zoom]);
 
   const handleRoomClick = (loc: Location) => {
     if (onPlayerMove && loc !== currentPlayerData?.location) {
@@ -1378,12 +1494,33 @@ export function ScrollableMap({
                     showName
                     name={isMe ? "You" : PlayerColors[player.colorId].name}
                     isMoving={pos.isMoving}
+                    isGhost={!player.isAlive}
                   />
+                  {/* Task Success Indicator */}
+                  <AnimatePresence>
+                    {taskSuccess === player.address && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, y: -60, scale: 1.2 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
+                        className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl"
+                      >
+                         <div className="bg-emerald-500 rounded-full p-1 shadow-[0_0_15px_rgba(16,185,129,0.8)]">
+                            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                            </svg>
+                         </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
             );
           })}
       </motion.div>
+
+      {/* Sabotage Overlays */}
+      <SabotageOverlay activeSabotage={activeSabotage} gamePhase={gamePhase} killFlashLocation={killFlash} />
 
       {/* Mini-map */}
       <div className="fixed bottom-4 right-4 w-64 h-52 bg-gradient-to-b from-gray-900 to-black rounded-xl border-2 border-gray-600 p-2 z-50" style={{
@@ -1525,6 +1662,103 @@ export function ScrollableMap({
       <div className="fixed bottom-4 left-4 bg-black/80 rounded-lg px-3 py-2 text-gray-400 text-xs z-50">
         Scroll to explore • Click player to follow • Click room to move
       </div>
+    </div>
+  );
+}
+
+// Sabotage Visual Effects Component
+function SabotageOverlay({ 
+  activeSabotage, 
+  gamePhase, 
+  killFlashLocation 
+}: { 
+  activeSabotage?: number; 
+  gamePhase?: number;
+  killFlashLocation: Location | null;
+}) {
+  const isLightsOut = activeSabotage === 1; // SabotageType.Lights
+  const isCritical = activeSabotage === 2 || activeSabotage === 3; // Reactor or O2
+  const isCommsOut = activeSabotage === 4;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+      <AnimatePresence>
+        {/* Lights Out Effect */}
+        {isLightsOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/85"
+            style={{
+              maskImage: 'radial-gradient(circle at 50% 50%, transparent 150px, black 350px)',
+              WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 150px, black 350px)',
+            }}
+          />
+        )}
+
+        {/* Kill Flash (Brief Red) */}
+        {killFlashLocation !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.5, 0] }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-red-600/40 z-50 pointer-events-none"
+          />
+        )}
+
+        {/* Critical Alarm Pulse (Reactor/O2) */}
+        {isCritical && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: [0, 0.3, 0],
+              transition: { duration: 1, repeat: Infinity, ease: "easeInOut" }
+            }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-red-600/20 mix-blend-overlay shadow-[inset_0_0_100px_rgba(220,38,38,0.5)]"
+          />
+        )}
+
+        {/* Comms Glitch Effect */}
+        {isCommsOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: [0.1, 0.3, 0.1],
+              transition: { duration: 0.2, repeat: Infinity }
+            }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-cyan-900/10 mix-blend-color-dodge"
+            style={{
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 255, 255, 0.05) 1px, rgba(0, 255, 255, 0.05) 2px)'
+            }}
+          />
+        )}
+        
+        {/* Meeting / Body Discovery Overlays */}
+        {(gamePhase === 4 || gamePhase === 5) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md z-50"
+          >
+             <motion.div 
+               initial={{ scale: 0.8, y: 20 }}
+               animate={{ scale: 1, y: 0 }}
+               className="bg-red-600/20 p-12 rounded-[3rem] border-2 border-red-500/50 backdrop-blur-3xl flex flex-col items-center"
+             >
+               <div className="text-8xl font-black italic text-white uppercase tracking-tighter mb-4">
+                 {gamePhase === 4 ? "DISCUSSION" : "VOTING"}
+               </div>
+               <div className="text-xl font-black text-red-500 uppercase tracking-[0.5em] animate-pulse">
+                 Sect Integrity Compromised
+               </div>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

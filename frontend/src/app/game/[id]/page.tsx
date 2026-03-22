@@ -203,7 +203,9 @@ export default function RoomDetailsPage() {
                     marketObjectId={dbGame.marketId || dbGame.roomId}
                     gamePlayers={(currentRoom?.players || []).map(p => ({
                       address: p.address,
-                      name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : "Human"
+                      name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : "Human",
+                      isAlive: p.isAlive,
+                      colorId: p.colorId
                     }))}
                     isResolved={dbGame.status === "COMPLETED"}
                     actualImpostors={[]} // Hidden during lobby

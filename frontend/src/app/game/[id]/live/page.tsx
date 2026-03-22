@@ -19,6 +19,7 @@ export default function LiveRoomPage() {
     deadBodies,
     logs,
     phase,
+    activeSabotage,
     tasksCompleted,
     totalTasks,
     joinRoom,
@@ -71,6 +72,7 @@ export default function LiveRoomPage() {
       gameObjectId={game?._id}
       marketObjectId={undefined} // Registry ID should be used
       gamePhase={phase}
+      activeSabotage={activeSabotage}
     />
   );
 }

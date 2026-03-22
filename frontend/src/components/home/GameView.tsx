@@ -40,6 +40,7 @@ export interface GameViewProps {
   gameObjectId?: string;
   marketObjectId?: string;
   gamePhase?: number;
+  activeSabotage?: number;
   actualImpostors?: string[];
 }
 
@@ -62,6 +63,7 @@ export function GameView({
   gameObjectId,
   marketObjectId,
   gamePhase = 0,
+  activeSabotage = 0,
   actualImpostors = [],
 }: GameViewProps) {
   // Persistence layer to prevent HUD flickering during WebSocket blips
@@ -87,6 +89,8 @@ export function GameView({
         onPlayerMove={() => {}} // Spectators don't move
         spotlightedPlayer={spotlightedPlayer}
         onSpotlightPlayer={onSpotlightPlayer}
+        activeSabotage={activeSabotage}
+        gamePhase={gamePhase}
       />
 
       {/* ─── HUD OVERLAY ─── */}

@@ -38,6 +38,8 @@ export interface RoomState {
   maxPlayers: number;
   impostorCount: number;
   phase: "lobby" | "playing" | "ended";
+  detailedPhase?: GamePhase; // Added detailed phase
+  activeSabotage?: number;    // Added active sabotage
   createdAt: number;
   creator?: string;
   wagerAmount?: string;
@@ -113,6 +115,7 @@ export interface UseGameServerReturn {
   deadBodies: DeadBody[];
   logs: GameLog[];
   phase: GamePhase;
+  activeSabotage: number; // Added active sabotage
   tasksCompleted: number;
   totalTasks: number;
 
@@ -243,23 +246,16 @@ export function useGameServer(): UseGameServerReturn {
           case "server:game_state":
             // Full game state snapshot (sent when joining or game starts)
             if (message.state) {
-              const phaseMap: Record<number, "lobby" | "playing" | "ended"> = {
-                0: "lobby",
-                1: "lobby", // Roles assigned but still transition to playing
-                2: "playing",
-                3: "playing", // Discussion is part of active game
-                4: "playing", // Voting is part of active game
-                5: "ended"
-              };
-
-              const newPhase = phaseMap[message.state.phase] || "lobby";
+              const newSimplifiedPhase = (message.state.phase >= 2 && message.state.phase <= 6) ? "playing" : (message.state.phase === 7 ? "ended" : "lobby");
 
               if (message.state.players) {
                 setCurrentRoom((prev) => {
                   if (!prev || prev.roomId !== message.gameId) return prev;
                   return {
                     ...prev,
-                    phase: newPhase,
+                    phase: newSimplifiedPhase,
+                    detailedPhase: message.state.phase as GamePhase,
+                    activeSabotage: message.state.activeSabotage || 0,
                     players: message.state.players.map((p: any) => ({
                       address: p.address,
                       colorId: p.colorId,
@@ -323,6 +319,15 @@ export function useGameServer(): UseGameServerReturn {
               `Phase changed to ${message.phase}`,
               message.gameId,
             );
+            setCurrentRoom((prev) => {
+              if (!prev || prev.roomId !== message.gameId) return prev;
+              const newSimplifiedPhase = (message.phase >= 2 && message.phase <= 6) ? "playing" : (message.phase === 7 ? "ended" : "lobby");
+              return { 
+                ...prev, 
+                phase: newSimplifiedPhase,
+                detailedPhase: message.phase 
+              };
+            });
             break;
 
           case "server:task_completed":
@@ -354,6 +359,22 @@ export function useGameServer(): UseGameServerReturn {
                   p.address === message.voter ? { ...p, hasVoted: true } : p,
                 ),
               };
+            });
+            break;
+
+          case "server:sabotage_started":
+            addLog("kill", `SABOTAGE: ${message.sabotageType} initiated!`, message.gameId);
+            setCurrentRoom((prev) => {
+              if (!prev || prev.roomId !== message.gameId) return prev;
+              return { ...prev, activeSabotage: message.sabotageType };
+            });
+            break;
+
+          case "server:sabotage_fixed":
+            addLog("task", `Sabotage repaired`, message.gameId);
+            setCurrentRoom((prev) => {
+              if (!prev || prev.roomId !== message.gameId) return prev;
+              return { ...prev, activeSabotage: 0 };
             });
             break;
 
@@ -510,12 +531,14 @@ export function useGameServer(): UseGameServerReturn {
       hasVoted: p.hasVoted,
     })) || [];
 
-  const phase: GamePhase =
+  const phase: GamePhase = currentRoom?.detailedPhase ?? (
     currentRoom?.phase === "playing"
       ? GamePhase.ActionCommit
       : currentRoom?.phase === "ended"
         ? GamePhase.Ended
-        : GamePhase.Lobby;
+        : GamePhase.Lobby);
+
+  const activeSabotage = currentRoom?.activeSabotage ?? 0;
 
   const tasksCompleted = players.reduce((sum, p) => sum + p.tasksCompleted, 0);
   const totalTasks = players.reduce((sum, p) => sum + p.totalTasks, 0);
@@ -532,6 +555,7 @@ export function useGameServer(): UseGameServerReturn {
     deadBodies,
     logs,
     phase,
+    activeSabotage,
     tasksCompleted,
     totalTasks,
     createRoom,
