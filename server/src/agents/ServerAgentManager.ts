@@ -23,9 +23,11 @@ function randomStyle<T>(arr: T[]): T {
 }
 
 function generateAgentAddress(): string {
-  // Generate a fake address for the AI agent
-  const hex = uuidv4().replace(/-/g, "").slice(0, 40);
-  return `0xAI${hex.slice(0, 38)}`;
+  // Generate a valid Sui address for the AI agent (64 hex characters)
+  // We use 'aa1' (Agent AI) prefix to identify them while maintaining hex validity
+  const hex = uuidv4().replace(/-/g, ""); // 32 chars
+  const hex2 = uuidv4().replace(/-/g, ""); // 32 chars
+  return `0xaa1${(hex + hex2).slice(0, 61)}`;
 }
 
 export class ServerAgentManager {

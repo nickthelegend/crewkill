@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "@onelabs/dapp-kit";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export function NavBar() {
   const pathname = usePathname();
@@ -19,8 +20,13 @@ export function NavBar() {
       <div className="flex items-center gap-12 h-full">
         {/* Logo Unit */}
         <Link href="/" className="flex items-center gap-4 group h-full">
-          <div className="w-10 h-10 bg-red-600 border border-red-400/50 flex items-center justify-center font-black text-white italic group-hover:rotate-6 transition-transform">
-            CK
+          <div className="relative w-10 h-10 group-hover:rotate-6 transition-transform">
+            <Image 
+              src="/logo.png" 
+              alt="CrewKill Logo" 
+              fill 
+              className="object-contain"
+            />
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-black tracking-tighter text-white uppercase italic leading-none">

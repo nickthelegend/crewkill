@@ -201,6 +201,10 @@ export function PredictionMarket({
     }
 
     try {
+      if (!/^0x[a-fA-F0-9]{64}$/.test(selectedSuspect)) {
+        throw new Error("Target address is not a valid 32-byte hex string (AI agents require server restart for valid hex IDs).");
+      }
+
       const tx = new Transaction();
       const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betMist)]);
       tx.moveCall({

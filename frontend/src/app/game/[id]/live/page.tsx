@@ -43,8 +43,21 @@ export default function LiveRoomPage() {
     };
   }, [isConnected, id, joinRoom, leaveRoom]);
 
+  if (!isConnected) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">
+           Connecting...
+        </div>
+      </div>
+    );
+  }
+
   // If in lobby, show the Game Not Started UI
-  if (phase === GamePhase.Lobby || (game && game.status === "CREATED")) {
+  const isLobby = phase === GamePhase.Lobby || (game && game.status === "CREATED");
+  const isStarted = currentRoom && currentRoom.phase !== "lobby";
+  
+  if (isLobby && !isStarted) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-center p-6 z-50">
         <div className="w-24 h-24 border border-white/5 flex items-center justify-center mb-8 relative">
@@ -63,16 +76,6 @@ export default function LiveRoomPage() {
         >
            DO YOUR PREDICTIONS HERE
         </button>
-      </div>
-    );
-  }
-
-  if (!isConnected) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">
-           Connecting...
-        </div>
       </div>
     );
   }
