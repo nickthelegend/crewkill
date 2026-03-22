@@ -4,8 +4,8 @@ import { Agent } from './core/Agent.js';
 import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 
 async function createUserTestGame() {
-  // 1. Generate a unique room ID
-  const roomId = `test_${Math.random().toString(36).slice(2, 8)}`;
+  // 1. Generate a fixed room ID for the user
+  const roomId = `user_final_test`;
   console.log(`===========================================`);
   console.log(`   CREATING USER TEST GAME: ${roomId}`);
   console.log(`===========================================\n`);

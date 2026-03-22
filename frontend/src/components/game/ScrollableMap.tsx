@@ -1222,7 +1222,7 @@ export function ScrollableMap({
             return (
               <motion.div
                 key={loc}
-                className="absolute cursor-pointer rounded-2xl overflow-hidden"
+                className="absolute cursor-pointer rounded-2xl overflow-hidden z-[10]"
                 style={{ left: room.x, top: room.y, width: room.width, height: room.height }}
                 onClick={() => handleRoomClick(loc)}
                 whileHover={{ scale: 1.008 }}
@@ -1306,7 +1306,7 @@ export function ScrollableMap({
             return (
               <div
                 key={`body-${body.victim}`}
-                className="absolute z-20"
+                className="absolute z-[20]"
                 style={{ left: room.center.x - 40 + i * 50, top: room.center.y + 40 }}
               >
                 <DeadBodySprite colorId={victim?.colorId || 0} size={80} />
@@ -1329,7 +1329,7 @@ export function ScrollableMap({
             return (
               <motion.div
                 key={player.address}
-                className="absolute z-30 cursor-pointer"
+                className="absolute z-[30] cursor-pointer"
                 animate={{
                   left: pos.x - 40,
                   top: pos.y - 70 + jitterY,
@@ -1391,7 +1391,7 @@ export function ScrollableMap({
       }}>
         {/* Mini-map header */}
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-800 px-3 py-0.5 rounded-full border border-gray-600">
-          <span className="text-[10px] text-cyan-400 font-bold tracking-wider">RADAR</span>
+          <span className="text-[10px] text-cyan-400 font-bold tracking-wider uppercase">Agent Radar</span>
         </div>
 
         <div className="relative w-full h-full mt-1">
@@ -1444,7 +1444,7 @@ export function ScrollableMap({
             );
           })}
 
-          {/* Player dots with glow */}
+          {/* Agent dots with glow */}
           {lastKnownPlayers.filter(p => p.isAlive).map(player => {
             const pos = playerPositions[player.address];
             if (!pos) return null;

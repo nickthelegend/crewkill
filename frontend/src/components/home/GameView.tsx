@@ -158,10 +158,10 @@ export function GameView({
                initial={{ x: 50, opacity: 0 }}
                animate={{ x: 0, opacity: 1 }}
                transition={{ delay: 0.1 }}
-               className="flex-1 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden flex flex-col pointer-events-auto"
+               className="h-[45%] bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden flex flex-col pointer-events-auto"
             >
                <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Players</span>
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Active Agents</span>
                   <span className="text-[10px] font-black text-emerald-400/60 uppercase">{activePlayers.filter(p => p.isAlive).length}/{activePlayers.length}</span>
                </div>
                
@@ -195,9 +195,9 @@ export function GameView({
                             <div className="flex-1 text-left min-w-0">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-[11px] font-black text-white truncate uppercase tracking-tight">
-                                  {PlayerColors[player.colorId]?.name || `Player ${player.colorId}`}
+                                  {PlayerColors[player.colorId]?.name || `Agent ${player.colorId}`}
                                 </span>
-                                {!player.isAlive && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded">Eliminated</span>}
+                                {!player.isAlive && <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded">Terminated</span>}
                               </div>
                               <div className="text-[9px] text-white/30 font-mono flex items-center gap-1.5 mt-0.5">
                                  <div className="w-1 h-1 rounded-full bg-white/20" />
@@ -222,17 +222,8 @@ export function GameView({
                                    </div>
                                    <div className="flex justify-between border-b border-white/5 pb-2">
                                       <span className="text-white/30">Status:</span>
-                                      <span className={player.isAlive ? "text-emerald-400" : "text-rose-500"}>{player.isAlive ? "Alive" : "Dead"}</span>
+                                      <span className={player.isAlive ? "text-emerald-400" : "text-rose-500"}>{player.isAlive ? "Active" : "Offline"}</span>
                                    </div>
-                                   <button
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       navigator.clipboard.writeText(player.address);
-                                     }}
-                                     className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/50 text-[8px] font-black uppercase transition-all"
-                                   >
-                                     Copy Address
-                                   </button>
                                 </div>
                               </motion.div>
                             )}
@@ -241,6 +232,25 @@ export function GameView({
                       );
                     })}
                   </div>
+               </div>
+            </motion.div>
+
+            {/* MISSION LOGS (Moved from bottom) */}
+            <motion.div
+               initial={{ x: 50, opacity: 0 }}
+               animate={{ x: 0, opacity: 1 }}
+               transition={{ delay: 0.15 }}
+               className="flex-1 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden flex flex-col pointer-events-auto min-h-[200px]"
+            >
+               <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                  <span className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.2em]">Mission Logs</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-tighter">{deadBodies.length} LOST</span>
+                    <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
+                  </div>
+               </div>
+               <div className="flex-1 p-3 overflow-hidden">
+                  <GameLogPanel logs={logs} maxHeight="100%" />
                </div>
             </motion.div>
 
@@ -269,21 +279,23 @@ export function GameView({
 
         {/* ─── BOTTOM HUD ─── */}
         <div className="absolute bottom-6 left-6 right-80 flex items-end justify-between pointer-events-none">
-           
            <div className="pointer-events-auto">
               <OperatorKeyPanel />
            </div>
-
-           <div className="pointer-events-auto bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[1.5rem] p-4 flex gap-4">
-              <div className="w-48 overflow-hidden h-24">
-                 <GameLogPanel logs={logs} maxHeight="100%" />
+           
+           {/* Simple Status Indicator */}
+           <div className="flex items-center gap-4 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-2xl px-6 py-3">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Telemetry</span>
+                <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest italic">Stable</span>
               </div>
-              <div className="w-px bg-white/10" />
-              <div className="flex flex-col justify-center px-4">
-                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Game Logs</span>
-                 <div className="text-2xl font-black text-white italic tracking-tighter">
-                    {deadBodies.length} <span className="text-xs text-white/30 not-italic tracking-widest uppercase">Eliminated</span>
-                 </div>
+              <div className="w-px h-6 bg-white/10" />
+              <div className="text-right">
+                <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Latent Signals</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-black text-white italic tracking-tighter">0.42</span>
+                  <span className="text-[8px] font-black text-white/40 uppercase">ms</span>
+                </div>
               </div>
            </div>
         </div>
