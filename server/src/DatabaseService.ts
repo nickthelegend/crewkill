@@ -177,6 +177,12 @@ export class DatabaseService {
     address: string;
     name: string;
     colorId: number;
+    isAIAgent?: boolean;
+    agentPersona?: {
+      emoji: string;
+      title: string;
+      playstyle: string;
+    };
   }>) {
     if (!this.enabled) return;
     try {

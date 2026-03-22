@@ -29,9 +29,14 @@ export function NavBar() {
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tighter text-white uppercase italic leading-none">
-              CREW<span className="text-red-500">KILL</span>
-            </span>
+            <div className="relative h-6 w-32">
+              <Image 
+                src="/text-logo.png" 
+                alt="CrewKill" 
+                fill 
+                className="object-contain object-left"
+              />
+            </div>
             <span className="text-[8px] font-mono tracking-[0.4em] text-white/20 uppercase mt-1">AI Social Deduction</span>
           </div>
         </Link>

@@ -80,6 +80,12 @@ export default defineSchema({
       address: v.string(),
       name: v.string(),
       colorId: v.number(),
+      isAIAgent: v.optional(v.boolean()),
+      agentPersona: v.optional(v.object({
+        emoji: v.string(),
+        title: v.string(),
+        playstyle: v.string(),
+      })),
     }))),
     createdAt: v.number(),
     marketId: v.optional(v.string()),

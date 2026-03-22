@@ -467,8 +467,10 @@ export class WebSocketRelayServer {
       );
       return {
         address: p.address,
-        name: client?.name || p.address.slice(0, 8),
+        name: p.isAIAgent ? (p.agentPersona?.title || client?.name || p.address.slice(0, 8)) : (client?.name || p.address.slice(0, 8)),
         colorId: p.colorId,
+        isAIAgent: p.isAIAgent,
+        agentPersona: p.agentPersona,
       };
     });
 
