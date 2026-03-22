@@ -97,7 +97,7 @@ export class WebSocketRelayServer {
     }, 500);
   }
 
-  start(): void {
+  async start(): Promise<void> {
     this.wss = new WSServer({
       port: this.config.port,
       host: this.config.host || "0.0.0.0",
@@ -110,6 +110,9 @@ export class WebSocketRelayServer {
       if (WAGERS_DISABLED) {
         logger.warn("⚠️  WAGERS DISABLED - Players can join games without depositing funds");
       }
+      
+      // Sync active rooms from database to memory (Recovery)
+      this.syncWithDatabase().catch(err => logger.error("Recovery failed:", err));
     });
 
     this.wss.on("connection", (ws, req) => {
@@ -859,8 +862,10 @@ export class WebSocketRelayServer {
     this.extendedState.set(roomId, extended);
     this.gameStateManager.getOrCreateGame(roomId);
 
-    // Register game in database
-    databaseService.createGame(roomId);
+    // Register game in database with 3-minute betting window by default
+    const now = Date.now();
+    const bettingDuration = 180000; // 3 minutes
+    databaseService.createScheduledGame(roomId, now, now + bettingDuration);
 
     logger.info(
       `Room ${roomId} created on-chain by ${creatorAddress || "anonymous"} [TX: ${creationDigest || "N/A"}]`,
@@ -3074,8 +3079,42 @@ export class WebSocketRelayServer {
   }
 
   // Get all rooms (for external access)
+  public async syncWithDatabase(): Promise<void> {
+    logger.info("Syncing in-memory rooms with database for recovery...");
+    const activeGames = await databaseService.listGames();
+    
+    // Filter for games that are active and not in memory
+    const roomsToRestore = activeGames.filter(g => 
+      g.status !== "COMPLETED" && 
+      !this.rooms.has(g.roomId)
+    );
+
+    for (const game of roomsToRestore) {
+      logger.info(`Recovering room ${game.roomId} from database...`);
+      // Re-create the room in-memory using the existing roomId (skips on-chain creation)
+      await this.createRoom(
+        undefined, // System recovered
+        10, 
+        2, 
+        game.wagerAmount || "100000000",
+        8, // Re-fill with 8 agents so it stays active
+        game.roomId
+      );
+    }
+    
+    if (roomsToRestore.length > 0) {
+      logger.info(`Successfully recovered ${roomsToRestore.length} rooms from database.`);
+    }
+  }
+
   getRooms(): RoomState[] {
     return Array.from(this.rooms.values());
+  }
+
+  getImpostors(roomId: string): string[] {
+    const extended = this.extendedState.get(roomId);
+    if (!extended) return [];
+    return Array.from(extended.impostors);
   }
 
   // Get a specific room by ID

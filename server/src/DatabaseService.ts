@@ -137,6 +137,16 @@ export class DatabaseService {
     }
   }
 
+  async listGames() {
+    if (!this.enabled) return [];
+    try {
+      return await this.convex.query("crewkill:listGames" as any, {});
+    } catch (error) {
+      logger.error("Failed to list games from Convex:", error);
+      return [];
+    }
+  }
+
   // ============ Game Operations ============
 
   async createGame(roomId: string) {

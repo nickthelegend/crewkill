@@ -220,6 +220,18 @@ export function createApiServer(
     }
   });
 
+  // Get impostors for a room (Admin testing only)
+  app.post("/api/system/impostors", requireOperatorAuth, (req: AuthenticatedRequest, res: Response) => {
+    const { roomId } = req.body;
+    if (!roomId) {
+      res.status(400).json({ error: "roomId required" });
+      return;
+    }
+    
+    const impostors = wsServer.getImpostors(roomId);
+    res.json({ roomId, impostors });
+  });
+
   // ============ SERVER INFO ============
 
   app.get("/api/server", (_req: Request, res: Response) => {
