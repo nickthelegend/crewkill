@@ -29,7 +29,7 @@ const logger = createLogger("websocket-server");
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
 const MIN_PLAYERS_TO_START = 1; // Lowered to 1 for solo testing
-const LOBBY_WAITING_DURATION = 180000; // 3 minutes to wait for other agents
+const LOBBY_WAITING_DURATION = 300000; // 5 minutes to wait for other agents
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
 const EJECTION_DURATION = 5000; // 5 seconds
@@ -488,26 +488,37 @@ export class WebSocketRelayServer {
     colorId?: number,
     asSpectator?: boolean,
   ): Promise<void> {
-    let room = this.rooms.get(roomId);
+    // Normalize roomId
+    const normalizedRoomId = roomId.toLowerCase();
+    let room = this.rooms.get(normalizedRoomId);
+
+    // If not found in memory, try to restore from DB on-the-fly
     if (!room) {
-      if (roomId.startsWith("scheduled_")) {
-        // Auto-create room for scheduled games if it doesn't exist
-        logger.info(`Auto-creating room for scheduled game: ${roomId}`);
-        const result = await this.createRoom(undefined, 10, 2, "100000000", 10, roomId);
-        
-        if ("error" in result) {
-          this.sendError(client, "ROOM_CREATION_FAILED", result.error);
+      const dbGame = await databaseService.getGameByRoomId(normalizedRoomId);
+      if (dbGame) {
+        logger.info(`Restoring room ${normalizedRoomId} from DB on-the-fly...`);
+        const result = await this.createRoom(
+          undefined,
+          10,
+          2,
+          dbGame.wagerAmount || "100000000",
+          8,
+          normalizedRoomId
+        );
+        if ('error' in result) {
+          this.sendError(client, "ROOM_NOT_FOUND", `Failed to restore room ${normalizedRoomId}`);
           return;
         }
         room = result;
       } else {
-        this.sendError(client, "ROOM_NOT_FOUND", `Room ${roomId} not found`);
+        this.sendError(client, "ROOM_NOT_FOUND", `Room ${normalizedRoomId} not found`);
         return;
       }
     }
 
     // Now 'room' is guaranteed to exist
     const activeRoom = room!;
+    const finalRoomId = normalizedRoomId;
 
     // Check if room has ended - prevent any new joins (except spectators viewing results)
     if (activeRoom.phase === "ended" && !asSpectator) {
@@ -520,7 +531,7 @@ export class WebSocketRelayServer {
     }
 
     // Check if lobby is locked (after waiting period expired)
-    const extended = this.extendedState.get(roomId);
+    const extended = this.extendedState.get(finalRoomId);
     if (extended?.lobbyLocked && !asSpectator && client.isAgent) {
       this.sendError(
         client,
@@ -531,96 +542,116 @@ export class WebSocketRelayServer {
     }
 
     // Leave previous room if any
-    if (client.roomId && client.roomId !== roomId) {
+    if (client.roomId && client.roomId !== finalRoomId) {
       this.handleLeaveRoom(client, client.roomId);
     }
 
-    client.roomId = roomId;
+    client.roomId = finalRoomId;
     client.colorId = colorId;
 
     if (asSpectator || !client.isAgent) {
-      // Join as spectator
-      if (!room.spectators.includes(client.id)) {
-        room.spectators.push(client.id);
+      // JOIN AS SPECTATOR
+      if (!activeRoom.spectators.includes(client.id)) {
+        activeRoom.spectators.push(client.id);
       }
-      logger.info(`Spectator ${client.name} joined room ${roomId}`);
-    } else {
-      // Join as player - enforce both room.maxPlayers and global limit
-      const effectiveMaxPlayers = Math.min(
-        room.maxPlayers,
-        MAX_PLAYERS_PER_ROOM,
-      );
-      if (room.players.length >= effectiveMaxPlayers) {
-        this.sendError(
-          client,
-          "ROOM_FULL",
-          `Room is full (max ${effectiveMaxPlayers} players)`,
-        );
-        return;
-      }
-
-      // Check if agent has wagered (in-memory first, then on-chain)
-      // SKIP WAGER CHECKS IF DISABLED or if AI agent
-      const isAIAgent = this.aiAgentManager.isAIAgent(client.address || "");
-      if (!WAGERS_DISABLED && !isAIAgent) {
-        const hasInMemoryWager = wagerService.hasWagered(
-          roomId,
-          client.address || "",
-        );
-        if (!hasInMemoryWager) {
-          // Check on-chain wager asynchronously
-          this.checkOnChainWagerAndJoin(client, room, roomId, colorId);
-          return;
-        }
-      }
-
-      const playerState: PlayerState = {
-        address: client.address || client.id,
-        colorId: colorId ?? room.players.length,
-        location: 0, // Cafeteria
-        role: Role.None,
-        isAlive: true,
-        tasksCompleted: 0,
-        totalTasks: 10, // Increased from 5 for longer games
-        hasVoted: false,
-      };
-
-      room.players.push(playerState);
-
-      // Register player with GameStateManager
-      this.gameStateManager.updatePlayer(roomId, playerState);
-
-      logger.info(
-        `Player ${client.name} joined room ${roomId} (color: ${playerState.colorId}${WAGERS_DISABLED ? ", wagers disabled" : ", wagered"})`,
-      );
-
-      // Broadcast player joined to room
-      this.broadcastToRoom(roomId, {
-        type: "server:player_joined",
-        gameId: roomId,
-        player: playerState,
+      
+      logger.info(`Client ${client.id} joined room ${finalRoomId} as SPECTATOR`);
+      
+      // Send confirm
+      this.send(client, {
+        type: "server:room_update",
+        room: activeRoom,
       });
 
-      // Trigger auto-start logic
-      await this.onPlayerJoinedRoom(roomId);
+      // Send current game state if not in lobby
+      if (activeRoom.phase !== "lobby") {
+        const gameState = this.gameStateManager.getGame(finalRoomId);
+        if (gameState) {
+          this.send(client, {
+            type: "server:game_state",
+            gameId: finalRoomId,
+            state: gameState,
+          });
+        }
+      }
+      return;
     }
 
+    // JOIN AS PLAYER - enforce both room.maxPlayers and global limit
+    const effectiveMaxPlayers = Math.min(
+      activeRoom.maxPlayers,
+      MAX_PLAYERS_PER_ROOM,
+    );
+    
+    if (activeRoom.players.length >= effectiveMaxPlayers) {
+      this.sendError(
+        client,
+        "ROOM_FULL",
+        `Room is full (max ${effectiveMaxPlayers} players)`,
+      );
+      return;
+    }
+
+    // Check if agent has wagered (in-memory first, then on-chain)
+    // SKIP WAGER CHECKS IF DISABLED or if AI agent
+    const isAIAgent = this.aiAgentManager.isAIAgent(client.address || "");
+    if (!WAGERS_DISABLED && !isAIAgent) {
+      const hasInMemoryWager = wagerService.hasWagered(
+        finalRoomId,
+        client.address || "",
+      );
+      if (!hasInMemoryWager) {
+        // Check on-chain wager asynchronously
+        this.checkOnChainWagerAndJoin(client, activeRoom, finalRoomId, colorId);
+        return;
+      }
+    }
+    const playerState: PlayerState = {
+      address: client.address || client.id,
+      colorId: colorId ?? activeRoom.players.length,
+      location: 0, // Cafeteria
+      role: Role.None,
+      isAlive: true,
+      tasksCompleted: 0,
+      totalTasks: 10,
+      hasVoted: false,
+    };
+
+    activeRoom.players.push(playerState);
+
+    // Register player with GameStateManager
+    this.gameStateManager.updatePlayer(finalRoomId, playerState);
+
+    logger.info(
+      `Player ${client.name} joined room ${finalRoomId} (color: ${playerState.colorId}${WAGERS_DISABLED ? ", wagers disabled" : ", wagered"})`,
+    );
+
+    // Broadcast player joined to room
+    this.broadcastToRoom(finalRoomId, {
+      type: "server:player_joined",
+      gameId: finalRoomId,
+      player: playerState,
+    });
+
+    // Trigger auto-start logic
+    await this.onPlayerJoinedRoom(finalRoomId);
+
     // Send current room state to the joining client
-    this.send(client, { type: "server:room_update", room });
+    this.send(client, { type: "server:room_update", room: activeRoom });
 
     // Broadcast room list update
     this.broadcastRoomList();
 
     // Sync to Convex
-    this.updateConvexPlayers(roomId);
+    this.updateConvexPlayers(finalRoomId);
 
     // If game is in progress, send current game state to the joining client
-    if (room.phase !== "lobby") {
-      const gameState = this.gameStateManager.getGame(roomId);
+    if (activeRoom.phase !== "lobby") {
+      const gameState = this.gameStateManager.getGame(finalRoomId);
       if (gameState) {
         this.send(client, {
           type: "server:game_state",
-          gameId: roomId,
+          gameId: finalRoomId,
           state: gameState,
         });
       }
@@ -864,7 +895,7 @@ export class WebSocketRelayServer {
 
     // Register game in database with 3-minute betting window by default
     const now = Date.now();
-    const bettingDuration = 180000; // 3 minutes
+    const bettingDuration = 420000; // 7 minutes
     databaseService.createScheduledGame(roomId, now, now + bettingDuration);
 
     logger.info(
@@ -954,20 +985,8 @@ export class WebSocketRelayServer {
         
         logger.info(`Scheduled room ${roomId} reached minimum players. Waiting ${waitMs / 1000}s to start game.`);
         
-        // Create prediction market on-chain immediately so betting can begin!
-        if (!room.marketId && !(room as any).marketLoading) {
-           (room as any).marketLoading = true;
-           contractService.createMarket(roomId, room.players.map(p => p.address))
-             .then(marketId => {
-                if (marketId) {
-                   databaseService.updateGameMarketId(roomId, marketId);
-                   room.marketId = marketId;
-                   this.broadcastToRoom(roomId, { type: "server:room_update", room });
-                }
-             })
-             .catch(err => logger.error(`Failed to create market for ${roomId}:`, err))
-             .finally(() => { (room as any).marketLoading = false; });
-        }
+        // Create prediction market on-chain immediately if enough players so betting can begin!
+        this.ensureMarketDeployment(roomId);
 
         // Start countdown to actual game start
         setTimeout(async () => {
@@ -1291,6 +1310,9 @@ export class WebSocketRelayServer {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
+    // Check if market is already deployed or being deployed
+    if (room.marketId || (room as any).marketLoading) return;
+
     // Check database first in case it's already there but not in memory
     try {
         const dbGame = await databaseService.getGameByRoomId(roomId);
@@ -1302,18 +1324,23 @@ export class WebSocketRelayServer {
         logger.error(`Error checking DB for market in ${roomId}:`, err);
     }
 
-    if (room.players.length < MIN_PLAYERS_TO_START) return;
+    // Don't create markets for solo games (or with 0 players) - need at least 1 contenders
+    if (room.players.length < 1) return;
 
-    logger.info(`Ensuring market deployment for room ${roomId}...`);
+    (room as any).marketLoading = true;
+    logger.info(`Ensuring market deployment for room ${roomId} (${room.players.length} players)...`);
     try {
         const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
         if (marketId) {
             await databaseService.updateGameMarketId(roomId, marketId);
             room.marketId = marketId;
+            this.broadcastToRoom(roomId, { type: "server:room_update", room });
             logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
         }
     } catch (err) {
         logger.error(`Failed to ensure market for ${roomId}:`, err);
+    } finally {
+        (room as any).marketLoading = false;
     }
   }
 
@@ -2904,6 +2931,9 @@ export class WebSocketRelayServer {
 
     // Sync to Convex
     this.updateConvexPlayers(roomId);
+
+    // CRITICAL: Trigger join lifecycle logic (prediction market, auto-start, etc)
+    this.onPlayerJoinedRoom(roomId);
   }
 
   /**
@@ -2949,14 +2979,7 @@ export class WebSocketRelayServer {
       this.registerAIAgent(agent, roomId);
     }
 
-    // If the room is still in lobby and has enough players, start the game
-    if (room.phase === "lobby" && room.players.length >= MIN_PLAYERS_TO_START) {
-      logger.info(
-        `AI-populated room ${roomId} has ${room.players.length} players, starting game`,
-      );
-      this.startGameInternal(roomId);
-    }
-
+    // Logic for starting/market creation is now handled by registerAIAgent -> onPlayerJoinedRoom
     this.broadcastRoomList();
   }
 

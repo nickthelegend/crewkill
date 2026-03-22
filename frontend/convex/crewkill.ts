@@ -232,6 +232,12 @@ export const updateGamePlayers = mutation({
       address: v.string(),
       name: v.string(),
       colorId: v.number(),
+      isAIAgent: v.optional(v.boolean()),
+      agentPersona: v.optional(v.object({
+        emoji: v.string(),
+        title: v.string(),
+        playstyle: v.string(),
+      })),
     })),
   },
   handler: async (ctx, args) => {

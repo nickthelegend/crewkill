@@ -13,7 +13,7 @@ export class SchedulerService {
   private wsServer?: WebSocketRelayServer;
   private intervalMs: number = 10 * 60 * 1000; // 10 minutes
   private intervalId: NodeJS.Timeout | null = null;
-  private bettingWindowMs: number = 3 * 60 * 1000; // 3 minutes betting window
+  private bettingWindowMs: number = 7 * 60 * 1000; // 7 minutes betting window
 
   constructor(convexUrl: string, wsServer?: WebSocketRelayServer) {
     this.convex = new ConvexHttpClient(convexUrl);
@@ -57,7 +57,7 @@ export class SchedulerService {
       if (!games) {
         logger.info(`Scheduling new game for slot: ${new Date(targetSlot).toISOString()}`);
         
-        const bettingEndsAt = now + (3 * 60 * 1000); // Betting open for exactly 3 mins
+        const bettingEndsAt = now + this.bettingWindowMs; // Betting open for the defined window
 
         await this.convex.mutation("crewkill:createScheduledGame" as any, {
           roomId,

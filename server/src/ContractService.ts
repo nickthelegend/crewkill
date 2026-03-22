@@ -165,11 +165,11 @@ export class ContractService {
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
         transaction: tx,
-        options: { showEvents: true } 
+        options: { showEvents: true, showEffects: true } 
       });
       
       if (result.effects?.status.status !== 'success') {
-        logger.error(`Prediction market creation TX failed: ${result.effects?.status.error}`);
+        logger.error(`Prediction market creation TX failed: ${result.effects?.status.error || "Unknown error"}`);
         return null;
       }
 
@@ -205,8 +205,15 @@ export class ContractService {
 
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
-        transaction: tx 
+        transaction: tx,
+        options: { showEffects: true }
       });
+      
+      if (result.effects?.status.status !== 'success') {
+        logger.error(`Prediction market resolution TX failed: ${result.effects?.status.error || "Unknown error"}`);
+        return false;
+      }
+      
       logger.info(`Prediction market resolved for game ${gameId}: ${result.digest}`);
       return true;
     } catch (error) {
