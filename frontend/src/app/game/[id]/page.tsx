@@ -37,6 +37,26 @@ export default function RoomDetailsPage() {
     }
   }, [isConnected, roomId, currentRoom, joinRoom]);
 
+  // Deterministic hash for non-hex IDs (matches server logic)
+  const displayId = useMemo(() => {
+    if (!dbGame) return "";
+    if (dbGame.marketId) return dbGame.marketId;
+    if (dbGame.roomId.startsWith('0x')) return dbGame.roomId;
+    
+    // Fallback: simple hash of roomId (same as server ideally)
+    let hash = 0;
+    for (let i = 0; i < dbGame.roomId.length; i++) {
+      hash = ((hash << 5) - hash) + dbGame.roomId.charCodeAt(i);
+      hash |= 0;
+    }
+    return `0x${Math.abs(hash).toString(16).padEnd(64, '0')}`;
+  }, [dbGame]);
+
+  const startAt = dbGame ? (dbGame.scheduledAt ? new Date(dbGame.scheduledAt) : null) : null;
+  const bettingEndsAt = dbGame ? (dbGame.bettingEndsAt ? new Date(dbGame.bettingEndsAt) : null) : null;
+  const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
+  const isLive = dbGame ? ((currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && dbGame.status !== "COMPLETED") : false;
+
   if (!dbGame) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -44,26 +64,6 @@ export default function RoomDetailsPage() {
       </div>
     );
   }
-
-  const startAt = dbGame.scheduledAt ? new Date(dbGame.scheduledAt) : null;
-  const bettingEndsAt = dbGame.bettingEndsAt ? new Date(dbGame.bettingEndsAt) : null;
-  const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
-  const isLive = (currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && dbGame.status !== "COMPLETED";
-
-  // Deterministic hash for non-hex IDs (matches server logic)
-  const displayId = useMemo(() => {
-    if (dbGame.marketId) return dbGame.marketId;
-    if (dbGame.roomId.startsWith('0x')) return dbGame.roomId;
-    
-    // Fallback: simple hash of roomId (same as server ideally)
-    // For now we just use a stable string derived from ID
-    let hash = 0;
-    for (let i = 0; i < dbGame.roomId.length; i++) {
-      hash = ((hash << 5) - hash) + dbGame.roomId.charCodeAt(i);
-      hash |= 0;
-    }
-    return `0x${Math.abs(hash).toString(16).padEnd(64, '0')}`;
-  }, [dbGame.roomId, dbGame.marketId]);
 
   return (
     <SpaceBackground>

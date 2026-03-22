@@ -41,7 +41,7 @@ export class SchedulerService {
     try {
       const now = Date.now();
       // For immediate verification during development
-      const targetSlot = Math.ceil(now / (5 * 60 * 1000)) * (5 * 60 * 1000); // 5 min slots
+      const targetSlot = Math.ceil(now / (5 * 60 * 1000)) * (5 * 60 * 1000) + (5 * 60 * 1000); // Next 5 min slot
 
       // Check if a game is already scheduled for this slot or later
       // For now, we'll just check if there are any games in LOBBY phase
@@ -66,13 +66,13 @@ export class SchedulerService {
         });
 
         if (this.wsServer) {
-          this.wsServer.createRoom(undefined, 10, 2, "100000000", 0, roomId);
+          this.wsServer.createRoom(undefined, 10, 2, "100000000", 10, roomId);
         }
 
         logger.info(`Successfully created scheduled room: ${roomId}`);
       } else if (missingInMemory && this.wsServer) {
         logger.info(`Room ${roomId} exists in Convex but missing from memory. Syncing...`);
-        this.wsServer.createRoom(undefined, 10, 2, "100000000", 0, roomId);
+        this.wsServer.createRoom(undefined, 10, 2, "100000000", 10, roomId);
       }
     } catch (err) {
       logger.error("Error in scheduler check:", err);
