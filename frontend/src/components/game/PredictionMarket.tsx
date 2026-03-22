@@ -201,11 +201,15 @@ export function PredictionMarket({
     }
 
     try {
+      if (!marketObjectId || !/^0x[a-fA-F0-9]{64}$/.test(marketObjectId)) {
+        throw new Error("Market is not currently available on-chain. Please wait for deployment to complete.");
+      }
+
       if (!/^0x[a-fA-F0-9]{64}$/.test(selectedSuspect)) {
         throw new Error("Target address is not a valid 32-byte hex string (AI agents require server restart for valid hex IDs).");
       }
-
-      const tx = new Transaction();
+ 
+       const tx = new Transaction();
       const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betMist)]);
       tx.moveCall({
         target: `${PACKAGE_ID}::prediction_market::place_bet`,

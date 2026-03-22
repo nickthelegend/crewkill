@@ -4,10 +4,10 @@ export const ONECHAIN_RPC = 'https://rpc-testnet.onelabs.cc:443';
 
 export const suiClient = new SuiClient({ url: ONECHAIN_RPC });
 
-export const PACKAGE_ID = '0xf2f49ca2d13215c2f33274096544594a0d8d7cd2a84b46f4c76a46db18cce181';
-export const GAME_MANAGER_ID = '0x3b27263b05400d61dcb41a56d19d7954cc1a10fe396e03f51bd0c52d0586e990';
-export const WAGER_VAULT_ID = '0x862b3118447979427ec22fd8000abc21d6e9f7e2e53d7ed472b8d63ac7926163';
-export const AGENT_REGISTRY_ID = '0xc14e3f34ac679169cfe11e833a07f870e9c1ae0c7d17fe3f1c5e5a4d687ace93';
-export const MARKET_REGISTRY_ID = '0xe0233036eebdf19edd01437383268df0f0d3d7072de42b6526beec527afaa6f4';
+export const PACKAGE_ID = '0x567d677bccf3954947bea622eea5ac40f98c4d5b7650b5d4ad5b1a2ae7b475f3';
+export const GAME_MANAGER_ID = '0xa5c182e8038e735ab566b6cb4c7376953a9273f3d33f345ed23555c2b3db6360';
+export const WAGER_VAULT_ID = '0x9368ea086d8a73b02bdb5cd5ad3fdddf75395f85b4a5689d1a71399f430f0814';
+export const AGENT_REGISTRY_ID = '0xfd1c098058c06254a4f99ac0122448e4d2987cd228059235d1951ea2dc419bb';
+export const MARKET_REGISTRY_ID = '0x8f2dfb369f11bc2df49bebf43450549e94615c8ffe06e5a3c6f3d4eca3260f42';
 export const CLOCK_ID = '0x6';
-export const MINT_CAP_ID = '0x60c814165e894dd593879b65bf0cb830567574ce5bf384c290ee66940712d52d';
+export const MINT_CAP_ID = '0x94e84672ed71b5fc48f83c6531a86cb7c214ff4669582d3096fcd6b340f321d4';

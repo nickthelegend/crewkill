@@ -98,7 +98,7 @@ export default function LiveRoomPage() {
       onShowInviteModal={setShowInviteModal}
       onBack={() => router.push(`/game/${id}`)}
       gameObjectId={game?._id}
-      marketObjectId={undefined} // Registry ID should be used
+      marketObjectId={game?.marketId}
       gamePhase={phase}
       activeSabotage={activeSabotage}
     />
