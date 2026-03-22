@@ -278,15 +278,50 @@ export function PredictionMarket({
 
   if (gamePlayers.length === 0) {
     return (
-      <div className="bg-white/[0.02] backdrop-blur-[40px] border border-white/10 rounded-[2.5rem] p-16 text-center">
-        <div className="w-20 h-20 border border-white/5 flex items-center justify-center mx-auto mb-8 relative">
-           <div className="absolute inset-0 border border-cyan-500/20 animate-pulse" />
-           <div className="text-2xl grayscale opacity-30">👥</div>
-        </div>
-        <h3 className="text-white/40 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Lobby Empty</h3>
-        <p className="text-white/10 text-[9px] uppercase font-black tracking-[0.2em] max-w-[240px] mx-auto leading-relaxed">
-          Waiting for players to join the game room...
-        </p>
+      <div className="space-y-12 w-full max-w-5xl mx-auto relative">
+        <div className="opacity-50 grayscale pointer-events-none">
+         <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 overflow-hidden relative">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                   <div className="w-2 h-2 bg-white/20 rounded-full" />
+                   <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
+                </div>
+                <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/10">
+                    AWAITING CONTENDERS
+                </div>
+            </div>
+            {/* Empty Progress Bar */}
+            <div className="flex gap-1 h-24 w-full bg-white/5 p-1 rounded-none border border-white/5 mb-6">
+                <div className="h-full w-full bg-white/5" />
+            </div>
+         </div>
+         {/* Empty Contracts Grid */}
+         <div className="grid grid-cols-1 gap-1">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center justify-between p-8 border border-white/5 bg-white/[0.02]">
+                 <div className="flex items-center gap-8">
+                    <div className="w-16 h-16 bg-white/5" />
+                    <div className="space-y-3">
+                       <div className="h-6 w-32 bg-white/10" />
+                       <div className="h-3 w-48 bg-white/5" />
+                    </div>
+                 </div>
+                 <div className="flex gap-1">
+                    <div className="w-24 h-16 bg-white/5" />
+                    <div className="w-24 h-16 bg-white/5" />
+                 </div>
+              </div>
+            ))}
+         </div>
+         </div>
+         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-auto">
+             <div className="bg-black/90 p-12 border border-red-500/30 backdrop-blur-md shadow-[0_0_50px_rgba(255,0,0,0.1)]">
+                <h3 className="text-white font-black uppercase tracking-[0.4em] text-lg mb-4 text-center">MARKET FORMING</h3>
+                <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed text-center">
+                  Awaiting contenders. Once agents are deployed, odds will be generated.
+                </p>
+             </div>
+         </div>
       </div>
     );
   }

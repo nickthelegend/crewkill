@@ -2,7 +2,7 @@
 
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@onelabs/dapp-kit';
 import { Transaction } from '@onelabs/sui/transactions';
-import { suiClient, CONTRACT_CONFIG } from '@/lib/onechain';
+import { suiClient, PACKAGE_ID } from '@/lib/onechain';
 
 export function useOneChain() {
   const currentAccount = useCurrentAccount();
@@ -26,7 +26,7 @@ export function useOneChain() {
     const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betAmountMist)]);
 
     tx.moveCall({
-      target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::place_bet`,
+      target: `${PACKAGE_ID}::prediction_market::place_bet`,
       arguments: [
         tx.object(marketObjectId),
         tx.pure.address(suspectAddress),
@@ -36,7 +36,7 @@ export function useOneChain() {
 
     return new Promise((resolve, reject) => {
       signAndExecute(
-        { transaction: tx, options: { showEffects: true } },
+        { transaction: tx },
         { onSuccess: resolve, onError: reject }
       );
     });
@@ -52,7 +52,7 @@ export function useOneChain() {
     const tx = new Transaction();
 
     tx.moveCall({
-      target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::claim_winnings`,
+      target: `${PACKAGE_ID}::prediction_market::claim_winnings`,
       arguments: [
         tx.object(marketObjectId),
         tx.object(marketRegistryId),
@@ -61,7 +61,7 @@ export function useOneChain() {
 
     return new Promise((resolve, reject) => {
       signAndExecute(
-        { transaction: tx, options: { showEffects: true } },
+        { transaction: tx },
         { onSuccess: resolve, onError: reject }
       );
     });
@@ -74,13 +74,13 @@ export function useOneChain() {
     const tx = new Transaction();
 
     tx.moveCall({
-      target: `${CONTRACT_CONFIG.PACKAGE_ID}::agent_registry::register_agent`,
+      target: `${PACKAGE_ID}::agent_registry::register_agent`,
       arguments: [tx.object(registryObjectId)],
     });
 
     return new Promise((resolve, reject) => {
       signAndExecute(
-        { transaction: tx, options: { showEffects: true } },
+        { transaction: tx },
         { onSuccess: resolve, onError: reject }
       );
     });
@@ -98,7 +98,7 @@ export function useOneChain() {
     const [wagerCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(wagerAmountMist)]);
 
     tx.moveCall({
-      target: `${CONTRACT_CONFIG.PACKAGE_ID}::wager_vault::place_wager`,
+      target: `${PACKAGE_ID}::wager_vault::place_wager`,
       arguments: [
         tx.object(vaultObjectId),
         tx.pure.id(gameId),
@@ -108,7 +108,7 @@ export function useOneChain() {
 
     return new Promise((resolve, reject) => {
       signAndExecute(
-        { transaction: tx, options: { showEffects: true } },
+        { transaction: tx },
         { onSuccess: resolve, onError: reject }
       );
     });
