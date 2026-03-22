@@ -117,6 +117,7 @@ export default function GameBettingPage() {
                     isResolved={dbGame.status === "COMPLETED" || dbGame.status === "ENDED"}
                     actualImpostors={[]} 
                     gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 7 : 0)}
+                    creationDigest={currentRoom?.creationDigest}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">

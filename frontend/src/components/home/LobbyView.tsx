@@ -205,10 +205,31 @@ export function LobbyView({
                       <div className="text-right hidden sm:block">
                          <div className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-2 font-mono">Total Prize Pool</div>
                          <div className="text-5xl font-black text-white tracking-tighter tabular-nums leading-none">
-                           {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-ml-1">OCT</span>
-                         </div>
-                      </div>
+                            {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-ml-1">OCT</span>
+                          </div>
+                       </div>
                     </div>
+
+                    {/* On-Chain Verification */}
+                    {currentRoom.creationDigest && (
+                      <div className="mb-8 p-4 bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-1.5 h-1.5 bg-cyan-400 rotate-45" />
+                          <div>
+                            <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest">On-Chain Room Verified</p>
+                            <p className="text-[9px] font-mono text-white/40">{currentRoom.creationDigest}</p>
+                          </div>
+                        </div>
+                        <a 
+                          href={`https://explorer.onechain.network/txblock/${currentRoom.creationDigest}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[9px] font-black text-cyan-400 uppercase tracking-widest hover:text-cyan-300 underline decoration-cyan-400/30"
+                        >
+                          View Transaction
+                        </a>
+                      </div>
+                    )}
 
                     {/* Node Interface Grid */}
                     <div className="grid grid-cols-5 gap-1 bg-white/5 border border-white/5 p-1 mb-16">

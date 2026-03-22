@@ -479,18 +479,18 @@ export class WebSocketRelayServer {
     });
   }
 
-  private handleJoinRoom(
+  private async handleJoinRoom(
     client: Client,
     roomId: string,
     colorId?: number,
     asSpectator?: boolean,
-  ): void {
+  ): Promise<void> {
     let room = this.rooms.get(roomId);
     if (!room) {
       if (roomId.startsWith("scheduled_")) {
         // Auto-create room for scheduled games if it doesn't exist
         logger.info(`Auto-creating room for scheduled game: ${roomId}`);
-        const result = this.createRoom(undefined, 10, 2, "100000000", 10, roomId);
+        const result = await this.createRoom(undefined, 10, 2, "100000000", 10, roomId);
         
         if ("error" in result) {
           this.sendError(client, "ROOM_CREATION_FAILED", result.error);
@@ -599,7 +599,7 @@ export class WebSocketRelayServer {
       });
 
       // Trigger auto-start logic
-      this.onPlayerJoinedRoom(roomId);
+      await this.onPlayerJoinedRoom(roomId);
     }
 
     // Send current room state to the joining client
@@ -782,14 +782,14 @@ export class WebSocketRelayServer {
     this.broadcastRoomList();
   }
 
-  public createRoom(
+  public async createRoom(
     creatorAddress: string | undefined,
     maxPlayers = 10,
     impostorCount = 2,
     wagerAmount?: string,
     aiAgentCount?: number,
     forcedRoomId?: string,
-  ): RoomState | { error: string } {
+  ): Promise<RoomState | { error: string }> {
     // Limit: one active room per creator
     if (creatorAddress) {
       const existingRoom = Array.from(this.rooms.values()).find(
@@ -806,7 +806,30 @@ export class WebSocketRelayServer {
       }
     }
 
-    const roomId = forcedRoomId || `room-${uuidv4().slice(0, 6)}`;
+    let roomId = forcedRoomId;
+    let creationDigest: string | undefined;
+
+    // IMPORTANT: If not forced (scheduled), create it on-chain!
+    if (!roomId) {
+      const actualWager = wagerAmount || wagerService.getWagerAmount().toString();
+      // Default tasks required: 5 per player
+      const tasksRequired = 5; 
+      
+      logger.info("Triggering ON-CHAIN game creation...");
+      const onChainResult = await contractService.createGame(
+        Math.min(maxPlayers, MAX_PLAYERS_PER_ROOM), 
+        actualWager, 
+        tasksRequired
+      );
+
+      if (!onChainResult) {
+        return { error: "Failed to create game on-chain. Check operator funds/connectivity." };
+      }
+
+      roomId = onChainResult.gameId;
+      creationDigest = onChainResult.digest;
+    }
+
     const room: RoomState = {
       roomId,
       players: [],
@@ -817,6 +840,7 @@ export class WebSocketRelayServer {
       createdAt: Date.now(),
       creator: creatorAddress,
       wagerAmount: wagerAmount || wagerService.getWagerAmount().toString(),
+      creationDigest,
     };
 
     const extended: ExtendedRoomState = {
@@ -839,7 +863,7 @@ export class WebSocketRelayServer {
     databaseService.createGame(roomId);
 
     logger.info(
-      `Dynamic room ${roomId} created by ${creatorAddress || "anonymous"}`,
+      `Room ${roomId} created on-chain by ${creatorAddress || "anonymous"} [TX: ${creationDigest || "N/A"}]`,
     );
 
     // Spawn AI agents if requested
@@ -852,15 +876,15 @@ export class WebSocketRelayServer {
     return room;
   }
 
-  private handleCreateRoom(
+  private async handleCreateRoom(
     client: Client,
     maxPlayers = 10,
     impostorCount = 2,
     wagerAmount?: string,
     aiAgentCount?: number,
     roomId?: string,
-  ): void {
-    const result = this.createRoom(
+  ): Promise<void> {
+    const result = await this.createRoom(
       client.address,
       maxPlayers,
       impostorCount,
@@ -926,19 +950,24 @@ export class WebSocketRelayServer {
         logger.info(`Scheduled room ${roomId} reached minimum players. Waiting ${waitMs / 1000}s to start game.`);
         
         // Create prediction market on-chain immediately so betting can begin!
-        contractService.createMarket(roomId, room.players.map(p => p.address))
-          .then(marketId => {
-             if (marketId) {
-                (databaseService as any).updateGameMarketId(roomId, marketId);
-                room.marketId = marketId;
-             }
-          })
-          .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
+        if (!room.marketId && !(room as any).marketLoading) {
+           (room as any).marketLoading = true;
+           contractService.createMarket(roomId, room.players.map(p => p.address))
+             .then(marketId => {
+                if (marketId) {
+                   databaseService.updateGameMarketId(roomId, marketId);
+                   room.marketId = marketId;
+                   this.broadcastToRoom(roomId, { type: "server:room_update", room });
+                }
+             })
+             .catch(err => logger.error(`Failed to create market for ${roomId}:`, err))
+             .finally(() => { (room as any).marketLoading = false; });
+        }
 
         // Start countdown to actual game start
-        setTimeout(() => {
+        setTimeout(async () => {
           logger.info(`Scheduled time reached for room ${roomId}. Starting game.`);
-          this.startGameInternal(roomId);
+          await this.startGameInternal(roomId);
           extended.lobbyLocked = true;
           this.reassignRolesAfterLobby(roomId);
           this.broadcastToRoom(roomId, {
@@ -1093,65 +1122,16 @@ export class WebSocketRelayServer {
     }
   }
 
-  private startGameInternal(roomId: string, isInitialBoarding = false): void {
+  private async startGameInternal(roomId: string, isInitialBoarding = false): Promise<void> {
     const room = this.rooms.get(roomId);
-    if (!room) return;
+    const extended = this.extendedState.get(roomId);
+    if (!room || !extended) return;
 
     if (room.players.length < MIN_PLAYERS_TO_START) {
-      logger.warn(
-        `Cannot start ${roomId}: only ${room.players.length} players`,
-      );
+      logger.warn(`Cannot start ${roomId}: only ${room.players.length} players`);
       return;
     }
 
-    // Set playing state
-    room.phase = "playing";
-    this.broadcastToRoom(roomId, {
-      type: "server:game_started",
-      gameId: roomId,
-    });
-
-    // Final check for market - if still missing, try one last time
-    if (!room.marketId) {
-        this.ensureMarketDeployment(roomId);
-    }
-
-    logger.info(`Game started in room ${roomId}`);
-  }
-
-  private async ensureMarketDeployment(roomId: string): Promise<void> {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
-
-    // Check database first in case it's already there but not in memory
-    try {
-        const dbGame = await databaseService.getGameByRoomId(roomId);
-        if (dbGame?.marketId) {
-           room.marketId = dbGame.marketId;
-           return;
-        }
-    } catch (err) {
-        logger.error(`Error checking DB for market in ${roomId}:`, err);
-    }
-
-    if (room.players.length < MIN_PLAYERS_TO_START) return;
-
-    logger.info(`Ensuring market deployment for room ${roomId}...`);
-    try {
-        const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
-        if (marketId) {
-            await databaseService.updateGameMarketId(roomId, marketId);
-            room.marketId = marketId;
-            logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
-        }
-    } catch (err) {
-        logger.error(`Failed to ensure market for ${roomId}:`, err);
-    }
-  }
-
-  private startGame(roomId: string, isInitialBoarding = false): void {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
     const phaseValue = isInitialBoarding ? 1 : 2;
 
     // Assign impostors randomly
@@ -1170,19 +1150,9 @@ export class WebSocketRelayServer {
     }
 
     // Initialize or update extended room state
-    const existingExtended = this.extendedState.get(roomId);
-    const extended: ExtendedRoomState = {
-      ...room,
-      impostors: new Set(impostorAddresses.map((a) => a.toLowerCase())),
-      votes: new Map(),
-      deadBodies: [],
-      currentRound: 1,
-      currentPhase: phaseValue,
-      phaseTimer: null,
-      lobbyLocked: existingExtended?.lobbyLocked ?? false,
-      lobbyTimer: existingExtended?.lobbyTimer ?? null,
-    };
-    this.extendedState.set(roomId, extended);
+    extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
+    extended.currentRound = 1;
+    extended.currentPhase = phaseValue;
 
     // Also register with GameStateManager
     this.gameStateManager.getOrCreateGame(roomId);
@@ -1228,28 +1198,36 @@ export class WebSocketRelayServer {
         );
     }
 
-    // Create game on-chain (async, don't block game flow)
-    // Skip on-chain creation if we have fewer than 4 players (contract minimum)
-    const playerAddresses = room.players.map((p) => p.address);
-    if (playerAddresses.length >= 4) {
-      contractService
-        .createGame(roomId, playerAddresses, impostorAddresses)
-        .then((success) => {
-          if (success) {
-            logger.info(`Game ${roomId} created on-chain successfully`);
-          } else {
-            logger.warn(
-              `Failed to create game ${roomId} on-chain (continuing in off-chain mode)`,
-            );
-          }
-        })
-        .catch((err) => {
-          logger.error(`Error creating game ${roomId} on-chain:`, err);
-        });
-    } else {
-      logger.info(
-        `Game ${roomId} running in off-chain mode (${playerAddresses.length} players, contract requires 4+)`,
-      );
+    // Register game on-chain if not already done
+    if (!room.creationDigest) {
+       logger.info(`Game ${roomId} being created on-chain...`);
+       try {
+         const onChainResult = await contractService.createGame(
+            room.maxPlayers, 
+            room.wagerAmount || "100000000", 
+            5
+         );
+         if (onChainResult) {
+            room.creationDigest = onChainResult.digest;
+            logger.info(`Game ${roomId} created on-chain successfully with digest ${onChainResult.digest}`);
+         } else {
+            logger.warn(`Failed to create game ${roomId} on-chain (continuing in off-chain mode)`);
+         }
+       } catch (err) {
+         logger.error(`Error creating game ${roomId} on-chain:`, err);
+       }
+    }
+
+    // Set playing state
+    room.phase = "playing";
+    this.broadcastToRoom(roomId, {
+      type: "server:game_started",
+      gameId: roomId,
+    });
+
+    // Final check for market - if still missing, try one last time
+    if (!room.marketId) {
+        this.ensureMarketDeployment(roomId);
     }
 
     // Role and task assignments are only sent when phase is 2 (final)
@@ -1276,7 +1254,7 @@ export class WebSocketRelayServer {
         }
     }
 
-    // Broadcast game start (phase change)
+    // Broadcast phase change
     this.broadcastToRoom(roomId, {
       type: "server:phase_changed",
       gameId: roomId,
@@ -1290,7 +1268,7 @@ export class WebSocketRelayServer {
     // Send room update
     this.broadcastToRoom(roomId, { type: "server:room_update", room });
 
-    // Send initial game state to all clients (including frontend)
+    // Send initial game state to all clients
     const gameState = this.gameStateManager.getGame(roomId);
     if (gameState) {
       this.broadcastToRoom(roomId, {
@@ -1301,6 +1279,37 @@ export class WebSocketRelayServer {
     }
 
     this.broadcastRoomList();
+    logger.info(`Game configuration complete for room ${roomId}`);
+  }
+
+  private async ensureMarketDeployment(roomId: string): Promise<void> {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    // Check database first in case it's already there but not in memory
+    try {
+        const dbGame = await databaseService.getGameByRoomId(roomId);
+        if (dbGame?.marketId) {
+           room.marketId = dbGame.marketId;
+           return;
+        }
+    } catch (err) {
+        logger.error(`Error checking DB for market in ${roomId}:`, err);
+    }
+
+    if (room.players.length < MIN_PLAYERS_TO_START) return;
+
+    logger.info(`Ensuring market deployment for room ${roomId}...`);
+    try {
+        const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
+        if (marketId) {
+            await databaseService.updateGameMarketId(roomId, marketId);
+            room.marketId = marketId;
+            logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
+        }
+    } catch (err) {
+        logger.error(`Failed to ensure market for ${roomId}:`, err);
+    }
   }
 
   private generateTaskLocations(count: number): number[] {

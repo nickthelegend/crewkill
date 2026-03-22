@@ -45,6 +45,7 @@ export interface RoomState {
   createdAt: number;
   creator?: string;
   wagerAmount?: string;
+  creationDigest?: string;
 }
 
 interface ServerMessage {
@@ -538,6 +539,7 @@ export function useGameServer(): UseGameServerReturn {
   const players: Player[] =
     currentRoom?.players.map((p) => ({
       address: p.address as `0x${string}`,
+      name: (p as any).name || (p.address.startsWith('0x') ? p.address.slice(0, 8) : p.address),
       colorId: p.colorId,
       role: Role.None, // Hidden
       location: p.location as Location,

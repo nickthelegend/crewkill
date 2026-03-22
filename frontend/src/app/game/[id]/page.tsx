@@ -227,6 +227,7 @@ export default function RoomDetailsPage() {
                     isResolved={dbGame.status === "COMPLETED"}
                     actualImpostors={[]} // Hidden during lobby
                     gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 2 : 0)}
+                    creationDigest={currentRoom?.creationDigest}
                   />
                   
                   {/* Market Sentiment Disclaimer */}

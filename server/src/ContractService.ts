@@ -85,24 +85,52 @@ export class ContractService {
     return CONTRACT_CONFIG.WAGER_VAULT_ID;
   }
 
-  async createGame(gameId: string, playerAddresses: string[], impostorAddresses: string[]): Promise<boolean> {
-    if (!this.operatorKeypair) return false;
+  async createGame(maxPlayers: number, wagerAmount: string, tasksRequired: number): Promise<{ gameId: string, digest: string } | null> {
+    if (!this.operatorKeypair) {
+      logger.error("Cannot create game: Operator keypair missing");
+      return null;
+    }
     try {
+      logger.info(`Creating NEW GAME on-chain (Max: ${maxPlayers}, Wager: ${wagerAmount}, Tasks: ${tasksRequired})...`);
       const tx = new Transaction();
-      const suiGameId = `0x${crypto.createHash('sha256').update(gameId).digest('hex')}`;
+      
       tx.moveCall({
-        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::create_game`,
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::create_game`,
         arguments: [
           tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
-          tx.pure.address(suiGameId),
-          tx.pure.u64(BigInt("100000000")), // 0.1 OCT
-          tx.pure.u64(BigInt(playerAddresses.length)),
-          tx.pure.u64(BigInt(impostorAddresses.length)),
+          tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
+          tx.pure.u64(BigInt(maxPlayers)),
+          tx.pure.u64(BigInt(wagerAmount)),
+          tx.pure.u64(BigInt(tasksRequired)),
+          tx.object('0x6'), // SUI Clock
         ],
       });
-      await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
-      return true;
-    } catch (error) { return false; }
+
+      const result = await this.client.signAndExecuteTransaction({ 
+        signer: this.operatorKeypair, 
+        transaction: tx,
+        options: { showEvents: true } 
+      });
+
+      if (result.effects?.status.status !== 'success') {
+        logger.error(`Game creation TX failed: ${result.effects?.status.error}`);
+        return null;
+      }
+
+      const event = result.events?.find(e => e.type.includes('::GameCreated'));
+      const gameId = (event?.parsedJson as any)?.game_id;
+      
+      if (gameId) {
+        logger.info(`Game created SUCCESSFULLY on-chain: ${gameId} [TX: ${result.digest}]`);
+        return { gameId, digest: result.digest };
+      }
+      
+      logger.error(`Game ID not found in event. Result type: ${JSON.stringify(result.events?.map(e => e.type))}`);
+      return null;
+    } catch (error) {
+      logger.error("Critical error in createGame:", error);
+      return null;
+    }
   }
 
   async createMarket(gameId: string, playerAddresses: string[]): Promise<string | null> {

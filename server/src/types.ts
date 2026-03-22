@@ -368,6 +368,7 @@ export interface RoomState {
   createdAt: number;
   creator?: string; // wallet address of creator
   wagerAmount?: string; // custom wager amount in wei
+  creationDigest?: string; // transaction digest for on-chain game creation
 }
 
 // Server → Client Messages

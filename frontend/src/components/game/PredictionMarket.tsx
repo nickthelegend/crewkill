@@ -45,6 +45,7 @@ interface PredictionMarketProps {
   isResolved: boolean;
   actualImpostors: string[];
   gamePhase: number;
+  creationDigest?: string;
 }
 
 export function PredictionMarket({
@@ -54,6 +55,7 @@ export function PredictionMarket({
   isResolved,
   actualImpostors,
   gamePhase,
+  creationDigest,
 }: PredictionMarketProps) {
   const account = useCurrentAccount();
   const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
@@ -353,6 +355,7 @@ export function PredictionMarket({
             </div>
             <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
                 {isOpen ? `Betting Active (ROOM#${(gameId || "").slice(-6).toUpperCase()})` : "Final Confidence"}
+                {creationDigest && <span className="ml-4 opacity-50">TX: {creationDigest.slice(0, 8)}...</span>}
             </div>
         </div>
 
