@@ -3,6 +3,7 @@ import { Transaction } from '@onelabs/sui/transactions';
 import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 import { createLogger } from "./logger.js";
 import { CONTRACT_CONFIG, ONECHAIN_RPC } from "./config.js";
+import crypto from 'crypto';
 
 const logger = createLogger("contract-service");
 
@@ -48,13 +49,14 @@ export class ContractService {
     if (!this.operatorKeypair) return false;
     try {
       const tx = new Transaction();
+      const suiGameId = `0x${crypto.createHash('sha256').update(gameId).digest('hex')}`;
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::settle_game`,
         arguments: [
           tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
           tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
           tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID),
-          tx.pure.address(gameId),
+          tx.pure.address(suiGameId),
           tx.pure.bool(crewmatesWon),
           tx.pure.vector('address', winners),
           tx.pure.vector('u64', playerKills.map(k => BigInt(k))),
@@ -87,11 +89,12 @@ export class ContractService {
     if (!this.operatorKeypair) return false;
     try {
       const tx = new Transaction();
+      const suiGameId = `0x${crypto.createHash('sha256').update(gameId).digest('hex')}`;
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::create_game`,
         arguments: [
           tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
-          tx.pure.address(gameId),
+          tx.pure.address(suiGameId),
           tx.pure.u64(BigInt("100000000")), // 0.1 OCT
           tx.pure.u64(BigInt(playerAddresses.length)),
           tx.pure.u64(BigInt(impostorAddresses.length)),
@@ -106,11 +109,15 @@ export class ContractService {
     if (!this.operatorKeypair) return null;
     try {
       const tx = new Transaction();
+      // Deterministically hash room ID to valid Sui Address
+      const hashedId = crypto.createHash('sha256').update(gameId).digest('hex');
+      const suiGameId = `0x${hashedId}`;
+
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::create_market`,
         arguments: [
           tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
-          tx.pure.address(gameId),
+          tx.pure.address(suiGameId),
           tx.pure.vector('address', playerAddresses),
         ],
       });
@@ -134,13 +141,40 @@ export class ContractService {
     }
   }
 
+  async resolveMarket(gameId: string, marketId: string, impostors: string[]): Promise<boolean> {
+    if (!this.operatorKeypair) return false;
+    try {
+      const tx = new Transaction();
+      // Ensure market registry is included from config
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::resolve_market`,
+        arguments: [
+          tx.object(marketId),
+          tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
+          tx.pure.vector('address', impostors),
+        ],
+      });
+
+      const result = await this.client.signAndExecuteTransaction({ 
+        signer: this.operatorKeypair, 
+        transaction: tx 
+      });
+      logger.info(`Prediction market resolved for game ${gameId}: ${result.digest}`);
+      return true;
+    } catch (error) {
+      logger.error(`Failed to resolve market for game ${gameId}:`, error);
+      return false;
+    }
+  }
+
   async cancelGame(gameId: string): Promise<boolean> {
     if (!this.operatorKeypair) return false;
     try {
       const tx = new Transaction();
+      const suiGameId = `0x${crypto.createHash('sha256').update(gameId).digest('hex')}`;
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::cancel_game`,
-        arguments: [tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID), tx.pure.address(gameId)],
+        arguments: [tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID), tx.pure.address(suiGameId)],
       });
       await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
       return true;

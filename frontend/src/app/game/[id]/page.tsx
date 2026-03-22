@@ -8,7 +8,7 @@ import { AmongUsSprite } from "@/components/game/AmongUsSprite";
 import { PredictionMarket } from "@/components/game/PredictionMarket";
 import { formatDistanceToNow } from "date-fns";
 import { useGameServer } from "@/hooks/useGameServer";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -50,6 +50,21 @@ export default function RoomDetailsPage() {
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
   const isLive = (currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && dbGame.status !== "COMPLETED";
 
+  // Deterministic hash for non-hex IDs (matches server logic)
+  const displayId = useMemo(() => {
+    if (dbGame.marketId) return dbGame.marketId;
+    if (dbGame.roomId.startsWith('0x')) return dbGame.roomId;
+    
+    // Fallback: simple hash of roomId (same as server ideally)
+    // For now we just use a stable string derived from ID
+    let hash = 0;
+    for (let i = 0; i < dbGame.roomId.length; i++) {
+      hash = ((hash << 5) - hash) + dbGame.roomId.charCodeAt(i);
+      hash |= 0;
+    }
+    return `0x${Math.abs(hash).toString(16).padEnd(64, '0')}`;
+  }, [dbGame.roomId, dbGame.marketId]);
+
   return (
     <SpaceBackground>
       <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 relative z-10">
@@ -77,7 +92,9 @@ export default function RoomDetailsPage() {
                   {isLive ? "● LIVE GAME" : dbGame.status === "COMPLETED" ? "GAME OVER" : "LOBBY OPEN"}
                 </div>
                 <div className="h-4 w-px bg-white/10" />
-                <span className="text-white/30 font-mono text-[10px] uppercase tracking-widest">ROOM_{dbGame.roomId.slice(-8)}</span>
+                <span className="text-cyan-400 font-black text-[10px] uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
+                   NETWORK_ID: #{displayId.slice(-12).toUpperCase()}
+                </span>
               </div>
               
               <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-white leading-[0.9]">

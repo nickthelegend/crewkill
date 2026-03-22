@@ -111,9 +111,9 @@ export function GameView({
                  <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"}`} />
                  <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{isConnected ? "SYNCED" : "DESYNC"}</span>
                  <div className="h-4 w-px bg-white/10 mx-1" />
-                 <span className="text-sm font-black text-white uppercase italic tracking-tighter">
-                   {activeRoom?.roomId || "ORBIT_01"}
-                 </span>
+                  <span className="text-[11px] font-black text-white uppercase italic tracking-[0.2em]">
+                    ROOM_#{(activeRoom?.roomId || "LOBBY").slice(-6).toUpperCase()}
+                  </span>
               </div>
            </div>
 

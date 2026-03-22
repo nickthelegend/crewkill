@@ -63,6 +63,18 @@ export function LobbyView({
       )
     : null;
   const hasActiveRoom = !!userRoom;
+ 
+  const getDisplayId = (id: string, marketId?: string) => {
+    if (marketId) return marketId.slice(-8).toUpperCase();
+    if (id.startsWith('0x')) return id.slice(-8).toUpperCase();
+    
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) - hash) + id.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(16).padEnd(8, '0').slice(-8).toUpperCase();
+  };
 
   return (
     <SpaceBackground>
@@ -133,7 +145,7 @@ export function LobbyView({
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-white/80 font-mono tracking-tighter">NODE_{room.roomId.slice(-6)}</span>
+                            <span className="text-xs font-black text-white/80 font-mono tracking-tighter">NODE_{getDisplayId(room.roomId, room.marketId)}</span>
                             <div className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
                               isPlaying ? "bg-rose-500/10 text-rose-500" : "bg-cyan-500/10 text-cyan-400"
                             }`}>
@@ -172,7 +184,7 @@ export function LobbyView({
                       <div>
                         <div className="flex items-center gap-3 mb-4">
                            <div className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
-                           <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em]">Connection Active: ROOM_{currentRoom.roomId.slice(-4).toUpperCase()}</p>
+                           <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em]">Connection Active: ROOM_{getDisplayId(currentRoom.roomId, currentRoom.marketId)}</p>
                         </div>
                         <h2 className="text-5xl md:text-6xl font-black text-white uppercase italic tracking-tighter leading-none mb-6">
                            GAME <span className="text-cyan-400">PROFILE</span>

@@ -34,8 +34,14 @@ const MIN_BET_MIST: u64 = 10_000_000; // 0.01 OCT minimum bet
 public struct MarketRegistry has key {
     id: UID,
     markets: Table<ID, bool>, // game_id -> exists
+    player_stats: Table<address, PlayerStats>, // address -> stats
     admin: address,
     protocol_fee_balance: Balance<OCT>,
+}
+
+public struct PlayerStats has store, copy, drop {
+    wins: u64,
+    losses: u64,
 }
 
 /// One prediction market per game
@@ -117,6 +123,7 @@ fun init(ctx: &mut TxContext) {
     let registry = MarketRegistry {
         id: object::new(ctx),
         markets: table::new(ctx),
+        player_stats: table::new(ctx),
         admin: ctx.sender(),
         protocol_fee_balance: balance::zero(),
     };
@@ -216,12 +223,22 @@ public entry fun resolve_market(
     // Instead we check each game player's bet if they placed one
     while (i < player_len) {
         let player = *vector::borrow(&market.game_players, i);
+        
+        // Initialize stats if not exist
+        if (!table::contains(&registry.player_stats, player)) {
+            table::add(&mut registry.player_stats, player, PlayerStats { wins: 0, losses: 0 });
+        };
+        let stats = table::borrow_mut(&mut registry.player_stats, player);
+
         if (table::contains(&market.bets, player)) {
             let bet = table::borrow_mut(&mut market.bets, player);
             let is_correct = vector::contains(&actual_impostors, &bet.suspect);
             bet.correct = is_correct;
             if (is_correct) {
                 winner_count = winner_count + 1;
+                stats.wins = stats.wins + 1;
+            } else {
+                stats.losses = stats.losses + 1;
             };
         };
         i = i + 1;

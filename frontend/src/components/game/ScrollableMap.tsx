@@ -1492,9 +1492,14 @@ export function ScrollableMap({
                     colorId={player.colorId}
                     size={80}
                     showName
-                    name={isMe ? "You" : PlayerColors[player.colorId].name}
+                    name={
+                      (gamePhase === 7 && player.role === 2) 
+                        ? `${isMe ? "You" : PlayerColors[player.colorId].name} [IMPOSTOR]` 
+                        : (isMe ? "You" : PlayerColors[player.colorId].name)
+                    }
                     isMoving={pos.isMoving}
                     isGhost={!player.isAlive}
+                    isImpostor={gamePhase === 7 && player.role === 2}
                   />
                   {/* Task Success Indicator */}
                   <AnimatePresence>

@@ -14,10 +14,12 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8082";
 
 export interface RoomState {
   roomId: string;
+  marketId?: string;
   players: Array<{
     address: string;
     colorId: number;
     location: number;
+    role: Role;
     isAlive: boolean;
     tasksCompleted: number;
     totalTasks: number;
@@ -260,6 +262,7 @@ export function useGameServer(): UseGameServerReturn {
                       address: p.address,
                       colorId: p.colorId,
                       location: p.location,
+                      role: p.role || Role.None,
                       isAlive: p.isAlive,
                       tasksCompleted: p.tasksCompleted || 0,
                       totalTasks: p.totalTasks || 5,
@@ -410,12 +413,25 @@ export function useGameServer(): UseGameServerReturn {
             });
             break;
 
-          case "server:game_ended":
+          case "server:game_ended": // Restored case
             addLog(
               "start",
               message.crewmatesWon ? "Crewmates win!" : "Impostors win!",
               message.gameId,
             );
+            setCurrentRoom((prev) => {
+              if (!prev || prev.roomId !== message.gameId) return prev;
+              const revealedImpostors = message.impostors.map((a: string) => a.toLowerCase());
+              return {
+                ...prev,
+                phase: "ended",
+                detailedPhase: GamePhase.Ended,
+                players: prev.players.map((p) => ({
+                  ...p,
+                  role: revealedImpostors.includes(p.address.toLowerCase()) ? Role.Impostor : Role.Crewmate,
+                })),
+              };
+            });
             break;
         }
       } catch (err) {

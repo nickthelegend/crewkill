@@ -90,6 +90,7 @@ export interface PlayerState {
   address: string;
   colorId: number;
   location: Location;
+  role: Role;
   isAlive: boolean;
   tasksCompleted: number;
   totalTasks: number;
@@ -358,6 +359,7 @@ export interface OperatorListAgentsMessage {
 // Room state
 export interface RoomState {
   roomId: string;
+  marketId?: string;
   players: PlayerState[];
   spectators: string[]; // connection IDs
   maxPlayers: number;
@@ -571,6 +573,7 @@ export interface ServerGameEndedMessage {
   reason: "tasks" | "votes" | "kills";
   winners: string[];
   losers: string[];
+  impostors: string[];
   totalPot: string;
   winningsPerPlayer: string;
   timestamp: number;

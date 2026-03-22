@@ -1,16 +1,19 @@
 import { WebSocketServer as WSServer, WebSocket } from "ws";
 import type { Server as HttpServer } from "http";
 import { v4 as uuidv4 } from "uuid";
+import {
+  Role,
+  Location,
+  GamePhase,
+  SabotageType,
+} from "./types.js";
 import type {
   ClientMessage,
   ServerMessage,
   RoomState,
   PlayerState,
-  Location,
-  GamePhase,
   DeadBodyState,
   AgentStats,
-  SabotageType,
 } from "./types.js";
 import { createLogger } from "./logger.js";
 import { GameStateManager, WinConditionResult } from "./GameStateManager.js";
@@ -555,6 +558,7 @@ export class WebSocketRelayServer {
         address: client.address || client.id,
         colorId: colorId ?? room.players.length,
         location: 0, // Cafeteria
+        role: Role.None,
         isAlive: true,
         tasksCompleted: 0,
         totalTasks: 10, // Increased from 5 for longer games
@@ -639,6 +643,7 @@ export class WebSocketRelayServer {
           address: client.address || client.id,
           colorId: colorId ?? room.players.length,
           location: 0, // Cafeteria
+          role: Role.None, // Default role
           isAlive: true,
           tasksCompleted: 0,
           totalTasks: 10, // Increased from 5 for longer games
@@ -906,6 +911,7 @@ export class WebSocketRelayServer {
         .then(marketId => {
            if (marketId) {
               (databaseService as any).updateGameMarketId(roomId, marketId);
+              room.marketId = marketId;
            }
         })
         .catch(err => logger.error(`Failed to create market for ${roomId}:`, err));
@@ -1002,7 +1008,10 @@ export class WebSocketRelayServer {
 
     // Assign tasks to any players who don't have tasks yet
     for (const player of room.players) {
-      if (!extended.impostors.has(player.address.toLowerCase())) {
+      const isImp = extended.impostors.has(player.address.toLowerCase());
+      player.role = isImp ? Role.Impostor : Role.Crewmate;
+
+      if (!isImp) {
         const existingTasks = this.gameStateManager.getTaskLocations(roomId, player.address);
         if (!existingTasks || existingTasks.length === 0) {
           const taskLocations = this.generateTaskLocations(10);
@@ -1090,7 +1099,10 @@ export class WebSocketRelayServer {
     // Assign tasks to players (if phase is 2)
     if (phaseValue === 2) {
         for (const player of room.players) {
-          if (!extended.impostors.has(player.address.toLowerCase())) {
+          const isImp = extended.impostors.has(player.address.toLowerCase());
+          player.role = isImp ? Role.Impostor : Role.Crewmate;
+          
+          if (!isImp) {
             const taskLocations = this.generateTaskLocations(10);
             this.gameStateManager.assignTasks(
               roomId,
@@ -2635,10 +2647,17 @@ export class WebSocketRelayServer {
       reason,
       winners,
       losers,
+      impostors: impostorAddresses,
       totalPot: totalPot.toString(),
       winningsPerPlayer: wagerResult.winningsPerPlayer.toString(),
       timestamp: Date.now(),
     });
+
+    // Settle prediction market on-chain (async)
+    if (room.marketId) {
+      contractService.resolveMarket(roomId, room.marketId, impostorAddresses)
+         .catch(err => logger.error(`Failed to resolve prediction market for game ${roomId}:`, err));
+    }
 
     // Send individual balance updates to each player
     for (const player of room.players) {
@@ -2742,9 +2761,10 @@ export class WebSocketRelayServer {
       address: agent.address,
       colorId: room.players.length,
       location: 0, // Cafeteria
+      role: Role.None, // Default role
       isAlive: true,
       tasksCompleted: 0,
-      totalTasks: 10,
+      totalTasks: 5, // AI agents have fewer tasks
       hasVoted: false,
       isAIAgent: true,
       agentPersona: {

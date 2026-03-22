@@ -96,7 +96,12 @@ export function PredictionMarket({
         return;
     }
 
-    if (!marketObjectId || marketObjectId === '0x_FILL_AFTER_DEPLOY') return;
+    // Prevent crash on invalid Sui IDs (like room strings)
+    const isValidSuiId = marketObjectId?.startsWith('0x') && marketObjectId.length >= 64;
+    if (!isValidSuiId) {
+      console.warn('PredictionMarket: Waiting for valid market object ID...', marketObjectId);
+      return;
+    }
 
     try {
       const result = await suiClient.getObject({
@@ -296,7 +301,7 @@ export function PredictionMarket({
                <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
             </div>
             <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
-               {isOpen ? "Betting Active" : "Final Confidence"}
+                {isOpen ? `Betting Active (ROOM#${(gameId || "").slice(-6).toUpperCase()})` : "Final Confidence"}
             </div>
         </div>
 

@@ -14,6 +14,7 @@ interface AmongUsSpriteProps {
   onClick?: () => void;
   name?: string;
   showName?: boolean;
+  isImpostor?: boolean;
 }
 
 export function AmongUsSprite({
@@ -27,6 +28,7 @@ export function AmongUsSprite({
   onClick,
   name,
   showName = false,
+  isImpostor = false,
 }: AmongUsSpriteProps) {
   const color = PlayerColors[colorId] || PlayerColors[0];
   const scale = size / 80;
@@ -199,9 +201,10 @@ export function AmongUsSprite({
         <div
           className="absolute -bottom-6 whitespace-nowrap px-2 py-0.5 rounded text-xs font-bold"
           style={{
-            backgroundColor: "rgba(0,0,0,0.7)",
-            color: color.light,
-            textShadow: "1px 1px 2px black"
+            backgroundColor: isImpostor ? "rgba(239, 68, 68, 0.9)" : "rgba(0,0,0,0.7)",
+            color: isImpostor ? "white" : color.light,
+            textShadow: "1px 1px 2px black",
+            border: isImpostor ? "1px solid white" : "none"
           }}
         >
           {name}
