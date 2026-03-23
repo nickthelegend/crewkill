@@ -62,16 +62,16 @@ export function PredictionMarket({
 
   const [suspectPools, setSuspectPools] = useState<SuspectPool[]>([]);
 
-  // Initialize pools from local roster immediately
+  // Prevent flickering by only initializing the roster once, or if size changes
   useEffect(() => {
-    if (gamePlayers.length > 0) {
+    if (gamePlayers.length > 0 && (suspectPools.length === 0 || suspectPools.length !== gamePlayers.length)) {
       setSuspectPools(gamePlayers.map(p => ({
         address: p.address,
         totalBet: 0,
         percentage: 0
       })));
     }
-  }, [gamePlayers]);
+  }, [gamePlayers, suspectPools.length]);
 
   const [userBet, setUserBet] = useState<UserBet | null>(null);
   const [selectedSuspect, setSelectedSuspect] = useState<string>('');
@@ -414,7 +414,8 @@ export function PredictionMarket({
                 key={p.address}
                 initial={{ width: 0 }}
                 animate={{ width: `${percentage}%` }}
-                className={`h-full relative group transition-all duration-1000 ${colors[i % colors.length]}`}
+                transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                className={`h-full relative group ${colors[i % colors.length]}`}
                 style={{ minWidth: percentage > 0 ? '1%' : '0%' }}
               >
                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
