@@ -46,6 +46,7 @@ interface PredictionMarketProps {
   actualImpostors: string[];
   gamePhase: number;
   creationDigest?: string;
+  isSidebar?: boolean;
 }
 
 export function PredictionMarket({
@@ -56,6 +57,7 @@ export function PredictionMarket({
   actualImpostors,
   gamePhase,
   creationDigest,
+  isSidebar = false,
 }: PredictionMarketProps) {
   const account = useCurrentAccount();
   const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
@@ -387,9 +389,9 @@ export function PredictionMarket({
   }
 
   return (
-    <div className="space-y-12 w-full max-w-5xl mx-auto">
+    <div className={`w-full ${isSidebar ? "max-w-none space-y-4" : "max-w-5xl mx-auto space-y-12"}`}>
       {/* Polymarket Confidence Distribution */}
-      <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 overflow-hidden relative">
+      <div className={`bg-white/[0.03] backdrop-blur-3xl border border-white/10 ${isSidebar ? "rounded-xl p-4" : "rounded-[2.5rem] p-10"} overflow-hidden relative`}>
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ff003c]" />
@@ -401,7 +403,7 @@ export function PredictionMarket({
           </div>
         </div>
 
-        <div className="flex gap-1 h-24 w-full bg-white/5 p-1 rounded-none border border-white/5 mb-6">
+        <div className={`flex gap-1 ${isSidebar ? "h-12" : "h-24"} w-full bg-white/5 p-1 rounded-none border border-white/5 mb-6`}>
           {gamePlayers.map((p, i) => {
             const pool = suspectPools.find(sp => sp.address === p.address);
             const percentage = pool?.percentage ?? (100 / gamePlayers.length);
@@ -476,32 +478,32 @@ export function PredictionMarket({
       </div>
 
       {/* Header Stat Area */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-white/[0.02] border border-white/10 backdrop-blur-3xl rounded-none py-1 mb-8">
-        <div className="p-8 bg-black/40 flex flex-col items-center md:items-start group transition-colors hover:bg-black/60">
+      <div className={`grid grid-cols-1 ${isSidebar ? "" : "md:grid-cols-3"} gap-1 px-1 bg-white/[0.02] border border-white/10 backdrop-blur-3xl rounded-none py-1 mb-8`}>
+        <div className={`${isSidebar ? "p-4" : "p-8"} bg-black/40 flex flex-col items-center md:items-start group transition-colors hover:bg-black/60`}>
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             Total Pot
           </div>
-          <div className="text-4xl font-black text-white tracking-tighter tabular-nums drop-shadow-md">
+          <div className={`${isSidebar ? "text-xl" : "text-4xl"} font-black text-white tracking-tighter tabular-nums drop-shadow-md`}>
             {(totalPot / 1_000_000_000).toFixed(2)} <span className="text-red-500 text-sm tracking-widest ml-1 opacity-80">OCT</span>
           </div>
         </div>
-        <div className="p-8 bg-black/40 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5 transition-colors hover:bg-black/60">
+        <div className={`${isSidebar ? "p-4" : "p-8"} bg-black/40 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5 transition-colors hover:bg-black/60`}>
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             Market Status
           </div>
-          <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
+          <div className={`${isSidebar ? "text-sm" : "text-xl"} font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
             <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
             {marketObjectId && marketObjectId.startsWith('0x') ? (bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")) : "INITIALIZING SYNC..."}
           </div>
         </div>
-        <div className="p-8 bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60">
+        <div className={`${isSidebar ? "p-4" : "p-8"} bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60`}>
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             Contenders
           </div>
-          <div className="text-xl font-black text-white uppercase tracking-widest">{gamePlayers.length} Members</div>
+          <div className={`${isSidebar ? "text-sm" : "text-xl"} font-black text-white uppercase tracking-widest`}>{gamePlayers.length} Members</div>
         </div>
       </div>
 
@@ -521,18 +523,18 @@ export function PredictionMarket({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => bettingOpen && setSelectedSuspect(player.address)}
-              className={`group flex flex-col sm:flex-row items-center justify-between p-8 rounded-none border transition-all cursor-pointer relative overflow-hidden ${isSelected
+              className={`group flex flex-col ${isSidebar ? "p-3" : "sm:flex-row p-8"} items-center justify-between rounded-none border transition-all cursor-pointer relative overflow-hidden ${isSelected
                   ? "bg-red-500/10 border-red-500/40"
                   : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
                 }`}
             >
               {/* Profile */}
-              <div className="flex items-center gap-8 relative z-10 flex-1 w-full sm:w-auto">
-                <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all relative ${isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
+              <div className={`flex items-center ${isSidebar ? "gap-3" : "gap-8"} relative z-10 flex-1 w-full sm:w-auto`}>
+                <div className={`${isSidebar ? "w-10 h-10" : "w-16 h-16"} rounded-none flex items-center justify-center border transition-all relative ${isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
                   }`}>
                   <AmongUsSprite
                     colorId={player.colorId ?? (idx + (gameId?.length || 0) % 12)}
-                    size={48}
+                    size={isSidebar ? 32 : 48}
                     isGhost={!player.isAlive}
                   />
                   {!player.isAlive && (
@@ -545,44 +547,45 @@ export function PredictionMarket({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-2xl font-black text-white uppercase tracking-tighter truncate">{player.name}</span>
+                  <div className={`flex items-center ${isSidebar ? "gap-2" : "gap-3"} mb-1`}>
+                    <span className={`${isSidebar ? "text-sm" : "text-2xl"} font-black text-white uppercase tracking-tighter truncate`}>{player.name}</span>
                     {isUserPick && (
-                      <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-none uppercase">Betting Active</span>
+                      <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-none uppercase">Bet Active</span>
                     )}
                   </div>
-                  <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em] flex items-center gap-4">
-                    <span>Address: {player.address.slice(0, 16)}...</span>
-                    {!player.isAlive && <span className="text-red-500/50 font-black">● CASE_CLOSED</span>}
+                  <div className="text-[8px] font-mono text-white/20 uppercase tracking-[0.2em] flex items-center gap-3">
+                    <span>{isSidebar ? player.address.slice(0, 8) : `Address: ${player.address.slice(0, 16)}`}...</span>
+                    {!player.isAlive && <span className="text-red-500/50 font-black">● DEAD</span>}
                   </div>
                 </div>
               </div>
 
               {/* Stats & Actions */}
-              <div className="flex items-center gap-6 sm:gap-10 relative z-10 mt-8 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
+              <div className={`flex items-center ${isSidebar ? "gap-2 mt-3" : "gap-10 mt-8 sm:mt-0"} relative z-10 w-full sm:w-auto justify-between sm:justify-end`}>
                 <div className="text-right">
-                  <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Confidence</div>
-                  <div className="text-3xl font-black text-white tracking-tighter">{prob}%</div>
+                  <div className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Confidence</div>
+                  <div className={`${isSidebar ? "text-xl" : "text-3xl"} font-black text-white tracking-tighter`}>{prob}%</div>
                 </div>
 
-                <div className="flex bg-black/60 p-1 border border-white/10 rounded-none shadow-xl">
+                <div className="flex bg-black/60 p-0.5 border border-white/10 rounded-none">
                   <button
                     disabled={!bettingOpen}
                     onClick={(e) => { e.stopPropagation(); bettingOpen && setSelectedSuspect(player.address); }}
-                    className={`px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase transition-all flex flex-col items-center min-w-[90px] sm:min-w-[110px] border disabled:opacity-50 disabled:cursor-not-allowed ${isSelected ? "bg-cyan-500/20 text-cyan-400 border-cyan-500" : "text-cyan-400/60 border-cyan-500/10 hover:border-cyan-500/40 hover:bg-cyan-500/5"
+                    className={`${isSidebar ? "px-3 py-2 min-w-[60px]" : "px-8 py-4 min-w-[110px]"} rounded-none text-[10px] font-black uppercase transition-all flex flex-col items-center border disabled:opacity-50 disabled:cursor-not-allowed ${isSelected ? "bg-cyan-500/20 text-cyan-400 border-cyan-500" : "text-cyan-400/60 border-cyan-500/10 hover:border-cyan-500/40 hover:bg-cyan-500/5"
                       }`}
                   >
-                    <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY YES</span>
-                    <span className="text-xl tabular-nums tracking-tighter">{price}¢</span>
+                    <span className="text-[8px] tracking-[0.1em] font-mono">YES</span>
+                    <span className={`${isSidebar ? "text-sm" : "text-xl"} tabular-nums tracking-tighter`}>{price}¢</span>
                   </button>
-                  <button
-                    disabled={true}
-                    className="px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase text-red-500/30 border border-transparent cursor-not-allowed flex flex-col items-center min-w-[90px] sm:min-w-[110px] bg-red-500/5"
-                    title="Shorting impostors is currently offline"
-                  >
-                    <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY NO</span>
-                    <span className="text-xl tabular-nums tracking-tighter opacity-50">{100 - price}¢</span>
-                  </button>
+                  {!isSidebar && (
+                    <button
+                      disabled={true}
+                      className="px-8 py-4 rounded-none text-xs font-black uppercase text-red-500/30 border border-transparent cursor-not-allowed flex flex-col items-center min-w-[110px] bg-red-500/5"
+                    >
+                      <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY NO</span>
+                      <span className="text-xl tabular-nums tracking-tighter opacity-50">{100 - price}¢</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
