@@ -5,17 +5,22 @@
 
 import type { AgentAction, AgentStrategyContext } from "../types.js";
 
-// Map adjacency (mirrors agent/src/types.ts AdjacentRooms)
+// Map adjacency — must match GameStateManager's ROOM_ADJACENCY exactly!
 const AdjacentRooms: Record<number, number[]> = {
-  0: [1, 4, 5],       // Cafeteria -> Admin, MedBay, UpperEngine
-  1: [0, 2],           // Admin -> Cafeteria, Storage
-  2: [1, 3, 6],        // Storage -> Admin, Electrical, LowerEngine
-  3: [2, 6],           // Electrical -> Storage, LowerEngine
-  4: [0, 5, 7],        // MedBay -> Cafeteria, UpperEngine, Security
-  5: [0, 4, 8],        // UpperEngine -> Cafeteria, MedBay, Reactor
-  6: [2, 3, 7],        // LowerEngine -> Storage, Electrical, Security
-  7: [4, 6, 8],        // Security -> MedBay, LowerEngine, Reactor
-  8: [5, 7],           // Reactor -> UpperEngine, Security
+  0: [1, 4, 5, 9],       // Cafeteria -> Admin, MedBay, UpperEngine, Weapons
+  1: [0, 2],              // Admin -> Cafeteria, Storage
+  2: [1, 3, 11, 13],      // Storage -> Admin, Electrical, Shields, Communications
+  3: [2, 6],              // Electrical -> Storage, LowerEngine
+  4: [0, 5, 7],           // MedBay -> Cafeteria, UpperEngine, Security
+  5: [0, 4, 8],           // UpperEngine -> Cafeteria, MedBay, Reactor
+  6: [2, 3, 7],           // LowerEngine -> Storage, Electrical, Security
+  7: [4, 6, 8],           // Security -> MedBay, LowerEngine, Reactor
+  8: [5, 7],              // Reactor -> UpperEngine, Security
+  9: [0, 10],             // Weapons -> Cafeteria, Navigation
+  10: [9, 11, 12],        // Navigation -> Weapons, Shields, O2
+  11: [2, 10],            // Shields -> Storage, Navigation
+  12: [10],               // O2 -> Navigation
+  13: [2],                // Communications -> Storage
 };
 
 const VentConnections: Record<number, number | null> = {
@@ -30,7 +35,7 @@ const VentConnections: Record<number, number | null> = {
   8: 7,
 };
 
-const TaskRooms: number[] = [1, 2, 3, 4, 5, 6, 8]; // rooms with tasks (excluding Cafeteria)
+const TaskRooms: number[] = [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]; // rooms with tasks (excluding Cafeteria and Security)
 
 // ActionType enum values
 const ActionType = {

@@ -29,7 +29,7 @@ const logger = createLogger("websocket-server");
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
 const MIN_PLAYERS_TO_START = 1; // Lowered to 1 for solo testing
-const LOBBY_WAITING_DURATION = 300000; // 5 minutes — betting window before game starts
+const LOBBY_WAITING_DURATION = 120000; // 2 minutes — betting window before game starts
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
 const EJECTION_DURATION = 5000; // 5 seconds
@@ -1224,6 +1224,24 @@ export class WebSocketRelayServer {
     this.gameStateManager.updatePhase(roomId, phaseValue, 1, Date.now() + 60000); 
     this.gameStateManager.assignImpostors(roomId, impostorAddresses);
 
+    // CRITICAL FIX: Register ALL players in the GameStateManager
+    // Without this, validateMovement fails with "Player not in game" and agents can't move/kill/do tasks
+    for (const player of room.players) {
+      const isImp = extended.impostors.has(player.address.toLowerCase());
+      this.gameStateManager.updatePlayer(roomId, {
+        address: player.address,
+        colorId: player.colorId,
+        location: player.location,
+        isAlive: true,
+        role: isImp ? Role.Impostor : Role.Crewmate,
+        tasksCompleted: 0,
+        totalTasks: isImp ? 0 : 10,
+        hasVoted: false,
+        isAIAgent: player.isAIAgent || false,
+        agentPersona: player.agentPersona,
+      });
+    }
+
     // Assign tasks to players (if phase is 2)
     if (phaseValue === 2) {
         for (const player of room.players) {
@@ -1431,6 +1449,7 @@ export class WebSocketRelayServer {
       );
 
       if (!validation.valid) {
+        logger.warn(`Move rejected for ${client.address}: ${validation.reason} (from=${previousLocation} to=${location})`);
         this.send(client, {
           type: "server:error",
           code: "INVALID_MOVE",
@@ -1441,6 +1460,9 @@ export class WebSocketRelayServer {
     }
 
     player.location = location;
+
+    // CRITICAL: Also update GameStateManager so game_state broadcasts have correct locations
+    this.gameStateManager.updatePlayerPosition(roomId, client.address!, location);
 
     this.broadcastToRoom(roomId, {
       type: "server:player_moved",

@@ -278,7 +278,6 @@ export function useGameServer(): UseGameServerReturn {
                 setDeadBodies(message.state.deadBodies);
               }
 
-              addLog("start", "Game state synchronized", message.gameId);
             }
             break;
 

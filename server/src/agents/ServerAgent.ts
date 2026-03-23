@@ -178,6 +178,7 @@ export class ServerAgent {
     const previousPhase = this.phase;
     this.phase = msg.phase;
     this.round = msg.round;
+    logger.debug(`[${this.name}] Phase changed: ${previousPhase} -> ${this.phase}, role=${this.role}, alive=${this.isAlive}, timers=${this.pendingTimers.length}`);
 
     // Clear any pending action timers when leaving action phase (2)
     if (previousPhase === 2 && msg.phase !== 2) {
@@ -186,6 +187,7 @@ export class ServerAgent {
 
     // ActionCommit phase (2) — make a move
     if (msg.phase === 2) {
+      logger.debug(`[${this.name}] Phase 2 detected — starting action loop! role=${this.role}`);
       this.scheduleAction();
     }
 
@@ -230,7 +232,7 @@ export class ServerAgent {
     if (previousPhase !== this.phase) {
       // Entering ActionCommit phase (2) — start acting if we have a role
       if (this.phase === 2 && this.role !== "none" && this.pendingTimers.length === 0) {
-        logger.debug(`[${this.name}] Detected phase transition to ActionCommit via game_state, scheduling action`);
+        logger.debug(`[${this.name}] Detected phase transition to ActionCommit via game_state (${previousPhase}->${this.phase}), scheduling action`);
         this.scheduleAction();
       }
       // Entering Voting phase (5) — cast a vote
@@ -253,6 +255,13 @@ export class ServerAgent {
     const player = this.players.find((p) => p.address === msg.address);
     if (player) {
       player.location = msg.to;
+    }
+
+    // Update own location if this is our move being confirmed
+    if (msg.address === this.address) {
+      logger.debug(`[${this.name}] Server confirmed my move: ${this.myLocation} -> ${msg.to}`);
+      this.myLocation = msg.to;
+      this.memory.setMyLocation(this.myLocation);
     }
   }
 
@@ -331,8 +340,7 @@ export class ServerAgent {
     switch (action.type) {
       case ActionType.Move:
         if (action.destination !== undefined) {
-          this.myLocation = action.destination;
-          this.memory.setMyLocation(this.myLocation);
+          // Don't update myLocation here — wait for server confirmation via server:player_moved
           this.sendToServer({
             type: "agent:position_update",
             gameId: this.roomId,

@@ -109,8 +109,10 @@ export function GameView({
     }
   }, [logs, sidebarTab]);
 
-  // Use stable data for rendering
-  const activePlayers = stablePlayers;
+  // Use stable data for rendering — deduplicate by address
+  const activePlayers = Array.from(
+    new Map(stablePlayers.map(p => [p.address, p])).values()
+  );
   const activeRoom = stableRoom;
   const aliveCount = activePlayers.filter(p => p.isAlive).length;
   const deadCount = activePlayers.length - aliveCount;
