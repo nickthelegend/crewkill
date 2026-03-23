@@ -68,6 +68,7 @@ interface ExtendedRoomState extends RoomState {
 export class WebSocketRelayServer {
   private wss: WSServer | null = null;
   private clients: Map<string, Client> = new Map();
+  private creatingMarkets: Set<string> = new Set(); // GLOBAL LOCK FOR ON-CHAIN MARKETS
   private rooms: Map<string, RoomState> = new Map();
   private extendedState: Map<string, ExtendedRoomState> = new Map();
   private agentStats: Map<string, AgentStats> = new Map(); // Track agent statistics
@@ -895,25 +896,17 @@ export class WebSocketRelayServer {
 
     // Register game in database with 7-minute betting window by default
     const now = Date.now();
-    const bettingDuration = 420000; // 7 minutes
+    const bettingDuration = 600000; // 10 minutes for testing window
     try {
       await databaseService.createScheduledGame(roomId, now, now + bettingDuration);
       logger.info(`Room ${roomId} registered in database.`);
       
-      // CREATE MARKET IMMEDIATELY (even if room is empty, we update players later if possible)
-      // Actually, Move requires players. If empty, we wait for 1st player.
-      if (room.players.length > 0 || (aiAgentCount && aiAgentCount > 0)) {
-         logger.info(`Deploying initial market for ${roomId}...`);
-         const initialPlayers = room.players.length > 0 ? room.players.map(p => p.address) : [];
-         // If we're spawning agents, they'll join in a moment, but if we have some now, use them.
-         const marketId = await contractService.createMarket(roomId, initialPlayers);
-         if (marketId) {
-            await databaseService.updateGameMarketId(roomId, marketId);
-            room.marketId = marketId;
-         }
-      }
+      // DEFERRED MARKET CREATION:
+      // We no longer create the market immediately during initialization
+      // because we need players to be present for the Move contract to create suspects.
+      // Market will be created by ensureMarketDeployment when the first player/agent joins.
     } catch (e) {
-      logger.error(`Failed to register room ${roomId} or create initial market:`, e);
+      logger.error(`Failed to register room ${roomId} in database:`, e);
     }
 
     logger.info(
@@ -1329,10 +1322,10 @@ export class WebSocketRelayServer {
     if (!room) return;
 
     // Check if market is already deployed or being deployed
-    if (room.marketId || (room as any).marketLoading) return;
+    if (room.marketId || (room as any).marketLoading || this.creatingMarkets.has(roomId)) return;
 
     if (room.marketId && !room.marketId.startsWith('scheduled')) return;
-    if ((room as any).marketLoading) return;
+    if ((room as any).marketLoading || this.creatingMarkets.has(roomId)) return;
 
     // Check database first in case it's already there but not in memory
     try {
@@ -1349,6 +1342,7 @@ export class WebSocketRelayServer {
     if (room.players.length < 1) return;
 
     (room as any).marketLoading = true;
+    this.creatingMarkets.add(roomId);
     logger.info(`Ensuring market deployment for room ${roomId} (${room.players.length} players)...`);
     try {
         const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
@@ -1365,6 +1359,7 @@ export class WebSocketRelayServer {
         logger.error(`Failed to ensure market for ${roomId}:`, err);
     } finally {
         (room as any).marketLoading = false;
+        this.creatingMarkets.delete(roomId);
     }
   }
 

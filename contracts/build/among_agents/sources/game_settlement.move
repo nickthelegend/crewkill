@@ -202,14 +202,16 @@ public entry fun commit_action(
     ctx: &mut TxContext,
 ) {
     assert!(game.phase == PHASE_ACTION_COMMIT, 7);
+    assert!(game.phase == PHASE_ACTION_COMMIT || game.phase == PHASE_VOTING, 10);
     let player = ctx.sender();
     assert!(vector::contains(&game.players, &player), 8);
     assert!(*table::borrow(&game.alive, player), 9);
 
-    if (table::contains(&game.commits, player)) {
-        *table::borrow_mut(&mut game.commits, player) = commitment;
+    if (table::contains(&game.commits, ctx.sender())) {
+        let commit_ref = table::borrow_mut(&mut game.commits, ctx.sender());
+        *commit_ref = commitment;
     } else {
-        table::add(&mut game.commits, player, commitment);
+        table::add(&mut game.commits, ctx.sender(), commitment);
     };
 
     event::emit(ActionCommitted { game_id: object::id(game), player, round: game.round });
@@ -279,6 +281,21 @@ public entry fun advance_phase(
         PHASE_ACTION_COMMIT
     } else {
         PHASE_ENDED
+    };
+
+    if (new_phase == PHASE_ACTION_COMMIT || new_phase == PHASE_VOTING) {
+        let n = vector::length(&game.players);
+        let mut i = 0;
+        while (i < n) {
+            let player = *vector::borrow(&game.players, i);
+            if (table::contains(&game.reveals, player)) {
+                table::remove(&mut game.reveals, player);
+            };
+            if (table::contains(&game.commits, player)) {
+                table::remove(&mut game.commits, player);
+            };
+            i = i + 1;
+        };
     };
 
     game.phase = new_phase;

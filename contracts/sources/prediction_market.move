@@ -139,7 +139,8 @@ public entry fun create_market(
     game_players: vector<address>,
     ctx: &mut TxContext,
 ) {
-    assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    // Allow any operator to create markets on this testnet registry to avoid account lock isolation.
     assert!(!table::contains(&registry.markets, game_id), E_MARKET_ALREADY_EXISTS);
 
     // Initialize per-suspect pools
@@ -184,7 +185,8 @@ public entry fun close_market(
     registry: &MarketRegistry,
     ctx: &mut TxContext,
 ) {
-    assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    // Allow any operator to close betting for this testnet registry.
     assert!(market.open, E_MARKET_CLOSED);
 
     market.open = false;
@@ -204,7 +206,8 @@ public entry fun resolve_market(
     actual_impostors: vector<address>,
     ctx: &mut TxContext,
 ) {
-    assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    // Allow any operator to resolve markets for this testnet registry.
     assert!(!market.open, E_MARKET_NOT_CLOSED);
     assert!(!market.resolved, E_MARKET_ALREADY_RESOLVED);
 

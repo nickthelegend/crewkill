@@ -104,7 +104,7 @@ export default function GameBettingPage() {
              {/* Left Panel: The Market (8/12) */}
               <div className="lg:col-span-8 p-8 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto max-h-[85vh] custom-scrollbar">
                   <PredictionMarket 
-                    gameId={dbGame._id}
+                    gameId={dbGame.roomId}
                     marketObjectId={dbGame.marketId || ""}
                     gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
                       address: p.address,

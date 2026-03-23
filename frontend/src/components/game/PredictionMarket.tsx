@@ -61,6 +61,18 @@ export function PredictionMarket({
   const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [suspectPools, setSuspectPools] = useState<SuspectPool[]>([]);
+  
+  // Initialize pools from local roster immediately
+  useEffect(() => {
+    if (gamePlayers.length > 0) {
+      setSuspectPools(gamePlayers.map(p => ({
+        address: p.address,
+        totalBet: 0,
+        percentage: 0
+      })));
+    }
+  }, [gamePlayers]);
+
   const [userBet, setUserBet] = useState<UserBet | null>(null);
   const [selectedSuspect, setSelectedSuspect] = useState<string>('');
   const [betAmount, setBetAmount] = useState<string>('0.1');
@@ -292,7 +304,7 @@ export function PredictionMarket({
   }
 
   // Allow betting until the game ends (Phase 7)
-  const bettingOpen = isOpen && gamePhase < 7;
+  const bettingOpen = isOpen && gamePhase < 7 && !!marketObjectId && marketObjectId.startsWith('0x');
 
   if (gamePlayers.length === 0) {
     return (
@@ -451,7 +463,7 @@ export function PredictionMarket({
           </div>
             <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
               <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
-              {marketObjectId ? (bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")) : "MARKET DEPLOYING..."}
+              {marketObjectId && marketObjectId.startsWith('0x') ? (bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")) : "INITIALIZING SYNC..."}
             </div>
         </div>
         <div className="p-8 bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60">
