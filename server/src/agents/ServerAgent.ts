@@ -166,6 +166,12 @@ export class ServerAgent {
     this.role = msg.role;
     this.impostors = msg.impostors || [];
     logger.info(`[${this.name}] Role assigned: ${this.role}`);
+
+    // Robustness: If we're already in phase 2, start move loop now
+    if (this.phase === 2 && this.isAlive && this.pendingTimers.length === 0) {
+      logger.debug(`[${this.name}] Detected phase 2 during role assignment, starting action loop`);
+      this.scheduleAction();
+    }
   }
 
   private handlePhaseChanged(msg: any): void {

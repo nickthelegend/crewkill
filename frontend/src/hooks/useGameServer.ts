@@ -249,7 +249,7 @@ export function useGameServer(): UseGameServerReturn {
           case "server:game_state":
             // Full game state snapshot (sent when joining or game starts)
             if (message.state) {
-              const newSimplifiedPhase = (message.state.phase >= 2 && message.state.phase <= 6) ? "playing" : (message.state.phase === 7 ? "ended" : "lobby");
+              const newSimplifiedPhase = message.state.phase === 1 ? "boarding" : (message.state.phase >= 2 && message.state.phase <= 6) ? "playing" : (message.state.phase === 7 ? "ended" : "lobby");
 
               if (message.state.players) {
                 setCurrentRoom((prev) => {
@@ -325,7 +325,7 @@ export function useGameServer(): UseGameServerReturn {
             );
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
-              const newSimplifiedPhase = (message.phase >= 2 && message.phase <= 6) ? "playing" : (message.phase === 7 ? "ended" : "lobby");
+              const newSimplifiedPhase = message.phase === 1 ? "boarding" : (message.phase >= 2 && message.phase <= 6) ? "playing" : (message.phase === 7 ? "ended" : "lobby");
               return { 
                 ...prev, 
                 phase: newSimplifiedPhase,
