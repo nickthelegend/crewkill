@@ -39,24 +39,22 @@ export default function RoomsPage() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="flex bg-white/5 backdrop-blur-3xl p-1 rounded-none border border-white/10"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
-            <button 
+            <button
               onClick={() => setFilter("LIVE")}
-              className={`px-10 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                filter === "LIVE" ? "bg-red-500 text-white" : "text-white/30 hover:text-white"
-              }`}
+              className={`px-10 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all ${filter === "LIVE" ? "bg-red-500 text-white" : "text-white/30 hover:text-white"
+                }`}
             >
               Live Games
             </button>
-            <button 
+            <button
               onClick={() => setFilter("ARCHIVE")}
-              className={`px-10 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                filter === "ARCHIVE" ? "bg-white/10 text-white" : "text-white/30 hover:text-white"
-              }`}
+              className={`px-10 py-4 rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all ${filter === "ARCHIVE" ? "bg-white/10 text-white" : "text-white/30 hover:text-white"
+                }`}
             >
               Archive
             </button>
@@ -71,7 +69,7 @@ export default function RoomsPage() {
           </AnimatePresence>
 
           {filteredGames.length === 0 && (
-            <motion.div 
+            <motion.div
               className="col-span-full py-40 text-center bg-white/[0.02] backdrop-blur-3xl rounded-none border border-white/5 flex flex-col items-center justify-center p-10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -105,7 +103,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
   }
 
   return (
-    <motion.div 
+    <motion.div
       layout
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
@@ -117,7 +115,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
           <span className="text-[10px] text-white/30 font-mono uppercase tracking-[0.2em] mb-2 block">
             ID: {game.roomId.slice(-8).toUpperCase()}
           </span>
-          <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
+          <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none truncate max-w-[200px]" title={game.roomId}>
             {game.roomId.replace("scheduled_", "GAME-").replace("room_", "ROOM-")}
           </h3>
           <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-white/5 border border-white/5">
@@ -125,7 +123,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
             <span className="text-[9px] text-white font-black uppercase tracking-widest">{game.status}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center -space-x-3 opacity-60 group-hover:opacity-100 transition-opacity">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="w-10 h-10 rounded-none border border-white/10 bg-black/40 flex items-center justify-center backdrop-blur-md">

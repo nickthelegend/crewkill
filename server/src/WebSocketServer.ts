@@ -857,7 +857,7 @@ export class WebSocketRelayServer {
       );
 
       if (!onChainResult) {
-        return { error: "Failed to create game on-chain. Check operator funds/connectivity." };
+        return { error: "Failed to create game on-chain. Check operator funds/network." };
       }
 
       roomId = onChainResult.gameId;
@@ -3103,7 +3103,9 @@ export class WebSocketRelayServer {
 
   // Get all rooms (for external access)
   public async syncWithDatabase(): Promise<void> {
-    logger.info("Syncing in-memory rooms with database for recovery...");
+    // DISABLING AUTO-RECOVERY as per user request to stop automatic room appearance
+    logger.info("Syncing in-memory rooms with database... (SKIPPING RECOVERY for manual control)");
+    /*
     const activeGames = await databaseService.listGames();
     
     // Filter for games that are active and not in memory
@@ -3128,6 +3130,7 @@ export class WebSocketRelayServer {
     if (roomsToRestore.length > 0) {
       logger.info(`Successfully recovered ${roomsToRestore.length} rooms from database.`);
     }
+    */
   }
 
   getRooms(): RoomState[] {
