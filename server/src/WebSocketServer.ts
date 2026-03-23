@@ -896,7 +896,7 @@ export class WebSocketRelayServer {
 
     // Register game in database with 7-minute betting window by default
     const now = Date.now();
-    const bettingDuration = 600000; // 10 minutes for testing window
+    const bettingDuration = LOBBY_WAITING_DURATION; 
     try {
       await databaseService.createScheduledGame(roomId, now, now + bettingDuration);
       logger.info(`Room ${roomId} registered in database.`);
@@ -1188,6 +1188,14 @@ export class WebSocketRelayServer {
     extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
     extended.currentRound = 1;
     extended.currentPhase = phaseValue;
+
+    // Automated Market Closure when game starts (Phase 2)
+    if (phaseValue === 2 && room.marketId) {
+      logger.info(`Closing prediction market for starting game in room ${roomId}...`);
+      contractService.closeMarket(roomId, room.marketId).catch((err: any) => {
+        logger.error(`Failed to close market for ${roomId}:`, err);
+      });
+    }
 
     // Also register with GameStateManager
     this.gameStateManager.getOrCreateGame(roomId);

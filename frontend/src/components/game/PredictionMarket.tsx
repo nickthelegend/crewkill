@@ -82,6 +82,7 @@ export function PredictionMarket({
   const [txStatus, setTxStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [txMsg, setTxMsg] = useState('');
   const [remainingTime, setRemainingTime] = useState<string>('');
+  const [hasSynced, setHasSynced] = useState(false);
 
   const convexBets = useQuery(api.bets.getBetsByGame, { gameId }) || [];
   const placeConvexBet = useMutation(api.bets.placeBet);
@@ -134,6 +135,7 @@ export function PredictionMarket({
       if (!fields) return;
 
       setIsOpen(fields.open === true);
+      setHasSynced(true);
       // Sui RPC often flattens Balance/u64 to string in object fields
       const potStr = typeof fields.total_pot === 'string' ? fields.total_pot : (fields.total_pot?.fields?.value || '0');
       const pot = parseInt(potStr);
@@ -332,10 +334,9 @@ export function PredictionMarket({
     }
   }
 
-  // Allow betting until the game ends (Phase 7)
   const bettingOpen = isOpen && gamePhase < 7 && (IS_OFFLINE || (!!marketObjectId && marketObjectId.startsWith('0x')));
 
-  if (gamePlayers.length === 0) {
+  if (gamePlayers.length === 0 || (!hasSynced && !IS_OFFLINE)) {
     return (
       <div className="space-y-12 w-full max-w-5xl mx-auto relative">
         <div className="opacity-50 grayscale pointer-events-none">
