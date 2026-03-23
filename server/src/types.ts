@@ -275,6 +275,7 @@ export interface AgentTaskCompleteMessage {
   player: string;
   tasksCompleted: number;
   totalTasks: number;
+  location?: number;
 }
 
 export interface AgentReportBodyMessage {
@@ -570,6 +571,7 @@ export interface ServerTaskCompletedMessage {
   tasksCompleted: number;
   totalTasks: number;
   totalProgress: number; // Percentage
+  location?: number;
   timestamp: number;
 }
 

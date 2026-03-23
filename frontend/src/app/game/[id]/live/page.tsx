@@ -41,7 +41,7 @@ export default function LiveRoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, id]);
 
-  if (!isConnected || !game) {
+  if (!isConnected) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">
@@ -51,9 +51,9 @@ export default function LiveRoomPage() {
     );
   }
 
-  // Robust starts detection: prioritize database status as stable fallback
+  // Robust starts detection: prioritize database status as stable fallback IF available
   const isStarted = (currentRoom && ["playing", "discussion", "voting", "ejection"].includes(currentRoom.phase)) || (game && (game.status === "ACTIVE" || game.status === "COMPLETED"));
-  const isLobby = !isStarted && (currentRoom?.phase === "lobby" || currentRoom?.phase === "boarding" || (game && game.status === "CREATED"));
+  const isLobby = !isStarted && (currentRoom?.phase === "lobby" || currentRoom?.phase === "boarding" || (game && game.status === "CREATED") || !currentRoom);
   
   if (isLobby && !isStarted) {
     return (

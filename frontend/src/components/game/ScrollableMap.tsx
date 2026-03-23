@@ -946,9 +946,8 @@ export function ScrollableMap({
         const prevLoc = next[addr].lastLocation;
         const currLoc = player.location;
         
-        // TELEPORT DETECTION: If rooms are NOT adjacent, snap instead of walking
-        // Also snap if it's the beginning of the game or a meeting was just called (everyone at Cafeteria)
-        const isTeleport = !areLocationsAdjacent(prevLoc, currLoc) || currLoc === Location.Cafeteria;
+        // TELEPORT DETECTION: Snap if it's the Discussion (4) phase (meeting called)
+        const isTeleport = gamePhase === 4 && currLoc === Location.Cafeteria;
 
         if (isTeleport) {
            next[addr] = {

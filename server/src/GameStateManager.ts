@@ -11,7 +11,7 @@ import { createLogger } from "./logger.js";
 const logger = createLogger("game-state-manager");
 
 // Game constants
-const KILL_COOLDOWN_ROUNDS = 2; // Impostors must wait 2 rounds between kills
+const KILL_COOLDOWN_ROUNDS = 1; // Impostors must wait 1 round between kills
 const MAX_EMERGENCY_MEETINGS_PER_PLAYER = 1; // Each player gets 1 emergency meeting
 const SABOTAGE_COOLDOWN_MS = 30000; // 30 seconds between sabotages
 

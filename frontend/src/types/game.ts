@@ -126,10 +126,12 @@ export interface DeadBody {
 }
 
 export interface GameLog {
-  type: "kill" | "report" | "meeting" | "vote" | "eject" | "task" | "sabotage" | "join" | "start";
+  type: "kill" | "report" | "meeting" | "vote" | "eject" | "task" | "sabotage" | "join" | "start" | "move";
   message: string;
   timestamp: number;
   round?: bigint;
+  address?: string;
+  targetAddress?: string;
 }
 
 // Player colors matching Among Us

@@ -154,7 +154,7 @@ export function useGameServer(): UseGameServerReturn {
   const currentRoomIdRef = useRef<string | null>(null);
 
   const addLog = useCallback(
-    (type: GameLog["type"], message: string, gameId?: string) => {
+    (type: GameLog["type"], message: string, gameId?: string, address?: string, targetAddress?: string) => {
       // Only add log if it's for the current room or no room specified (global events)
       if (
         gameId &&
@@ -165,7 +165,7 @@ export function useGameServer(): UseGameServerReturn {
       }
       setLogs((prev) => [
         ...prev.slice(-49),
-        { type, message, timestamp: Date.now() },
+        { type, message, timestamp: Date.now(), address, targetAddress },
       ]);
     },
     [],
@@ -282,7 +282,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:player_moved":
-            addLog("start", `${message.address.slice(0,8)}... moved to ${LocationNames[message.to as Location] || 'Room ' + message.to}`, message.gameId);
+            addLog("move", `${message.address.slice(0,8)}... moved to ${LocationNames[message.to as Location] || 'Room ' + message.to}`, message.gameId, message.address);
             setCurrentRoom((prev) => {
               if (!prev) return prev;
               return {
@@ -297,7 +297,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:kill_occurred":
-            addLog("kill", `☠️ ${message.victim.slice(0,8)}... was eliminated at ${LocationNames[message.location as Location] || 'unknown location'}!`, message.gameId);
+            addLog("kill", `☠️ ${message.victim.slice(0,8)}... was eliminated at ${LocationNames[message.location as Location] || 'unknown location'}!`, message.gameId, undefined, message.victim);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -336,7 +336,8 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:task_completed":
-            addLog("task", `✅ ${message.player.slice(0,8)}... completed a task (${message.tasksCompleted}/${message.totalTasks})`, message.gameId);
+            const locName = message.location !== undefined ? LocationNames[message.location as Location] : 'unknown location';
+            addLog("task", `✅ ${message.player.slice(0,8)}... completed a task at ${locName} (${message.tasksCompleted}/${message.totalTasks})`, message.gameId, message.player);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -355,7 +356,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:vote_cast":
-            addLog("vote", `🗳️ ${message.voter.slice(0,8)}... voted ${message.target ? 'to eject ' + message.target.slice(0,8) + '...' : 'to skip'}`, message.gameId);
+            addLog("vote", `🗳️ ${message.voter.slice(0,8)}... voted ${message.target ? 'to eject ' + message.target.slice(0,8) + '...' : 'to skip'}`, message.gameId, message.voter, message.target);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -376,7 +377,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:sabotage_fixed":
-            addLog("task", `🔧 Sabotage repaired by ${message.fixedBy.slice(0,8)}...`, message.gameId);
+            addLog("task", `🔧 Sabotage repaired by ${message.fixedBy.slice(0,8)}...`, message.gameId, message.fixedBy);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return { ...prev, activeSabotage: 0 };
@@ -388,6 +389,8 @@ export function useGameServer(): UseGameServerReturn {
               "report",
               `🚨 BODY REPORTED! ${message.reporter.slice(0,8)}... found ${message.victim.slice(0,8)}... at ${LocationNames[message.location as Location] || 'unknown'}`,
               message.gameId,
+              message.reporter,
+              message.victim
             );
             // Mark body as reported
             setDeadBodies((prev) =>
@@ -402,6 +405,7 @@ export function useGameServer(): UseGameServerReturn {
               "eject",
               `🚀 ${message.ejected.slice(0,8)}... was ejected! ${message.wasImpostor ? "They were an IMPOSTOR! 🔪" : "They were innocent... 😢"}`,
               message.gameId,
+              message.ejected
             );
             // Mark player as dead
             setCurrentRoom((prev) => {

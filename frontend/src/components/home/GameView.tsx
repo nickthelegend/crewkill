@@ -67,7 +67,48 @@ const logBorders: Record<string, string> = {
   sabotage: "border-l-red-400",
   join: "border-l-cyan-500",
   start: "border-l-green-400",
+  move: "border-l-gray-400",
 };
+
+// Helper function to colorize player references in logs
+function renderLogMessage(log: GameLog, players: Player[]) {
+  let msg = log.message;
+  let parsedElements = [];
+  
+  // Quick check if there's any substitution
+  const hasAddr = log.address && players.some(p => p.address === log.address);
+  const hasTarget = log.targetAddress && players.some(p => p.address === log.targetAddress);
+
+  if (!hasAddr && !hasTarget) return msg;
+
+  let player = hasAddr ? players.find(p => p.address === log.address) : null;
+  let target = hasTarget ? players.find(p => p.address === log.targetAddress) : null;
+
+  if (player) {
+    const shortAddr = `${player.address.slice(0,8)}...`;
+    msg = msg.replace(shortAddr, `[AGENT_${player.colorId}]`);
+  }
+  if (target) {
+    const targetShortAddr = `${target.address.slice(0,8)}...`;
+    msg = msg.replace(targetShortAddr, `[AGENT_${target.colorId}]`);
+  }
+
+  const parts = msg.split(/(\[AGENT_\d+\])/);
+  return parts.map((part, i) => {
+    const match = part.match(/\[AGENT_(\d+)\]/);
+    if (match) {
+      const colorId = parseInt(match[1]);
+      const colorData = PlayerColors[colorId];
+      if (!colorData) return <span key={i}>{part}</span>;
+      return (
+        <span key={i} className="font-extrabold px-1 rounded mx-0.5 whitespace-nowrap" style={{ color: colorData.light, backgroundColor: `${colorData.hex}33`, border: `1px solid ${colorData.hex}66` }}>
+          {colorData.name}
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
 
 export function GameView({
   players,
@@ -305,9 +346,9 @@ export function GameView({
                         >
                           <span className="text-sm leading-none mt-0.5 flex-shrink-0">{logIcons[log.type] || "📌"}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold text-white/80 leading-snug break-words">
-                              {log.message}
-                            </p>
+                            <div className="text-[10px] font-bold text-white/80 leading-snug break-words">
+                              {renderLogMessage(log, activePlayers)}
+                            </div>
                             <span className="text-[8px] font-mono text-white/20 mt-1 block">
                               {new Date(log.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                             </span>
@@ -394,7 +435,7 @@ export function GameView({
                  className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2.5 flex items-center gap-3 max-w-lg"
                >
                  <span className="text-sm">{logIcons[logs[logs.length - 1]?.type] || "📌"}</span>
-                 <span className="text-[10px] font-bold text-white/70 truncate">{logs[logs.length - 1]?.message}</span>
+                 <span className="text-[10px] font-bold text-white/70 truncate">{renderLogMessage(logs[logs.length - 1], activePlayers)}</span>
                </motion.div>
              )}
            </div>

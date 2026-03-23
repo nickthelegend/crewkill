@@ -308,6 +308,7 @@ export class WebSocketRelayServer {
           message.player,
           message.tasksCompleted,
           message.totalTasks,
+          message.location,
         );
         break;
 
@@ -1652,6 +1653,7 @@ export class WebSocketRelayServer {
       tasksCompleted,
       totalTasks,
       totalProgress: progress,
+      location,
       timestamp: Date.now(),
     });
 

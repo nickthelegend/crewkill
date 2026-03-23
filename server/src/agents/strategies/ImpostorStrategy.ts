@@ -7,8 +7,8 @@ import { BaseStrategy, ActionType } from "./BaseStrategy.js";
 import type { AgentAction, AgentStrategyContext, ImpostorStyle } from "../types.js";
 import type { GameMemory } from "./GameMemory.js";
 
-const KILL_COOLDOWN_ROUNDS = 2;
-const MIN_KILL_ROUND = 3; // No kills before round 3
+const KILL_COOLDOWN_ROUNDS = 1;
+const MIN_KILL_ROUND = 0; // Kills allowed early
 
 export class ImpostorStrategy extends BaseStrategy {
   private style: ImpostorStyle;

@@ -359,6 +359,7 @@ export class ServerAgent {
           player: this.address,
           tasksCompleted: this.tasksCompleted,
           totalTasks: this.totalTasks,
+          location: this.myLocation,
         });
         break;
 
