@@ -853,7 +853,7 @@ export class WebSocketRelayServer {
       logger.info("Triggering ON-CHAIN game creation...");
       const onChainResult = await contractService.createGame(
         Math.min(maxPlayers, MAX_PLAYERS_PER_ROOM), 
-        actualWager, 
+        Number(actualWager), 
         tasksRequired
       );
 
@@ -1248,7 +1248,7 @@ export class WebSocketRelayServer {
        try {
          const onChainResult = await contractService.createGame(
             room.maxPlayers, 
-            room.wagerAmount || "100000000", 
+            Number(room.wagerAmount || "100000000"), 
             5
          );
          if (onChainResult) {
