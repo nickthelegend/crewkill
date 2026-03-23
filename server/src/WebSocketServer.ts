@@ -900,18 +900,20 @@ export class WebSocketRelayServer {
       await databaseService.createScheduledGame(roomId, now, now + bettingDuration);
       logger.info(`Room ${roomId} registered in database.`);
       
-      // If we pre-filled the room with agents, create the market NOW
-      if (aiAgentCount && aiAgentCount >= maxPlayers - 1) {
-         logger.info(`Room is pre-filled. Deploying market for ${roomId} immediately...`);
-         const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
+      // CREATE MARKET IMMEDIATELY (even if room is empty, we update players later if possible)
+      // Actually, Move requires players. If empty, we wait for 1st player.
+      if (room.players.length > 0 || (aiAgentCount && aiAgentCount > 0)) {
+         logger.info(`Deploying initial market for ${roomId}...`);
+         const initialPlayers = room.players.length > 0 ? room.players.map(p => p.address) : [];
+         // If we're spawning agents, they'll join in a moment, but if we have some now, use them.
+         const marketId = await contractService.createMarket(roomId, initialPlayers);
          if (marketId) {
             await databaseService.updateGameMarketId(roomId, marketId);
             room.marketId = marketId;
-            logger.info(`Market ${marketId} ready for room ${roomId}`);
          }
       }
     } catch (e) {
-      logger.error(`Failed to register room ${roomId} in database:`, e);
+      logger.error(`Failed to register room ${roomId} or create initial market:`, e);
     }
 
     logger.info(
@@ -1329,6 +1331,9 @@ export class WebSocketRelayServer {
     // Check if market is already deployed or being deployed
     if (room.marketId || (room as any).marketLoading) return;
 
+    if (room.marketId && !room.marketId.startsWith('scheduled')) return;
+    if ((room as any).marketLoading) return;
+
     // Check database first in case it's already there but not in memory
     try {
         const dbGame = await databaseService.getGameByRoomId(roomId);
@@ -1340,7 +1345,7 @@ export class WebSocketRelayServer {
         logger.error(`Error checking DB for market in ${roomId}:`, err);
     }
 
-    // Don't create markets for solo games (or with 0 players) - need at least 1 contenders
+    // Need at least 1 player to have suspects in a market
     if (room.players.length < 1) return;
 
     (room as any).marketLoading = true;
@@ -1352,6 +1357,9 @@ export class WebSocketRelayServer {
             room.marketId = marketId;
             this.broadcastToRoom(roomId, { type: "server:room_update", room });
             logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
+        } else {
+            // If creation failed (likely gas lock), we'll try again on next player join/update
+            logger.warn(`Market creation returned null for ${roomId}, check operator logs.`);
         }
     } catch (err) {
         logger.error(`Failed to ensure market for ${roomId}:`, err);

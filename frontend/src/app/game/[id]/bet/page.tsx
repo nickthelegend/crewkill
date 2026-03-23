@@ -103,10 +103,9 @@ export default function GameBettingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-1 bg-white/5 border border-white/10 backdrop-blur-[100px] rounded-none">
              {/* Left Panel: The Market (8/12) */}
               <div className="lg:col-span-8 p-8 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto max-h-[85vh] custom-scrollbar">
-                {dbGame.marketId && !dbGame.marketId.includes('scheduled') ? (
                   <PredictionMarket 
                     gameId={dbGame._id}
-                    marketObjectId={dbGame.marketId}
+                    marketObjectId={dbGame.marketId || ""}
                     gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
                       address: p.address,
                       name: p.name || `Player ${p.address.slice(-4)}`,
@@ -119,17 +118,6 @@ export default function GameBettingPage() {
                     gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 7 : 0)}
                     creationDigest={currentRoom?.creationDigest}
                   />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-20 text-center space-y-6">
-                    <div className="w-16 h-16 border-2 border-cyan-500/20 border-t-cyan-500 animate-spin rounded-full" />
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-black text-white tracking-tighter uppercase">Initializing Market</h3>
-                      <p className="text-white/40 text-[10px] uppercase tracking-widest leading-relaxed max-w-xs">
-                        The prediction market is being deployed on OneChain. This portal will synchronize shortly.
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
 
              {/* Right Panel: Live Intel & Roster (4/12) */}

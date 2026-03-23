@@ -106,12 +106,12 @@ export function PredictionMarket({
     }
 
     // Prevent crash on invalid Sui IDs (like room strings)
-    const isValidSuiId = marketObjectId?.startsWith('0x') && marketObjectId.length >= 64;
-    if (!isValidSuiId) {
-      console.warn('PredictionMarket: Waiting for valid market object ID...', marketObjectId);
-      return;
+    if (!marketObjectId || marketObjectId === "" || !marketObjectId.startsWith('0x')) {
+       setLoading(false);
+       return;
     }
-
+    
+    console.log(`[PredictionMarket] Fetching state for ${marketObjectId}...`);
     try {
       const result = await suiClient.getObject({
         id: marketObjectId,
@@ -449,10 +449,10 @@ export function PredictionMarket({
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             Market Status
           </div>
-          <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
-            <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
-            {bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")}
-          </div>
+            <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
+              <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
+              {marketObjectId ? (bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")) : "MARKET DEPLOYING..."}
+            </div>
         </div>
         <div className="p-8 bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60">
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
@@ -547,7 +547,7 @@ export function PredictionMarket({
                    <div className="border border-red-500/30 bg-black/80 px-4 py-2 flex items-center gap-3 rotate-[-2deg] shadow-2xl shadow-red-500/20">
                       <div className="w-2 h-2 bg-red-500 rounded-sm" />
                       <span className="text-red-500 font-black uppercase tracking-widest text-sm">
-                        {!isOpen && gamePhase >= 2 ? "GAME IN PROGRESS" : "TRADING LOCKED"}
+                        {!marketObjectId ? "INITIALIZING SYNC..." : (!isOpen && gamePhase >= 2 ? "GAME IN PROGRESS" : "TRADING LOCKED")}
                       </span>
                    </div>
                 </div>
