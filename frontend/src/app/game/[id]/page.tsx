@@ -35,7 +35,8 @@ export default function RoomDetailsPage() {
     if (isConnected && (!currentRoom || currentRoom.roomId !== roomId)) {
       joinRoom(roomId, true);
     }
-  }, [isConnected, roomId, currentRoom, joinRoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, roomId]);
 
   // Deterministic hash for non-hex IDs (matches server logic)
   const displayId = useMemo(() => {
@@ -108,6 +109,7 @@ export default function RoomDetailsPage() {
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
+              {/* Live View button for active games */}
               {isLive && (
                 <Link 
                   href={`/game/${roomId}/live`}
@@ -116,10 +118,21 @@ export default function RoomDetailsPage() {
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
                   <span className="relative z-10 text-lg font-black uppercase tracking-[0.2em] flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    Watch Live Game
+                    Watch Live
                   </span>
                 </Link>
               )}
+              
+              {/* Recap button — always available */}
+              <Link 
+                href={`/game/${roomId}/recap`}
+                className="group relative px-12 py-6 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(147,51,234,0.3)] overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                <span className="relative z-10 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                  📋 {dbGame.status === "COMPLETED" ? "View Recap" : "View Events"}
+                </span>
+              </Link>
               
               <div className="text-right">
                 <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Current Pool</div>
@@ -161,40 +174,54 @@ export default function RoomDetailsPage() {
               <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8">
                 <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                   Players ({currentRoom?.players.length || 0}/10)
+                   Players ({currentRoom?.players.filter(p => p.isAlive).length || 0}/{currentRoom?.players.length || 0} alive)
                 </h3>
                 
                 <div className="space-y-3">
                   <AnimatePresence mode="popLayout">
-                    {currentRoom?.players.map((p, idx) => (
-                      <motion.div 
-                        key={p.address}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="bg-white/[0.04] border border-white/5 rounded-xl p-3 flex items-center gap-4 group hover:bg-white/[0.08] transition-colors"
-                      >
-                         <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center border border-white/10 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden">
-                            <AmongUsSprite colorId={p.colorId} size={28} isGhost={!p.isAlive} />
-                            {!p.isAlive && (
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                 <div className="relative w-full h-full opacity-70">
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-1 bg-red-600 rotate-45 shadow-[0_0_8px_#ff0000] rounded-full" />
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-1 bg-red-600 -rotate-45 shadow-[0_0_8px_#ff0000] rounded-full" />
-                                 </div>
+                    {currentRoom?.players.map((p, idx) => {
+                      const isDead = !p.isAlive;
+                      const isImpostor = p.role === 2;
+                      const isGameOver = dbGame.status === "COMPLETED" || wsPhase === 7;
+                      return (
+                        <motion.div 
+                          key={p.address}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className={`border rounded-xl p-3 flex items-center gap-4 group transition-colors ${
+                            isDead 
+                              ? "bg-red-500/5 border-red-500/20 opacity-60" 
+                              : "bg-white/[0.04] border-white/5 hover:bg-white/[0.08]"
+                          }`}
+                        >
+                           <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center border border-white/10 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden">
+                              <AmongUsSprite colorId={p.colorId} size={28} isGhost={isDead} />
+                              {isDead && (
+                                <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[7px]">💀</div>
+                              )}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <div className="text-[10px] font-black text-white uppercase truncate flex items-center gap-2">
+                                 {p.address.slice(0, 10)}...
+                                 {p.isAIAgent && <span className="text-[8px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">AI</span>}
+                                 {isGameOver && isImpostor && (
+                                   <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded animate-pulse">IMPOSTOR</span>
+                                 )}
                               </div>
-                            )}
-                         </div>
-                         <div className="flex-1 min-w-0">
-                            <div className="text-[10px] font-black text-white uppercase truncate flex items-center gap-2">
-                               {p.address.slice(0, 10)}...
-                               {p.isAIAgent && <span className="text-[8px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">AI</span>}
-                            </div>
-                            <div className="text-[8px] text-white/20 font-mono mt-0.5 uppercase">CONNECTING...</div>
-                         </div>
-                         <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                      </motion.div>
-                    ))}
+                              <div className="text-[8px] font-mono mt-0.5 uppercase flex items-center gap-2">
+                                 <span className={isDead ? "text-red-400" : "text-emerald-400"}>{isDead ? "💀 DEAD" : "🟢 ALIVE"}</span>
+                                 <span className="text-white/10">•</span>
+                                 <span className="text-white/30">Tasks {p.tasksCompleted}/{p.totalTasks}</span>
+                              </div>
+                           </div>
+                           {(p as any).agentPersona && (
+                             <div className="text-lg">{(p as any).agentPersona.emoji}</div>
+                           )}
+                           <div className={`w-1.5 h-1.5 rounded-full ${isDead ? "bg-red-500" : "bg-emerald-500"} ${isDead ? "" : "animate-pulse"}`} />
+                        </motion.div>
+                      );
+                    })}
                     {!currentRoom?.players.length && (
                       <div className="text-center py-12 opacity-20 text-sm">Waiting for participants...</div>
                     )}

@@ -5,6 +5,7 @@ import {
   Player,
   DeadBody,
   Location,
+  LocationNames,
   Role,
   GameLog,
   GamePhase,
@@ -282,6 +283,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:player_moved":
+            addLog("start", `${message.address.slice(0,8)}... moved to ${LocationNames[message.to as Location] || 'Room ' + message.to}`, message.gameId);
             setCurrentRoom((prev) => {
               if (!prev) return prev;
               return {
@@ -296,7 +298,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:kill_occurred":
-            addLog("kill", `A player was eliminated!`, message.gameId);
+            addLog("kill", `☠️ ${message.victim.slice(0,8)}... was eliminated at ${LocationNames[message.location as Location] || 'unknown location'}!`, message.gameId);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -335,7 +337,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:task_completed":
-            addLog("task", `Task completed`, message.gameId);
+            addLog("task", `✅ ${message.player.slice(0,8)}... completed a task (${message.tasksCompleted}/${message.totalTasks})`, message.gameId);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -354,7 +356,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:vote_cast":
-            addLog("vote", `Vote cast`, message.gameId);
+            addLog("vote", `🗳️ ${message.voter.slice(0,8)}... voted ${message.target ? 'to eject ' + message.target.slice(0,8) + '...' : 'to skip'}`, message.gameId);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -367,7 +369,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:sabotage_started":
-            addLog("kill", `SABOTAGE: ${message.sabotageType} initiated!`, message.gameId);
+            addLog("sabotage", `⚡ SABOTAGE: ${['None','Lights','Reactor','O2','Comms'][message.sabotageType] || 'Unknown'} initiated!`, message.gameId);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return { ...prev, activeSabotage: message.sabotageType };
@@ -375,7 +377,7 @@ export function useGameServer(): UseGameServerReturn {
             break;
 
           case "server:sabotage_fixed":
-            addLog("task", `Sabotage repaired`, message.gameId);
+            addLog("task", `🔧 Sabotage repaired by ${message.fixedBy.slice(0,8)}...`, message.gameId);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return { ...prev, activeSabotage: 0 };
@@ -384,8 +386,8 @@ export function useGameServer(): UseGameServerReturn {
 
           case "server:body_reported":
             addLog(
-              "kill",
-              `Body reported! ${message.reporter} found ${message.victim}`,
+              "report",
+              `🚨 BODY REPORTED! ${message.reporter.slice(0,8)}... found ${message.victim.slice(0,8)}... at ${LocationNames[message.location as Location] || 'unknown'}`,
               message.gameId,
             );
             // Mark body as reported
@@ -398,8 +400,8 @@ export function useGameServer(): UseGameServerReturn {
 
           case "server:player_ejected":
             addLog(
-              "vote",
-              `${message.ejected} was ejected. ${message.wasImpostor ? "They were an Impostor!" : "They were a Crewmate."}`,
+              "eject",
+              `🚀 ${message.ejected.slice(0,8)}... was ejected! ${message.wasImpostor ? "They were an IMPOSTOR! 🔪" : "They were innocent... 😢"}`,
               message.gameId,
             );
             // Mark player as dead
@@ -417,7 +419,7 @@ export function useGameServer(): UseGameServerReturn {
           case "server:game_ended": // Restored case
             addLog(
               "start",
-              message.crewmatesWon ? "Crewmates win!" : "Impostors win!",
+              message.crewmatesWon ? "🎉 CREWMATES WIN! All impostors defeated!" : "💀 IMPOSTORS WIN! The crew has fallen!",
               message.gameId,
             );
             setCurrentRoom((prev) => {

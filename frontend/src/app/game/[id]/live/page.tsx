@@ -38,10 +38,8 @@ export default function LiveRoomPage() {
     if (isConnected && id) {
       joinRoom(id, true); // Join as spectator
     }
-    return () => {
-      leaveRoom();
-    };
-  }, [isConnected, id, joinRoom, leaveRoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, id]);
 
   if (!isConnected || !game) {
     return (
