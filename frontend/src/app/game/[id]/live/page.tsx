@@ -43,19 +43,19 @@ export default function LiveRoomPage() {
     };
   }, [isConnected, id, joinRoom, leaveRoom]);
 
-  if (!isConnected) {
+  if (!isConnected || !game) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <div className="text-white/20 font-black uppercase tracking-[0.5em] animate-pulse">
-           Connecting...
+           Connecting System...
         </div>
       </div>
     );
   }
 
-  // Robust started check to fix flickering: prioritize actual room phase
-  const isStarted = currentRoom && currentRoom.phase !== "lobby";
-  const isLobby = phase === GamePhase.Lobby || (!isStarted && game && game.status === "CREATED");
+  // Robust starts detection: prioritize database status as stable fallback
+  const isStarted = (currentRoom && ["playing", "discussion", "voting", "ejection"].includes(currentRoom.phase)) || (game && game.status === "ACTIVE");
+  const isLobby = !isStarted && (game && game.status === "CREATED");
   
   if (isLobby && !isStarted) {
     return (

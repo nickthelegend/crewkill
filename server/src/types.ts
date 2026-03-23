@@ -364,7 +364,7 @@ export interface RoomState {
   spectators: string[]; // connection IDs
   maxPlayers: number;
   impostorCount: number;
-  phase: "lobby" | "playing" | "ended";
+  phase: "lobby" | "boarding" | "playing" | "discussion" | "voting" | "ejection" | "ended";
   createdAt: number;
   creator?: string; // wallet address of creator
   wagerAmount?: string; // custom wager amount in wei

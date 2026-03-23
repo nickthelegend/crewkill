@@ -1188,6 +1188,7 @@ export class WebSocketRelayServer {
     extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
     extended.currentRound = 1;
     extended.currentPhase = phaseValue;
+    room.phase = isInitialBoarding ? "boarding" : "playing";
 
     // Automated Market Closure when game starts (Phase 2)
     if (phaseValue === 2 && room.marketId) {
@@ -2447,6 +2448,7 @@ export class WebSocketRelayServer {
 
     const previousPhase = extended.currentPhase;
     extended.currentPhase = 4; // Discussion
+    room.phase = "discussion";
 
     const phaseEndTime = Date.now() + DISCUSSION_DURATION;
 
@@ -2487,6 +2489,7 @@ export class WebSocketRelayServer {
 
     const previousPhase = extended.currentPhase;
     extended.currentPhase = 5; // Voting
+    room.phase = "voting";
 
     // Initialize voting
     extended.votes.clear();
