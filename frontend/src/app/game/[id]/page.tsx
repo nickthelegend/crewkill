@@ -174,8 +174,16 @@ export default function RoomDetailsPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         className="bg-white/[0.04] border border-white/5 rounded-xl p-3 flex items-center gap-4 group hover:bg-white/[0.08] transition-colors"
                       >
-                         <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center border border-white/10 group-hover:border-cyan-500/30 transition-colors">
-                            <AmongUsSprite colorId={p.colorId} size={28} />
+                         <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center border border-white/10 group-hover:border-cyan-500/30 transition-colors relative overflow-hidden">
+                            <AmongUsSprite colorId={p.colorId} size={28} isGhost={!p.isAlive} />
+                            {!p.isAlive && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                 <div className="relative w-full h-full opacity-70">
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-1 bg-red-600 rotate-45 shadow-[0_0_8px_#ff0000] rounded-full" />
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-1 bg-red-600 -rotate-45 shadow-[0_0_8px_#ff0000] rounded-full" />
+                                 </div>
+                              </div>
+                            )}
                          </div>
                          <div className="flex-1 min-w-0">
                             <div className="text-[10px] font-black text-white uppercase truncate flex items-center gap-2">

@@ -134,14 +134,39 @@ export function PredictionMarket({
       if (!fields) return;
 
       setIsOpen(fields.open === true);
-      const pot = parseInt(fields.total_pot?.fields?.value || '0');
+      // Sui RPC often flattens Balance/u64 to string in object fields
+      const potStr = typeof fields.total_pot === 'string' ? fields.total_pot : (fields.total_pot?.fields?.value || '0');
+      const pot = parseInt(potStr);
       setTotalPot(pot);
 
+      // Fetch dynamic fields for the suspect_pools table to get individual balances
+      const tableId = fields.suspect_pools?.fields?.id?.id;
+      let poolBalances: Record<string, number> = {};
+      
+      if (tableId) {
+        try {
+          const dynamicFields = await suiClient.getDynamicFields({
+            parentId: tableId,
+          });
+          
+          // Fetch values for each field
+          await Promise.all(dynamicFields.data.map(async (df) => {
+            const fieldObj = await suiClient.getObject({
+              id: df.objectId,
+              options: { showContent: true }
+            });
+            const fieldFields = (fieldObj.data?.content as any)?.fields;
+            if (fieldFields) {
+              poolBalances[fieldFields.name] = parseInt(fieldFields.value || '0');
+            }
+          }));
+        } catch (dfErr) {
+          console.error("[PredictionMarket] Failed to fetch pool dynamic fields:", dfErr);
+        }
+      }
+
       const pools: SuspectPool[] = gamePlayers.map((p) => {
-        const poolEntry = fields.suspect_pools?.fields?.contents?.find(
-          (c: any) => c.fields?.key === p.address
-        );
-        const amount = parseInt(poolEntry?.fields?.value || '0');
+        const amount = poolBalances[p.address] || 0;
         return {
           address: p.address,
           totalBet: amount,
@@ -248,7 +273,11 @@ export function PredictionMarket({
             setTxStatus('success');
             setTxMsg(`TRANSACTION COMPLETE`);
             setLoading(false);
+            // Multi-stage polling to ensure sync through RPC lag
             fetchMarketState();
+            setTimeout(() => fetchMarketState(), 1000);
+            setTimeout(() => fetchMarketState(), 3000);
+            setTimeout(() => fetchMarketState(), 7000);
           },
           onError: (err) => {
             setTxStatus('error');
@@ -500,12 +529,17 @@ export function PredictionMarket({
                 <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all relative ${isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
                   }`}>
                   <AmongUsSprite
-                    colorId={player.colorId ?? (idx + (gameId.length % 12))}
+                    colorId={player.colorId ?? (idx + (gameId?.length || 0) % 12)}
                     size={48}
                     isGhost={!player.isAlive}
                   />
                   {!player.isAlive && (
-                    <div className="absolute inset-x-0 bottom-0 bg-red-600/80 text-[8px] font-black text-white text-center uppercase py-0.5">DEAD</div>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                       <div className="relative w-full h-full opacity-80">
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-1.5 bg-red-600 rotate-45 shadow-[0_0_15px_#ff0000] rounded-full" />
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-1.5 bg-red-600 -rotate-45 shadow-[0_0_15px_#ff0000] rounded-full" />
+                       </div>
+                    </div>
                   )}
                 </div>
                 <div className="min-w-0">
