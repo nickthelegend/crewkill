@@ -39,7 +39,7 @@ export interface RoomState {
   spectators: string[];
   maxPlayers: number;
   impostorCount: number;
-  phase: "lobby" | "playing" | "ended";
+  phase: "lobby" | "boarding" | "playing" | "ended";
   detailedPhase?: GamePhase; // Added detailed phase
   activeSabotage?: number;    // Added active sabotage
   createdAt: number;

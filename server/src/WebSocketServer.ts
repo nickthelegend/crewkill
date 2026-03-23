@@ -1025,13 +1025,27 @@ export class WebSocketRelayServer {
         // Create prediction market on-chain (async)
         this.ensureMarketDeployment(roomId);
 
-        // Start the game immediately so player can interact
-        this.startGameInternal(roomId);
+        // Start in "boarding" phase so agents stay in cafeteria and UI shows lobby
+        this.startGameInternal(roomId, true); 
 
-        // Start lobby waiting timer (3 minutes)
-        extended.lobbyTimer = setTimeout(() => {
+        // Start lobby waiting timer
+        extended.lobbyTimer = setTimeout(async () => {
           extended.lobbyLocked = true;
-          logger.info(`Room ${roomId} lobby locked after waiting period`);
+          logger.info(`Room ${roomId} lobby locked after waiting period. Moving to playing phase.`);
+          
+          // Actually transition to PLAYING mode now
+          await this.startGameInternal(roomId);
+          
+          // SAFETY: Explicitly close the market now (in case startGameInternal 
+          // missed it because the marketId wasn't set yet during initial boarding)
+          const currentRoom = this.rooms.get(roomId);
+          if (currentRoom?.marketId) {
+            logger.info(`Safety: Closing prediction market for room ${roomId} after lobby lock...`);
+            contractService.closeMarket(roomId, currentRoom.marketId).catch((err: any) => {
+              logger.error(`Failed to close market for ${roomId} after lobby lock:`, err);
+            });
+          }
+          
           this.reassignRolesAfterLobby(roomId);
           this.broadcastToRoom(roomId, {
             type: "server:lobby_locked",
@@ -1045,7 +1059,8 @@ export class WebSocketRelayServer {
     }
 
     // If game has ALREADY started but lobby is not locked, assign role to this late joiner
-    if (room.phase === "playing" && !extended.lobbyLocked) {
+    // FIXED: Include "boarding" phase as well, since that's the initial state during lobby window
+    if ((room.phase === "playing" || room.phase === "boarding") && !extended.lobbyLocked) {
         logger.info(`Player ${room.players[room.players.length-1].address} joined ACTIVE game ${roomId}, assigning role...`);
         
         // Late joiners are always crewmates for now to avoid rebalancing impostors
@@ -1188,9 +1203,15 @@ export class WebSocketRelayServer {
     extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
     extended.currentRound = 1;
     extended.currentPhase = phaseValue;
-    room.phase = isInitialBoarding ? "boarding" : "playing";
 
-    // Automated Market Closure when game starts (Phase 2)
+    // FIXED: Respect the boarding phase — don't override to "playing" prematurely
+    if (isInitialBoarding) {
+      room.phase = "boarding";
+    } else {
+      room.phase = "playing";
+    }
+
+    // Automated Market Closure when game transitions to PLAYING (Phase 2)
     if (phaseValue === 2 && room.marketId) {
       logger.info(`Closing prediction market for starting game in room ${roomId}...`);
       contractService.closeMarket(roomId, room.marketId).catch((err: any) => {
@@ -1262,12 +1283,14 @@ export class WebSocketRelayServer {
        }
     }
 
-    // Set playing state
-    room.phase = "playing";
-    this.broadcastToRoom(roomId, {
-      type: "server:game_started",
-      gameId: roomId,
-    });
+    // FIXED: Only set to "playing" and broadcast game_started during actual playing phase (not boarding)
+    if (!isInitialBoarding) {
+      room.phase = "playing";
+      this.broadcastToRoom(roomId, {
+        type: "server:game_started",
+        gameId: roomId,
+      });
+    }
 
     // Final check for market - if still missing, try one last time
     if (!room.marketId) {

@@ -54,8 +54,8 @@ export default function LiveRoomPage() {
   }
 
   // Robust starts detection: prioritize database status as stable fallback
-  const isStarted = (currentRoom && ["playing", "discussion", "voting", "ejection"].includes(currentRoom.phase)) || (game && game.status === "ACTIVE");
-  const isLobby = !isStarted && (game && game.status === "CREATED");
+  const isStarted = (currentRoom && ["playing", "discussion", "voting", "ejection"].includes(currentRoom.phase)) || (game && (game.status === "ACTIVE" || game.status === "COMPLETED"));
+  const isLobby = !isStarted && (currentRoom?.phase === "lobby" || currentRoom?.phase === "boarding" || (game && game.status === "CREATED"));
   
   if (isLobby && !isStarted) {
     return (

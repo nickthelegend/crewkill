@@ -93,7 +93,7 @@ export function PredictionMarket({
     if (IS_OFFLINE) {
       const pot = convexBets.reduce((sum, b) => sum + b.amountMist, 0);
       setTotalPot(pot);
-      setIsOpen(gamePhase < 7);
+      setIsOpen(gamePhase < 2); // FIXED: Betting closes when game starts playing (phase 2+)
 
       const pools: SuspectPool[] = gamePlayers.map((p) => {
         const amount = convexBets.filter(b => b.selection.toLowerCase() === p.address.toLowerCase())
@@ -336,7 +336,9 @@ export function PredictionMarket({
     }
   }
 
-  const bettingOpen = isOpen && gamePhase < 7 && (IS_OFFLINE || (!!marketObjectId && marketObjectId.startsWith('0x')));
+  // FIXED: Also consider gamePhase — once game is in playing phase (2+), betting should close
+  // even if the on-chain market wasn't closed yet (safety net for async race conditions)
+  const bettingOpen = isOpen && gamePhase < 2 && (IS_OFFLINE || (!!marketObjectId && marketObjectId.startsWith('0x')));
 
   if (gamePlayers.length === 0 || (!hasSynced && !IS_OFFLINE)) {
     return (

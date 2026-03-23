@@ -193,6 +193,7 @@ export class ServerAgent {
     const state = msg.state;
     if (!state) return;
 
+    const previousPhase = this.phase;
     this.round = state.round;
     this.phase = state.phase;
 
@@ -217,6 +218,26 @@ export class ServerAgent {
 
     this.memory.setCurrentRound(this.round);
     this.memory.setMyLocation(this.myLocation);
+
+    // FIXED: Detect phase transitions via game_state updates
+    // This catches transitions that might be missed by phase_changed events
+    if (previousPhase !== this.phase) {
+      // Entering ActionCommit phase (2) — start acting if we have a role
+      if (this.phase === 2 && this.role !== "none" && this.pendingTimers.length === 0) {
+        logger.debug(`[${this.name}] Detected phase transition to ActionCommit via game_state, scheduling action`);
+        this.scheduleAction();
+      }
+      // Entering Voting phase (5) — cast a vote
+      if (this.phase === 5 && this.role !== "none" && this.pendingTimers.length === 0) {
+        logger.debug(`[${this.name}] Detected phase transition to Voting via game_state, scheduling vote`);
+        this.scheduleVote();
+      }
+    } else if (this.phase === 2 && this.role !== "none" && this.isAlive && this.pendingTimers.length === 0) {
+      // SAFETY: If we're in phase 2 with a role but have no pending timers,
+      // it means we got stuck. Restart the action loop.
+      logger.debug(`[${this.name}] Phase 2 with no pending actions, restarting action loop`);
+      this.scheduleAction();
+    }
   }
 
   private handlePlayerMoved(msg: any): void {
