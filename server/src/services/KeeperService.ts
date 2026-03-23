@@ -18,7 +18,9 @@ export class KeeperService {
 
   constructor(rpcUrl: string, adminKeyB64: string, convexUrl: string) {
     this.client = new SuiClient({ url: rpcUrl });
-    this.keypair = Ed25519Keypair.fromSecretKey(Buffer.from(adminKeyB64, 'base64'));
+    const raw = Buffer.from(process.env.OPERATOR_PRIV_KEY!, 'base64');
+    const secretKey = raw.length === 33 ? raw.slice(1) : raw;
+    this.keypair = Ed25519Keypair.fromSecretKey(secretKey);
     this.convex = new ConvexHttpClient(convexUrl);
   }
 

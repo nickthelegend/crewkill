@@ -17,7 +17,9 @@ export class ContractService {
     const operatorKey = process.env.OPERATOR_PRIV_KEY;
     if (operatorKey) {
       try {
-        this.operatorKeypair = Ed25519Keypair.fromSecretKey(Buffer.from(operatorKey, 'base64'));
+        const raw = Buffer.from(operatorKey, 'base64');
+        const secretKey = raw.length === 33 ? raw.slice(1) : raw;
+        this.operatorKeypair = Ed25519Keypair.fromSecretKey(secretKey);
         this.enabled = true;
         logger.info(`Contract service initialized with operator: ${this.operatorKeypair.getPublicKey().toSuiAddress()}`);
       } catch (error) {

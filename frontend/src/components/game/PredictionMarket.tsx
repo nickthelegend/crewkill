@@ -13,7 +13,7 @@ const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 
 interface Player {
   address: string;
-  name: string; 
+  name: string;
   isAlive?: boolean;
   colorId?: number;
   agentPersona?: {
@@ -61,7 +61,7 @@ export function PredictionMarket({
   const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [suspectPools, setSuspectPools] = useState<SuspectPool[]>([]);
-  
+
   // Initialize pools from local roster immediately
   useEffect(() => {
     if (gamePlayers.length > 0) {
@@ -88,41 +88,41 @@ export function PredictionMarket({
 
   const fetchMarketState = useCallback(async () => {
     if (IS_OFFLINE) {
-        const pot = convexBets.reduce((sum, b) => sum + b.amountMist, 0);
-        setTotalPot(pot);
-        setIsOpen(gamePhase < 7);
+      const pot = convexBets.reduce((sum, b) => sum + b.amountMist, 0);
+      setTotalPot(pot);
+      setIsOpen(gamePhase < 7);
 
-        const pools: SuspectPool[] = gamePlayers.map((p) => {
-          const amount = convexBets.filter(b => b.selection.toLowerCase() === p.address.toLowerCase())
-                                   .reduce((sum, b) => sum + b.amountMist, 0);
-          return {
-            address: p.address,
-            totalBet: amount,
-            percentage: pot > 0 ? Math.round((amount / pot) * 100) : 0,
-          };
-        });
-        setSuspectPools(pools);
+      const pools: SuspectPool[] = gamePlayers.map((p) => {
+        const amount = convexBets.filter(b => b.selection.toLowerCase() === p.address.toLowerCase())
+          .reduce((sum, b) => sum + b.amountMist, 0);
+        return {
+          address: p.address,
+          totalBet: amount,
+          percentage: pot > 0 ? Math.round((amount / pot) * 100) : 0,
+        };
+      });
+      setSuspectPools(pools);
 
-        if (account?.address) {
-          const myBet = convexBets.find(b => b.address.toLowerCase() === account.address.toLowerCase());
-          if (myBet) {
-            setUserBet({
-              suspect: myBet.selection,
-              amount: myBet.amountMist,
-              correct: myBet.status === "won",
-              claimed: myBet.status === "won",
-            });
-          }
+      if (account?.address) {
+        const myBet = convexBets.find(b => b.address.toLowerCase() === account.address.toLowerCase());
+        if (myBet) {
+          setUserBet({
+            suspect: myBet.selection,
+            amount: myBet.amountMist,
+            correct: myBet.status === "won",
+            claimed: myBet.status === "won",
+          });
         }
-        return;
+      }
+      return;
     }
 
     // Prevent crash on invalid Sui IDs (like room strings)
     if (!marketObjectId || marketObjectId === "" || !marketObjectId.startsWith('0x')) {
-       setLoading(false);
-       return;
+      setLoading(false);
+      return;
     }
-    
+
     console.log(`[PredictionMarket] Fetching state for ${marketObjectId}...`);
     try {
       const result = await suiClient.getObject({
@@ -181,7 +181,7 @@ export function PredictionMarket({
   // Timer Effect
   useEffect(() => {
     if (!isOpen || gamePhase >= 2) return;
-    
+
     // We can't easily get bettingEndsAt from pure roomId in this component
     // unless we query the dbGame. Let's assume it's roughly 3 mins from creation
     // or just show a fallback if we don't have the exact timestamp.
@@ -229,8 +229,8 @@ export function PredictionMarket({
       if (!/^0x[a-fA-F0-9]{64}$/.test(selectedSuspect)) {
         throw new Error("Target address is not a valid 32-byte hex string (AI agents require server restart for valid hex IDs).");
       }
- 
-       const tx = new Transaction();
+
+      const tx = new Transaction();
       const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betMist)]);
       tx.moveCall({
         target: `${PACKAGE_ID}::prediction_market::place_bet`,
@@ -304,54 +304,54 @@ export function PredictionMarket({
   }
 
   // Allow betting until the game ends (Phase 7)
-  const bettingOpen = isOpen && gamePhase < 7 && !!marketObjectId && marketObjectId.startsWith('0x');
+  const bettingOpen = isOpen && gamePhase < 7 && (IS_OFFLINE || (!!marketObjectId && marketObjectId.startsWith('0x')));
 
   if (gamePlayers.length === 0) {
     return (
       <div className="space-y-12 w-full max-w-5xl mx-auto relative">
         <div className="opacity-50 grayscale pointer-events-none">
-         <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 overflow-hidden relative">
+          <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 overflow-hidden relative">
             <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                   <div className="w-2 h-2 bg-white/20 rounded-full" />
-                   <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
-                </div>
-                <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/10">
-                    AWAITING CONTENDERS
-                </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-white/20 rounded-full" />
+                <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
+              </div>
+              <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/10">
+                AWAITING CONTENDERS
+              </div>
             </div>
             {/* Empty Progress Bar */}
             <div className="flex gap-1 h-24 w-full bg-white/5 p-1 rounded-none border border-white/5 mb-6">
-                <div className="h-full w-full bg-white/5" />
+              <div className="h-full w-full bg-white/5" />
             </div>
-         </div>
-         {/* Empty Contracts Grid */}
-         <div className="grid grid-cols-1 gap-1">
+          </div>
+          {/* Empty Contracts Grid */}
+          <div className="grid grid-cols-1 gap-1">
             {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center justify-between p-8 border border-white/5 bg-white/[0.02]">
-                 <div className="flex items-center gap-8">
-                    <div className="w-16 h-16 bg-white/5" />
-                    <div className="space-y-3">
-                       <div className="h-6 w-32 bg-white/10" />
-                       <div className="h-3 w-48 bg-white/5" />
-                    </div>
-                 </div>
-                 <div className="flex gap-1">
-                    <div className="w-24 h-16 bg-white/5" />
-                    <div className="w-24 h-16 bg-white/5" />
-                 </div>
+                <div className="flex items-center gap-8">
+                  <div className="w-16 h-16 bg-white/5" />
+                  <div className="space-y-3">
+                    <div className="h-6 w-32 bg-white/10" />
+                    <div className="h-3 w-48 bg-white/5" />
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <div className="w-24 h-16 bg-white/5" />
+                  <div className="w-24 h-16 bg-white/5" />
+                </div>
               </div>
             ))}
-         </div>
-         </div>
-         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-auto">
-             <div className="bg-black/90 p-12 border border-red-500/30 backdrop-blur-md shadow-[0_0_50px_rgba(255,0,0,0.1)]">
-                <h3 className="text-white font-black uppercase tracking-[0.4em] text-lg mb-4 text-center">MARKET FORMING</h3>
-                <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed text-center">
-                  Awaiting contenders. Once agents are deployed, odds will be generated.
-                </p>
-             </div>
-         </div>
+          </div>
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-auto">
+          <div className="bg-black/90 p-12 border border-red-500/30 backdrop-blur-md shadow-[0_0_50px_rgba(255,0,0,0.1)]">
+            <h3 className="text-white font-black uppercase tracking-[0.4em] text-lg mb-4 text-center">MARKET FORMING</h3>
+            <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed text-center">
+              Awaiting contenders. Once agents are deployed, odds will be generated.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -361,87 +361,86 @@ export function PredictionMarket({
       {/* Polymarket Confidence Distribution */}
       <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 overflow-hidden relative">
         <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ff003c]" />
-               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
-            </div>
-            <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
-                {isOpen ? `Betting Active (ROOM#${(gameId || "").slice(-6).toUpperCase()})` : "Final Confidence"}
-                {creationDigest && <span className="ml-4 opacity-50">TX: {creationDigest.slice(0, 8)}...</span>}
-            </div>
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ff003c]" />
+            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Market Sentiment</h3>
+          </div>
+          <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
+            {isOpen ? `Betting Active (ROOM#${(gameId || "").slice(-6).toUpperCase()})` : "Final Confidence"}
+            {creationDigest && <span className="ml-4 opacity-50">TX: {creationDigest.slice(0, 8)}...</span>}
+          </div>
         </div>
 
         <div className="flex gap-1 h-24 w-full bg-white/5 p-1 rounded-none border border-white/5 mb-6">
-           {gamePlayers.map((p, i) => {
-              const pool = suspectPools.find(sp => sp.address === p.address);
-              const percentage = pool?.percentage ?? (100 / gamePlayers.length);
-              const colors = [
-                'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 
-                'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-rose-500',
-                'bg-indigo-500', 'bg-amber-500'
-              ];
-              return (
-                 <motion.div 
-                    key={p.address}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    className={`h-full relative group transition-all duration-1000 ${colors[i % colors.length]}`}
-                    style={{ minWidth: percentage > 0 ? '1%' : '0%' }}
-                 >
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {percentage > 10 && (
-                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-[10px] font-black text-white drop-shadow-md">{percentage}%</span>
-                       </div>
-                    )}
-                 </motion.div>
-              );
-           })}
+          {gamePlayers.map((p, i) => {
+            const pool = suspectPools.find(sp => sp.address === p.address);
+            const percentage = pool?.percentage ?? (100 / gamePlayers.length);
+            const colors = [
+              'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500',
+              'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-rose-500',
+              'bg-indigo-500', 'bg-amber-500'
+            ];
+            return (
+              <motion.div
+                key={p.address}
+                initial={{ width: 0 }}
+                animate={{ width: `${percentage}%` }}
+                className={`h-full relative group transition-all duration-1000 ${colors[i % colors.length]}`}
+                style={{ minWidth: percentage > 0 ? '1%' : '0%' }}
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {percentage > 10 && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-[10px] font-black text-white drop-shadow-md">{percentage}%</span>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 py-4">
-           {gamePlayers.map((player) => {
-              const isSelected = selectedSuspect === player.address;
-              return (
-                 <button
-                    key={player.address}
-                    disabled={!isOpen}
-                    onClick={() => setSelectedSuspect(player.address)}
-                    className="text-left group pointer-events-auto"
-                 >
-                    <div className={`p-4 rounded-xl border transition-all ${
-                      isSelected ? "bg-red-500/20 border-red-500 ring-1 ring-red-500/20" : "bg-white/5 border-white/10 hover:border-white/20"
-                    }`}>
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 border border-white/10 bg-black flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform">
-                           <AmongUsSprite colorId={player.colorId ?? 1} size={28} isGhost={!player.isAlive} />
-                           {player.agentPersona?.emoji && (
-                             <div className="absolute top-0 right-0 text-[10px] bg-black/60 px-1 rounded-bl">
-                               {player.agentPersona.emoji}
-                             </div>
-                           )}
+          {gamePlayers.map((player) => {
+            const isSelected = selectedSuspect === player.address;
+            return (
+              <button
+                key={player.address}
+                disabled={!isOpen}
+                onClick={() => setSelectedSuspect(player.address)}
+                className="text-left group pointer-events-auto"
+              >
+                <div className={`p-4 rounded-xl border transition-all ${isSelected ? "bg-red-500/20 border-red-500 ring-1 ring-red-500/20" : "bg-white/5 border-white/10 hover:border-white/20"
+                  }`}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 border border-white/10 bg-black flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform">
+                      <AmongUsSprite colorId={player.colorId ?? 1} size={28} isGhost={!player.isAlive} />
+                      {player.agentPersona?.emoji && (
+                        <div className="absolute top-0 right-0 text-[10px] bg-black/60 px-1 rounded-bl">
+                          {player.agentPersona.emoji}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xs font-black text-white truncate uppercase tracking-tight">{player.name}</span>
-                            {player.agentPersona?.playstyle && (
-                              <span className="text-[7px] font-mono text-cyan-400 border border-cyan-400/30 px-1 rounded-none uppercase">
-                                 {player.agentPersona.playstyle}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center gap-2">
-                            {player.agentPersona?.title || (player.isAlive ? "Active Agent" : "Deceased")}
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-black text-white truncate uppercase tracking-tight">{player.name}</span>
+                        {player.agentPersona?.playstyle && (
+                          <span className="text-[7px] font-mono text-cyan-400 border border-cyan-400/30 px-1 rounded-none uppercase">
+                            {player.agentPersona.playstyle}
+                          </span>
                         )}
                       </div>
+                      <div className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center gap-2">
+                        {player.agentPersona?.title || (player.isAlive ? "Active Agent" : "Deceased")}
+                      </div>
                     </div>
-                 </button>
-              );
-           })}
+                    {isSelected && (
+                      <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -461,10 +460,10 @@ export function PredictionMarket({
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             Market Status
           </div>
-            <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
-              <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
-              {marketObjectId && marketObjectId.startsWith('0x') ? (bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")) : "INITIALIZING SYNC..."}
-            </div>
+          <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
+            <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
+            {marketObjectId && marketObjectId.startsWith('0x') ? (bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")) : "INITIALIZING SYNC..."}
+          </div>
         </div>
         <div className="p-8 bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60">
           <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
@@ -491,20 +490,18 @@ export function PredictionMarket({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => bettingOpen && setSelectedSuspect(player.address)}
-              className={`group flex flex-col sm:flex-row items-center justify-between p-8 rounded-none border transition-all cursor-pointer relative overflow-hidden ${
-                isSelected 
-                  ? "bg-red-500/10 border-red-500/40" 
+              className={`group flex flex-col sm:flex-row items-center justify-between p-8 rounded-none border transition-all cursor-pointer relative overflow-hidden ${isSelected
+                  ? "bg-red-500/10 border-red-500/40"
                   : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
-              }`}
+                }`}
             >
               {/* Profile */}
               <div className="flex items-center gap-8 relative z-10 flex-1 w-full sm:w-auto">
-                <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all relative ${
-                  isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
-                }`}>
-                  <AmongUsSprite 
-                    colorId={player.colorId ?? (idx + (gameId.length % 12))} 
-                    size={48} 
+                <div className={`w-16 h-16 rounded-none flex items-center justify-center border transition-all relative ${isSelected ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/10 group-hover:border-white/20"
+                  }`}>
+                  <AmongUsSprite
+                    colorId={player.colorId ?? (idx + (gameId.length % 12))}
+                    size={48}
                     isGhost={!player.isAlive}
                   />
                   {!player.isAlive && (
@@ -531,37 +528,36 @@ export function PredictionMarket({
                   <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Confidence</div>
                   <div className="text-3xl font-black text-white tracking-tighter">{prob}%</div>
                 </div>
-                
+
                 <div className="flex bg-black/60 p-1 border border-white/10 rounded-none shadow-xl">
-                   <button 
-                      disabled={!bettingOpen}
-                      onClick={(e) => { e.stopPropagation(); bettingOpen && setSelectedSuspect(player.address); }}
-                      className={`px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase transition-all flex flex-col items-center min-w-[90px] sm:min-w-[110px] border disabled:opacity-50 disabled:cursor-not-allowed ${
-                        isSelected ? "bg-cyan-500/20 text-cyan-400 border-cyan-500" : "text-cyan-400/60 border-cyan-500/10 hover:border-cyan-500/40 hover:bg-cyan-500/5"
+                  <button
+                    disabled={!bettingOpen}
+                    onClick={(e) => { e.stopPropagation(); bettingOpen && setSelectedSuspect(player.address); }}
+                    className={`px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase transition-all flex flex-col items-center min-w-[90px] sm:min-w-[110px] border disabled:opacity-50 disabled:cursor-not-allowed ${isSelected ? "bg-cyan-500/20 text-cyan-400 border-cyan-500" : "text-cyan-400/60 border-cyan-500/10 hover:border-cyan-500/40 hover:bg-cyan-500/5"
                       }`}
-                   >
-                      <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY YES</span>
-                      <span className="text-xl tabular-nums tracking-tighter">{price}¢</span>
-                   </button>
-                   <button 
-                      disabled={true}
-                      className="px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase text-red-500/30 border border-transparent cursor-not-allowed flex flex-col items-center min-w-[90px] sm:min-w-[110px] bg-red-500/5"
-                      title="Shorting impostors is currently offline"
-                   >
-                      <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY NO</span>
-                      <span className="text-xl tabular-nums tracking-tighter opacity-50">{100 - price}¢</span>
-                   </button>
+                  >
+                    <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY YES</span>
+                    <span className="text-xl tabular-nums tracking-tighter">{price}¢</span>
+                  </button>
+                  <button
+                    disabled={true}
+                    className="px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase text-red-500/30 border border-transparent cursor-not-allowed flex flex-col items-center min-w-[90px] sm:min-w-[110px] bg-red-500/5"
+                    title="Shorting impostors is currently offline"
+                  >
+                    <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY NO</span>
+                    <span className="text-xl tabular-nums tracking-tighter opacity-50">{100 - price}¢</span>
+                  </button>
                 </div>
               </div>
-              
+
               {!bettingOpen && (
                 <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
-                   <div className="border border-red-500/30 bg-black/80 px-4 py-2 flex items-center gap-3 rotate-[-2deg] shadow-2xl shadow-red-500/20">
-                      <div className="w-2 h-2 bg-red-500 rounded-sm" />
-                      <span className="text-red-500 font-black uppercase tracking-widest text-sm">
-                        {!marketObjectId ? "INITIALIZING SYNC..." : (!isOpen && gamePhase >= 2 ? "GAME IN PROGRESS" : "TRADING LOCKED")}
-                      </span>
-                   </div>
+                  <div className="border border-red-500/30 bg-black/80 px-4 py-2 flex items-center gap-3 rotate-[-2deg] shadow-2xl shadow-red-500/20">
+                    <div className="w-2 h-2 bg-red-500 rounded-sm" />
+                    <span className="text-red-500 font-black uppercase tracking-widest text-sm">
+                      {!marketObjectId ? "INITIALIZING SYNC..." : (!isOpen && gamePhase >= 2 ? "GAME IN PROGRESS" : "TRADING LOCKED")}
+                    </span>
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -583,14 +579,14 @@ export function PredictionMarket({
                 <div className="flex-1 space-y-6">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                       <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
-                       <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Place Your Bet</h4>
+                      <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
+                      <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Place Your Bet</h4>
                     </div>
                     <div className="text-4xl font-black text-white uppercase tracking-tighter">
                       {(gamePlayers.find(p => p.address === selectedSuspect)?.name || "NODE").toUpperCase()}
                     </div>
                   </div>
-                  
+
                   <div className="relative group">
                     <input
                       type="number"
@@ -604,18 +600,18 @@ export function PredictionMarket({
                 </div>
 
                 <div className="w-full md:w-auto space-y-6">
-                   <div className="flex justify-between md:justify-end gap-10 bg-white/5 p-6 border border-white/5">
-                      <div className="text-right">
-                         <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Limit Price</div>
-                         <div className="text-xl font-black text-white tabular-nums">{(suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 0)}¢</div>
-                      </div>
-                      <div className="text-right">
-                         <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Est Payout</div>
-                         <div className="text-xl font-black text-emerald-400 tabular-nums">{(Number(betAmount) * 100 / Math.max(1, (suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 1))).toFixed(2)} OCT</div>
-                      </div>
-                   </div>
+                  <div className="flex justify-between md:justify-end gap-10 bg-white/5 p-6 border border-white/5">
+                    <div className="text-right">
+                      <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Limit Price</div>
+                      <div className="text-xl font-black text-white tabular-nums">{(suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 0)}¢</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Est Payout</div>
+                      <div className="text-xl font-black text-emerald-400 tabular-nums">{(Number(betAmount) * 100 / Math.max(1, (suspectPools.find(p => p.address === selectedSuspect)?.percentage ?? 1))).toFixed(2)} OCT</div>
+                    </div>
+                  </div>
 
-                   <button
+                  <button
                     onClick={() => handlePlaceBet()}
                     disabled={loading || !account || Number(betAmount) <= 0}
                     className="w-full h-20 bg-cyan-500 hover:bg-cyan-400 disabled:bg-white/5 disabled:text-white/10 text-black disabled:text-white/40 rounded-none text-xl font-black uppercase tracking-[0.2em] transition-all relative group overflow-hidden"
@@ -629,7 +625,7 @@ export function PredictionMarket({
                       <span className="relative z-10 flex items-center justify-center gap-3">
                         SUBMIT YES ORDER
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </span>
                     )}
@@ -639,9 +635,8 @@ export function PredictionMarket({
               </div>
 
               {txStatus !== 'idle' && (
-                <div className={`mt-8 p-5 text-center text-xs font-black uppercase tracking-[0.3em] border ${
-                  txStatus === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-500"
-                }`}>
+                <div className={`mt-8 p-5 text-center text-xs font-black uppercase tracking-[0.3em] border ${txStatus === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-500"
+                  }`}>
                   {txMsg}
                 </div>
               )}
@@ -653,12 +648,11 @@ export function PredictionMarket({
       {/* Resolution Section */}
       {isResolved && userBet && (
         <div className="bg-white/[0.02] backdrop-blur-3xl border-y border-white/5 py-24 text-center space-y-10">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
-            className={`w-32 h-32 border flex items-center justify-center mx-auto text-5xl relative ${
-              userBet.correct ? "border-emerald-500/50 bg-emerald-500/10" : "border-red-500/50 bg-red-500/10"
-            }`}
+            className={`w-32 h-32 border flex items-center justify-center mx-auto text-5xl relative ${userBet.correct ? "border-emerald-500/50 bg-emerald-500/10" : "border-red-500/50 bg-red-500/10"
+              }`}
           >
             <div className={`absolute inset-0 border animate-ping opacity-20 ${userBet.correct ? "border-emerald-500" : "border-red-500"}`} />
             {userBet.correct ? "🏆" : "💀"}
@@ -668,12 +662,12 @@ export function PredictionMarket({
               {userBet.correct ? "Prediction Correct" : "Prediction Wrong"}
             </h3>
             <p className="text-white/20 text-[10px] font-mono tracking-[0.4em] uppercase max-w-md mx-auto leading-relaxed">
-              {userBet.correct 
-                ? "You picked the right impostor. You can now claim your winnings." 
+              {userBet.correct
+                ? "You picked the right impostor. You can now claim your winnings."
                 : "You picked a crewmate. Better luck next time."}
             </p>
           </div>
-          
+
           {userBet.correct && (
             <button
               onClick={() => handleClaimWinnings()}

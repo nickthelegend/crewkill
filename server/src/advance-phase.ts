@@ -14,7 +14,9 @@ if (!GAME_ID) {
 }
 
 const client = new SuiClient({ url: RPC_URL });
-const keypair = Ed25519Keypair.fromSecretKey(Buffer.from(process.env.OPERATOR_PRIV_KEY!, 'base64'));
+const raw = Buffer.from(process.env.OPERATOR_PRIV_KEY!, 'base64');
+const secretKey = raw.length === 33 ? raw.slice(1) : raw;
+const keypair = Ed25519Keypair.fromSecretKey(secretKey);
 
 async function main() {
   console.log(`Advancing phase for game: ${GAME_ID}...`);
