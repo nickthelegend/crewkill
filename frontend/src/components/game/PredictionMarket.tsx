@@ -434,23 +434,32 @@ export function PredictionMarket({
       </div>
 
       {/* Header Stat Area */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-none py-1">
-        <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
-          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Total Pot</div>
-          <div className="text-4xl font-black text-white tracking-tighter tabular-nums">
-            {(totalPot / 1_000_000_000).toFixed(2)} <span className="text-red-500 text-sm not-ml-1">OCT</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-white/[0.02] border border-white/10 backdrop-blur-3xl rounded-none py-1 mb-8">
+        <div className="p-8 bg-black/40 flex flex-col items-center md:items-start group transition-colors hover:bg-black/60">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Total Pot
+          </div>
+          <div className="text-4xl font-black text-white tracking-tighter tabular-nums drop-shadow-md">
+            {(totalPot / 1_000_000_000).toFixed(2)} <span className="text-red-500 text-sm tracking-widest ml-1 opacity-80">OCT</span>
           </div>
         </div>
-        <div className="p-8 bg-black/20 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5">
-          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Market Status</div>
-          <div className={`text-sm font-black uppercase tracking-[0.1em] flex items-center gap-3 ${isOpen ? "text-cyan-400" : "text-red-500"}`}>
-            <span className={`w-2 h-2 rounded-full ${isOpen ? "bg-cyan-400 animate-pulse shadow-[0_0_10px_#00f0ff]" : "bg-red-500 shadow-[0_0_10px_#ff003c]"}`} />
-            {isOpen ? "OPEN" : "CLOSED"}
+        <div className="p-8 bg-black/40 flex flex-col items-center md:items-start border-y md:border-y-0 md:border-x border-white/5 transition-colors hover:bg-black/60">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            Market Status
+          </div>
+          <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
+            <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
+            {bettingOpen ? "TRADING ACTIVE" : "MARKET LOCKED"}
           </div>
         </div>
-        <div className="p-8 bg-black/20 flex flex-col items-center md:items-start">
-          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Players</div>
-          <div className="text-sm font-black text-emerald-400 uppercase tracking-widest">{gamePlayers.length} Members</div>
+        <div className="p-8 bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            Contenders
+          </div>
+          <div className="text-xl font-black text-white uppercase tracking-widest">{gamePlayers.length} Members</div>
         </div>
       </div>
 
@@ -505,31 +514,42 @@ export function PredictionMarket({
               </div>
 
               {/* Stats & Actions */}
-              <div className="flex items-center gap-10 relative z-10 mt-8 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-6 sm:gap-10 relative z-10 mt-8 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
                 <div className="text-right">
                   <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Confidence</div>
-                  <div className="text-2xl font-black text-white tracking-tighter">{prob}%</div>
+                  <div className="text-3xl font-black text-white tracking-tighter">{prob}%</div>
                 </div>
                 
-                <div className="flex gap-1 bg-black/40 p-1 border border-white/5 rounded-none">
+                <div className="flex bg-black/60 p-1 border border-white/10 rounded-none shadow-xl">
                    <button 
                       disabled={!bettingOpen}
-                      className={`px-8 py-4 rounded-none text-xs font-black uppercase transition-all flex flex-col items-center min-w-[100px] border ${
-                        isSelected ? "bg-red-500 text-white border-red-500" : "text-white/40 border-white/5 hover:border-white/20"
+                      onClick={(e) => { e.stopPropagation(); bettingOpen && setSelectedSuspect(player.address); }}
+                      className={`px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase transition-all flex flex-col items-center min-w-[90px] sm:min-w-[110px] border disabled:opacity-50 disabled:cursor-not-allowed ${
+                        isSelected ? "bg-cyan-500/20 text-cyan-400 border-cyan-500" : "text-cyan-400/60 border-cyan-500/10 hover:border-cyan-500/40 hover:bg-cyan-500/5"
                       }`}
                    >
-                      <span className="text-[9px] opacity-40 mb-1 tracking-widest font-mono">BUY_YES</span>
-                      <span className="text-lg tabular-nums tracking-tighter">{price}¢</span>
+                      <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY YES</span>
+                      <span className="text-xl tabular-nums tracking-tighter">{price}¢</span>
                    </button>
                    <button 
                       disabled={true}
-                      className="px-8 py-4 rounded-none text-xs font-black uppercase text-white/10 border border-white/5 cursor-not-allowed flex flex-col items-center min-w-[100px]"
+                      className="px-6 sm:px-8 py-4 rounded-none text-xs font-black uppercase text-red-500/30 border border-transparent cursor-not-allowed flex flex-col items-center min-w-[90px] sm:min-w-[110px] bg-red-500/5"
+                      title="Shorting impostors is currently offline"
                    >
-                      <span className="text-[9px] opacity-30 mb-1 tracking-widest font-mono">BUY_NO</span>
-                      <span className="text-lg tabular-nums tracking-tighter opacity-30">{100 - price}¢</span>
+                      <span className="text-[9px] mb-1 tracking-[0.2em] font-mono">BUY NO</span>
+                      <span className="text-xl tabular-nums tracking-tighter opacity-50">{100 - price}¢</span>
                    </button>
                 </div>
               </div>
+              
+              {!bettingOpen && (
+                <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+                   <div className="border border-red-500/30 bg-black/80 px-4 py-2 flex items-center gap-3 rotate-[-2deg] shadow-2xl shadow-red-500/20">
+                      <div className="w-2 h-2 bg-red-500 rounded-sm" />
+                      <span className="text-red-500 font-black uppercase tracking-widest text-sm">TRADING LOCKED</span>
+                   </div>
+                </div>
+              )}
             </motion.div>
           );
         })}
@@ -584,22 +604,22 @@ export function PredictionMarket({
                    <button
                     onClick={() => handlePlaceBet()}
                     disabled={loading || !account || Number(betAmount) <= 0}
-                    className="w-full h-20 bg-red-600 hover:bg-red-500 disabled:bg-white/5 disabled:text-white/10 text-white rounded-none text-xl font-black uppercase tracking-[0.2em] transition-all relative group overflow-hidden"
+                    className="w-full h-20 bg-cyan-500 hover:bg-cyan-400 disabled:bg-white/5 disabled:text-white/10 text-black disabled:text-white/40 rounded-none text-xl font-black uppercase tracking-[0.2em] transition-all relative group overflow-hidden"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-4">
-                        <div className="w-5 h-5 border-2 border-white/20 border-t-white animate-spin" />
+                        <div className="w-5 h-5 border-2 border-black/20 border-t-black animate-spin" />
                         PROCESSING...
                       </span>
                     ) : (
                       <span className="relative z-10 flex items-center justify-center gap-3">
-                        PLACE BET
+                        SUBMIT YES ORDER
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </span>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                   </button>
                 </div>
               </div>

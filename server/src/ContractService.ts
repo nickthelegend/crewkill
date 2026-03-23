@@ -32,6 +32,20 @@ export class ContractService {
     return this.enabled;
   }
 
+  private async fetchGasPayment(tx: Transaction) {
+    if (!this.operatorKeypair) return;
+    try {
+      const coins = await this.client.getCoins({ owner: this.operatorKeypair.getPublicKey().toSuiAddress() });
+      const badCoin = "0x48f3b0e90853dccda7bcdbc79ee8a434680edf3447221b780c8c678985bc4811";
+      const unlockedCoin = coins.data.find(c => c.coinObjectId !== badCoin);
+      if (unlockedCoin) {
+        tx.setGasPayment([{ objectId: unlockedCoin.coinObjectId, version: unlockedCoin.version, digest: unlockedCoin.digest }]);
+      }
+    } catch(e) {
+      logger.error("Failed to fetch gas payment bypass:", e);
+    }
+  }
+
   async getBalance(agentAddress: string): Promise<bigint> {
     try {
       const balance = await this.client.getBalance({ owner: agentAddress });
@@ -63,6 +77,7 @@ export class ContractService {
           tx.pure.vector('u64', playerTasks.map(t => BigInt(t))),
         ],
       });
+      await this.fetchGasPayment(tx);
       const result = await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
       logger.info(`Game settled on-chain. Digest: ${result.digest}`);
       return true;
@@ -105,6 +120,7 @@ export class ContractService {
           tx.object('0x6'), // SUI Clock
         ],
       });
+      await this.fetchGasPayment(tx);
 
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
@@ -161,6 +177,7 @@ export class ContractService {
           tx.pure.vector('address', playerAddresses),
         ],
       });
+      await this.fetchGasPayment(tx);
 
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
@@ -202,6 +219,7 @@ export class ContractService {
           tx.pure.vector('address', impostors),
         ],
       });
+      await this.fetchGasPayment(tx);
 
       const result = await this.client.signAndExecuteTransaction({ 
         signer: this.operatorKeypair, 
@@ -231,6 +249,7 @@ export class ContractService {
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::cancel_game`,
         arguments: [tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID), tx.pure.address(suiGameId)],
       });
+      await this.fetchGasPayment(tx);
       await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
       return true;
     } catch (error) { return false; }
