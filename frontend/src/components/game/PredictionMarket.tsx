@@ -451,7 +451,7 @@ export function PredictionMarket({
           </div>
           <div className={`text-xl font-black uppercase tracking-widest flex items-center gap-3 ${bettingOpen ? "text-cyan-400" : "text-red-500"}`}>
             <span className={`w-3 h-3 rounded-none border border-current ${bettingOpen ? "bg-cyan-400/20 animate-pulse shadow-[0_0_15px_#00f0ff]" : "bg-red-500/20 shadow-[0_0_15px_#ff003c]"}`} />
-            {bettingOpen ? "TRADING ACTIVE" : "MARKET LOCKED"}
+            {bettingOpen ? "TRADING ACTIVE" : (!isOpen && gamePhase >= 2 && gamePhase < 7 ? "GAME STARTED - BETTING CLOSED" : "MARKET LOCKED")}
           </div>
         </div>
         <div className="p-8 bg-black/40 flex flex-col items-center md:items-start transition-colors hover:bg-black/60">
@@ -546,7 +546,9 @@ export function PredictionMarket({
                 <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
                    <div className="border border-red-500/30 bg-black/80 px-4 py-2 flex items-center gap-3 rotate-[-2deg] shadow-2xl shadow-red-500/20">
                       <div className="w-2 h-2 bg-red-500 rounded-sm" />
-                      <span className="text-red-500 font-black uppercase tracking-widest text-sm">TRADING LOCKED</span>
+                      <span className="text-red-500 font-black uppercase tracking-widest text-sm">
+                        {!isOpen && gamePhase >= 2 ? "GAME IN PROGRESS" : "TRADING LOCKED"}
+                      </span>
                    </div>
                 </div>
               )}

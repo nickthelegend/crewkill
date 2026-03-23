@@ -206,6 +206,38 @@ export class ContractService {
     }
   }
 
+  async closeMarket(gameId: string, marketId: string): Promise<boolean> {
+    if (!this.operatorKeypair) return false;
+    try {
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::close_market`,
+        arguments: [
+          tx.object(marketId),
+          tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
+        ],
+      });
+      await this.fetchGasPayment(tx);
+
+      const result = await this.client.signAndExecuteTransaction({ 
+        signer: this.operatorKeypair, 
+        transaction: tx,
+        options: { showEffects: true }
+      });
+      
+      if (result.effects?.status.status !== 'success') {
+        logger.error(`Prediction market closure TX failed: ${result.effects?.status.error || "Unknown error"}`);
+        return false;
+      }
+      
+      logger.info(`Prediction market closed for game ${gameId}: ${result.digest}`);
+      return true;
+    } catch (error) {
+      logger.error(`Failed to close market for game ${gameId}:`, error);
+      return false;
+    }
+  }
+
   async resolveMarket(gameId: string, marketId: string, impostors: string[]): Promise<boolean> {
     if (!this.operatorKeypair) return false;
     try {

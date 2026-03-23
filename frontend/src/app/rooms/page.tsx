@@ -97,10 +97,14 @@ function RoomCard({ game, index }: { game: any; index: number }) {
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
 
   const getStatusColor = () => {
-    if (game.status === "DONE" || game.status === "ENDED") return "bg-white/20";
-    if (isStarting) return "bg-cyan-500";
-    return "bg-red-500";
+    if (game.status === "DONE" || game.status === "ENDED") return "bg-white/20 text-white/40";
+    if (game.status === "ACTIVE") return "bg-emerald-500 text-emerald-400";
+    if (isStarting) return "bg-cyan-500 text-cyan-400";
+    return "bg-red-500 text-red-500";
   }
+
+  const createdAt = game.createdAt ? new Date(game.createdAt) : null;
+  const startedAt = game.startedAt ? new Date(game.startedAt) : null;
 
   return (
     <motion.div
@@ -119,8 +123,10 @@ function RoomCard({ game, index }: { game: any; index: number }) {
             {game.roomId.replace("scheduled_", "GAME-").replace("room_", "ROOM-")}
           </h3>
           <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-white/5 border border-white/5">
-            <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
-            <span className="text-[9px] text-white font-black uppercase tracking-widest">{game.status}</span>
+            <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor().split(' ')[0]}`} />
+            <span className={`text-[9px] font-black uppercase tracking-widest ${getStatusColor().split(' ')[1]}`}>
+              {game.status === "ACTIVE" ? "MISSION ACTIVE" : game.status === "CREATED" ? "INITIALIZING" : game.status}
+            </span>
           </div>
         </div>
 
@@ -135,8 +141,16 @@ function RoomCard({ game, index }: { game: any; index: number }) {
 
       <div className="space-y-4 mb-10 bg-black/20 p-5 border border-white/5">
         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
-          <span className="text-white/20 font-mono text-[9px]">STARTS:</span>
-          <span className="text-white">{startAt ? formatDistanceToNow(startAt, { addSuffix: true }) : "UNKNOWN"}</span>
+          <span className="text-white/20 font-mono text-[9px]">INITIALIZED:</span>
+          <span className="text-white/60">{createdAt ? formatDistanceToNow(createdAt, { addSuffix: true }) : "N/A"}</span>
+        </div>
+        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+          <span className="text-white/20 font-mono text-[9px]">{game.status === "ACTIVE" ? "MISSION START:" : "EST. START:"}</span>
+          <span className={game.status === "ACTIVE" ? "text-emerald-400" : "text-white"}>
+            {game.status === "ACTIVE" && startedAt 
+              ? formatDistanceToNow(startedAt, { addSuffix: true }) 
+              : startAt ? formatDistanceToNow(startAt, { addSuffix: true }) : "ASAP"}
+          </span>
         </div>
         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
           <span className="text-white/20 font-mono text-[9px]">BETTING:</span>

@@ -893,10 +893,26 @@ export class WebSocketRelayServer {
     this.extendedState.set(roomId, extended);
     this.gameStateManager.getOrCreateGame(roomId);
 
-    // Register game in database with 3-minute betting window by default
+    // Register game in database with 7-minute betting window by default
     const now = Date.now();
     const bettingDuration = 420000; // 7 minutes
-    databaseService.createScheduledGame(roomId, now, now + bettingDuration);
+    try {
+      await databaseService.createScheduledGame(roomId, now, now + bettingDuration);
+      logger.info(`Room ${roomId} registered in database.`);
+      
+      // If we pre-filled the room with agents, create the market NOW
+      if (aiAgentCount && aiAgentCount >= maxPlayers - 1) {
+         logger.info(`Room is pre-filled. Deploying market for ${roomId} immediately...`);
+         const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
+         if (marketId) {
+            await databaseService.updateGameMarketId(roomId, marketId);
+            room.marketId = marketId;
+            logger.info(`Market ${marketId} ready for room ${roomId}`);
+         }
+      }
+    } catch (e) {
+      logger.error(`Failed to register room ${roomId} in database:`, e);
+    }
 
     logger.info(
       `Room ${roomId} created on-chain by ${creatorAddress || "anonymous"} [TX: ${creationDigest || "N/A"}]`,
@@ -2434,6 +2450,13 @@ export class WebSocketRelayServer {
     });
 
     logger.info(`Discussion phase started in room ${roomId}`);
+
+    if (room.marketId) {
+       logger.info(`Closing prediction market for room ${roomId}...`);
+       contractService.closeMarket(roomId, room.marketId).catch((err: any) => {
+          logger.error(`Failed to close market for ${roomId}:`, err);
+       });
+    }
 
     // Set timer to transition to voting
     extended.phaseTimer = setTimeout(() => {
