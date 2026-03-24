@@ -490,15 +490,21 @@ export class ServerAgent {
         break;
     }
 
-    // Schedule another action after a delay (continuous play during action phase)
+    // Schedule another action after a shorter delay for high intensity
     if (this.phase === 2 && this.isAlive) {
-      let delay = randomDelay() + 2000;
-      if (action.type === ActionType.DoTask || action.type === ActionType.FakeTask) {
-        delay = 15000 + randomDelay();
+      let delay = randomDelay(); // Reduced base delay
+      
+      if (action.type === ActionType.DoTask) {
+        delay = 25000 + randomDelay(); // Real tasks take much longer now
+      } else if (action.type === ActionType.FakeTask) {
+        // Impostors fake tasks much faster so they can move and kill again
+        delay = (this.role === "impostor" ? 2000 : 12000) + randomDelay();
       }
       
       const timer = setTimeout(() => {
-        this.executeAction();
+        if (this.isAlive && this.phase === 2) {
+          this.scheduleAction();
+        }
       }, delay);
       this.pendingTimers.push(timer);
     }

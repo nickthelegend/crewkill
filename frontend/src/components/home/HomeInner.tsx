@@ -119,11 +119,16 @@ export function HomeInner({
 
   // Watch for phase changes from WebSocket
   useEffect(() => {
-    if (phase === GamePhase.ActionCommit && (state.view === "lobby" || state.view === "voting")) {
-      dispatch({ type: "SET_VIEW", view: "game" });
-    } else if ((phase === GamePhase.Discussion || phase === GamePhase.Voting) && state.view === "game") {
+    // Show voting/meeting screen if in meeting phases
+    const isMeetingPhase = phase === GamePhase.Discussion || 
+                           phase === GamePhase.Voting || 
+                           phase === GamePhase.VoteResult;
+    
+    if (isMeetingPhase && (state.view === "game" || state.view === "lobby")) {
       dispatch({ type: "SET_VIEW", view: "voting" });
-    } else if (phase === GamePhase.Ended && state.view === "game") {
+    } else if (phase === GamePhase.ActionCommit && (state.view === "lobby" || state.view === "voting")) {
+      dispatch({ type: "SET_VIEW", view: "game" });
+    } else if (phase === GamePhase.Ended) {
       dispatch({ type: "SHOW_GAME_END" });
     }
   }, [phase, state.view, dispatch]);

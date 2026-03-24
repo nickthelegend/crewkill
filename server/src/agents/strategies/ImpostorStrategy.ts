@@ -7,7 +7,7 @@ import { BaseStrategy, ActionType } from "./BaseStrategy.js";
 import type { AgentAction, AgentStrategyContext, ImpostorStyle } from "../types.js";
 import type { GameMemory } from "./GameMemory.js";
 
-const KILL_COOLDOWN_ROUNDS = 1;
+const KILL_COOLDOWN_ROUNDS = 0; // Allow multiple kills per phase round for high lethality
 const MIN_KILL_ROUND = 0; // Kills allowed early
 
 export class ImpostorStrategy extends BaseStrategy {
@@ -40,8 +40,8 @@ export class ImpostorStrategy extends BaseStrategy {
     if (playersHere.length === 0) return null;
 
     const allHere = this.getPlayersAtLocation(alivePlayers, myLocation);
-    // Relaxed for more action: Kill if there's at most 1 witness (3 people total)
-    if (allHere.length <= 3) {
+    // Relaxed for maximum action: Kill if there's at most 2 witnesses (4 people total)
+    if (allHere.length <= 4) {
       return playersHere[0];
     }
 
@@ -126,14 +126,11 @@ export class ImpostorStrategy extends BaseStrategy {
       return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
     }
 
-    // Kill when alone with target
+    // Kill target if available
     const target = this.findKillTarget(context);
     if (target && this.canKill(context)) {
-      const allHere = this.getPlayersAtLocation(alivePlayers, myLocation);
-      if (allHere.length <= 2) {
-        this.lastKillRound = context.round;
-        return { type: ActionType.Kill, target: target.address };
-      }
+      this.lastKillRound = context.round;
+      return { type: ActionType.Kill, target: target.address };
     }
 
     // Fake tasks to blend in
@@ -156,8 +153,12 @@ export class ImpostorStrategy extends BaseStrategy {
     const { myLocation, round } = context;
 
     if (bodyHere) {
-      // Self-report to deflect
-      return { type: ActionType.Report };
+      // Self-report only 30% of the time to allow for organic discovery
+      if (Math.random() < 0.3) {
+        return { type: ActionType.Report };
+      }
+      const adjacent = this.getAdjacentLocations(myLocation);
+      return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
     }
 
     // Early game: move around and fake tasks to avoid suspicion
@@ -248,7 +249,12 @@ export class ImpostorStrategy extends BaseStrategy {
 
     // Mid-late game: betray
     if (bodyHere) {
-      return { type: ActionType.Report };
+      // Self-report only 40% of the time
+      if (Math.random() < 0.4) {
+        return { type: ActionType.Report };
+      }
+      const adjacent = this.getAdjacentLocations(myLocation);
+      return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
     }
 
     const target = this.findKillTarget(context);
@@ -275,14 +281,19 @@ export class ImpostorStrategy extends BaseStrategy {
     const { myLocation, alivePlayers, myAddress, round } = context;
 
     // Always self-report when finding body
+    // Self-report occasionally
     if (bodyHere) {
-      const playersHere = alivePlayers.filter(
-        (p) => p.location === myLocation && p.address !== myAddress,
-      );
-      if (playersHere.length > 0) {
-        this.framesTarget = this.randomChoice(playersHere).address;
+      if (Math.random() < 0.3) {
+        const playersHere = alivePlayers.filter(
+          (p) => p.location === myLocation && p.address !== myAddress,
+        );
+        if (playersHere.length > 0) {
+          this.framesTarget = this.randomChoice(playersHere).address;
+        }
+        return { type: ActionType.Report };
       }
-      return { type: ActionType.Report };
+      const adjacent = this.getAdjacentLocations(myLocation);
+      return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
     }
 
     // Early game: blend in by fake-tasking and positioning
@@ -300,11 +311,12 @@ export class ImpostorStrategy extends BaseStrategy {
       const playersHere = alivePlayers.filter(
         (p) => p.location === myLocation && p.address !== myAddress,
       );
+      // If we kill in a group, we frame one of the survivors
       if (playersHere.length >= 2) {
         this.framesTarget = playersHere.find((p) => p.address !== target.address)?.address || null;
-        this.lastKillRound = context.round;
-        return { type: ActionType.Kill, target: target.address };
       }
+      this.lastKillRound = context.round;
+      return { type: ActionType.Kill, target: target.address };
     }
 
     if (Math.random() > 0.5) {

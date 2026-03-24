@@ -618,7 +618,7 @@ export class WebSocketRelayServer {
       role: Role.None,
       isAlive: true,
       tasksCompleted: 0,
-      totalTasks: 10,
+      totalTasks: 30,
       hasVoted: false,
     };
 
@@ -702,7 +702,7 @@ export class WebSocketRelayServer {
           role: Role.None, // Default role
           isAlive: true,
           tasksCompleted: 0,
-          totalTasks: 10, // Increased from 5 for longer games
+          totalTasks: 30, // Dramatically increased for harder games
           hasVoted: false,
         };
 
@@ -1240,7 +1240,7 @@ export class WebSocketRelayServer {
         isAlive: true,
         role: isImp ? Role.Impostor : Role.Crewmate,
         tasksCompleted: 0,
-        totalTasks: isImp ? 0 : 10,
+        totalTasks: isImp ? 0 : 30,
         hasVoted: false,
         isAIAgent: player.isAIAgent || false,
         agentPersona: player.agentPersona,
@@ -3154,7 +3154,7 @@ export class WebSocketRelayServer {
       role: Role.None, // Default role
       isAlive: true,
       tasksCompleted: 0,
-      totalTasks: 5, // AI agents have fewer tasks
+      totalTasks: 30, // Crewmates need many tasks to win now
       hasVoted: false,
       isAIAgent: true,
       agentPersona: {
