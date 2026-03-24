@@ -23,42 +23,49 @@ function MarketContent() {
 
   if (allGames === undefined) {
     return (
-       <div className="min-h-screen flex items-center justify-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">
-          Scanning Active Sectors...
+       <div className="min-h-screen flex items-center justify-center font-mono text-[11px] tracking-[0.6em] text-white/20 uppercase animate-pulse">
+          SCANNING_MARKET_SECTORS...
        </div>
     );
   }
 
   return (
-    <div className="py-20 md:py-32 max-w-7xl mx-auto px-6 relative z-10">
-      <header className="mb-20">
+    <div className="py-20 md:py-32 max-w-[1800px] mx-auto px-6 md:px-12 relative z-10">
+      <header className="mb-24">
         <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-0.5 w-12 bg-red-500" />
-            <p className="text-white/40 font-mono tracking-[0.3em] text-[10px] uppercase">OneChain Prediction Network</p>
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-1 w-16 bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)]" />
+            <p className="text-white/30 font-space tracking-[0.4em] text-[11px] uppercase">OneChain Prediction Network</p>
           </div>
-          <h1 className="text-7xl md:text-8xl font-black tracking-tighter uppercase leading-none text-white">
+          <h1 className="text-7xl md:text-9xl font-black tracking-tighter uppercase leading-none text-white select-none font-space">
             MARKET <span className="text-red-500">FLOOR</span>
           </h1>
-          <p className="text-white/20 font-mono tracking-[0.4em] text-[10px] mt-8 uppercase whitespace-nowrap overflow-hidden">
-            Select an active match to place your confidence bets • Real-time odds updated via OneChain
-          </p>
+          <div className="flex items-center gap-6 mt-10">
+            <p className="text-white/20 font-space tracking-[0.5em] text-[10px] uppercase whitespace-nowrap overflow-hidden py-2 border-y border-white/5">
+              Select an active match to place your confidence bets • Real-time odds updated via OneChain
+            </p>
+          </div>
         </motion.div>
       </header>
 
       {/* Live Categories */}
-      <section className="mb-24">
-        <div className="flex items-center gap-4 mb-10">
-           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-           <h2 className="text-xl font-black text-white uppercase tracking-tighter">Live & Upcoming Matches</h2>
+      <section className="mb-32">
+        <div className="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
+           <div className="flex items-center gap-4">
+              <div className="w-2.5 h-2.5 rounded-none bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Live & Upcoming Matches</h2>
+           </div>
+           <div className="hidden md:block text-[10px] font-mono text-white/20 uppercase tracking-[0.3em]">
+              ACTIVE_HEDGING_POOLS: {activeGames.length}
+           </div>
         </div>
 
         {activeGames.length === 0 ? (
-          <div className="p-12 border border-white/5 bg-white/[0.02] text-center rounded-none">
-             <p className="text-white/20 font-mono text-[10px] uppercase tracking-[0.3em]">No active matches found. Create one from the terminal.</p>
+          <div className="p-20 border border-white/5 bg-white/[0.01] text-center rounded-none backdrop-blur-sm">
+             <p className="text-white/20 font-mono text-[11px] uppercase tracking-[0.4em]">No active match signals detected in this sector.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {activeGames.map((game) => (
               <GameMarketCard key={game._id} game={game} onClick={() => router.push(`/game/${game.roomId}/bet`)} />
             ))}
@@ -68,13 +75,13 @@ function MarketContent() {
 
       {/* Past Markets */}
       <section>
-        <div className="flex items-center gap-4 mb-10">
-           <div className="w-2 h-2 rounded-full bg-white/20" />
-           <h2 className="text-xl font-black text-white/40 uppercase tracking-tighter">Resolved Markets</h2>
+        <div className="flex items-center gap-4 mb-12 border-b border-white/5 pb-6">
+           <div className="w-2.5 h-2.5 rounded-none bg-white/20" />
+           <h2 className="text-2xl font-black text-white/30 uppercase tracking-tighter">Resolved Market Data</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-100">
-           {pastGames.slice(0, 6).map((game) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-40 grayscale-0 transition-all">
+           {pastGames.slice(0, 8).map((game) => (
              <GameMarketCard key={game._id} game={game} isPast onClick={() => router.push(`/game/${game.roomId}/bet`)} />
            ))}
         </div>
@@ -86,78 +93,87 @@ function MarketContent() {
 function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick: () => void, isPast?: boolean }) {
   const players = game.players || [];
   const pot = parseFloat(game.totalPot || "0") / 1e9;
+  const bettingEndsAt = game.bettingEndsAt ? new Date(game.bettingEndsAt) : null;
+  const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
 
   return (
     <motion.div 
-      whileHover={{ y: -5 }}
+      layout
+      whileHover={!isPast ? { y: -4, backgroundColor: "rgba(255,255,255,0.08)" } : {}}
       onClick={onClick}
-      className={`group cursor-pointer border transition-all p-10 flex flex-col justify-between min-h-[350px] relative overflow-hidden ${
-        isPast ? "bg-white/[0.02] border-white/5 opacity-60" : "bg-white/[0.04] border-white/10 hover:border-red-500/50 hover:bg-white/[0.08]"
+      className={`group cursor-pointer border transition-all duration-300 p-0 flex flex-col min-h-[420px] relative overflow-hidden ${
+        isPast ? "bg-white/[0.01] border-white/5" : "bg-white/[0.04] border-white/10 hover:border-red-500/30"
       }`}
     >
-      {/* Visual background accent */}
-      {!isPast && (
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/10 blur-[60px] rounded-full group-hover:bg-red-500/20 transition-all duration-700" />
-      )}
+      {/* Top Accent Line */}
+      <div className={`h-1 w-full ${isPast ? 'bg-white/10' : isBettingOpen ? 'bg-emerald-600' : 'bg-red-600'} opacity-50 group-hover:opacity-100 transition-opacity duration-500`} />
 
-      <div>
+      <div className="p-8 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-10">
-          <div className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] bg-white/5 px-4 py-1.5 border border-white/10">
-            ROOM#{(game.roomId || "").slice(-8).toUpperCase()}
+          <div className="flex flex-col gap-1">
+             <span className="text-[9px] font-space text-white/30 uppercase tracking-[0.2em]">ROOM_SIG</span>
+             <div className="text-[11px] font-black text-white uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/5 font-space">
+                {(game.roomId || "").slice(-8).toUpperCase()}
+             </div>
           </div>
           <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 border rounded-none flex items-center gap-2 ${
             game.status === "ACTIVE" || game.phase === "playing" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
             game.status === "CREATED" || game.phase === "lobby" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
             "bg-white/5 text-white/20 border-white/10"
           }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
+            <span className={`w-1 h-1 rounded-none ${
                (game.status === "ACTIVE" || game.phase === "playing") ? "bg-emerald-400 animate-pulse" : 
                (game.status === "CREATED" || game.phase === "lobby") ? "bg-cyan-400 animate-pulse" : "bg-white/20"
             }`} />
-            {game.phase === "playing" ? "GAME_ACTIVE" : game.status}
+            {game.phase === "playing" ? "MISSION_ENGAGED" : game.status}
           </div>
         </div>
 
-        <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-3 group-hover:text-red-500 transition-colors">
-           Confidence <span className="text-red-500">Market</span>
-        </h3>
-        <p className="text-white/40 text-[10px] uppercase font-black tracking-widest opacity-60">Settling on OneChain Network</p>
-      </div>
-
-      <div className="space-y-8">
-        <div className="flex justify-between items-end border-t border-white/10 pt-10">
-           <div className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1">Participants</div>
-                <div className="flex -space-x-3">
-                   {players.slice(0, 6).map((p: any, i: number) => (
-                     <div key={i} className={`w-9 h-9 border border-white/10 bg-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-1 relative z-[${10-i}]`}>
-                        <AmongUsSprite colorId={p.colorId ?? (i % 12)} size={22} isGhost={!p.isAlive} />
-                        {!p.isAlive && <div className="absolute inset-0 bg-red-600/30 backdrop-grayscale" />}
-                     </div>
-                   ))}
-                   {players.length > 6 && (
-                     <div className="w-9 h-9 bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-white font-black z-0">
-                        +{players.length - 6}
-                     </div>
-                   )}
-                </div>
-              </div>
-           </div>
-
-           <div className="text-right">
-              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest mb-1 font-mono">Total Stake</div>
-              <div className="text-3xl font-black text-white tabular-nums tracking-tighter">
-                {pot.toFixed(2)} <span className="text-red-500 text-sm not-ml-0.5">OCT</span>
-              </div>
-           </div>
+        <div className="mb-auto">
+          <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4 group-hover:text-red-500 transition-colors duration-500 font-space">
+             Confidence <br /><span className="text-red-500">Market</span>
+          </h3>
+          <div className="flex items-center gap-3">
+             <div className="h-[1px] w-8 bg-white/10" />
+             <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">OneChain_Protocol_V1</p>
+          </div>
         </div>
-        
-        <button className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.4em] transition-all border shadow-lg ${
-          isPast ? "border-white/10 text-white/20 cursor-default" : "bg-white text-black border-white group-hover:bg-red-500 group-hover:text-white group-hover:border-red-500 shadow-white/5"
-        }`}>
-          {isPast ? "MARKET CLOSED" : "JOIN FLOOR"}
-        </button>
+
+        <div className="mt-12 space-y-8">
+          <div className="flex justify-between items-end border-t border-white/5 pt-8">
+             <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <div className="text-[8px] text-white/20 uppercase font-black tracking-widest font-space">Active Operatives</div>
+                  <div className="flex -space-x-3">
+                     {players.slice(0, 6).map((p: any, i: number) => (
+                       <div key={i} className={`w-10 h-10 border border-white/5 bg-black/60 flex items-center justify-center overflow-hidden transition-all group-hover:-translate-y-1 relative z-[${10-i}] backdrop-blur-md`}>
+                          <AmongUsSprite colorId={p.colorId ?? (i % 12)} size={24} isGhost={!p.isAlive} />
+                          {!p.isAlive && <div className="absolute inset-0 bg-red-900/40 backdrop-grayscale" />}
+                       </div>
+                     ))}
+                     {players.length > 6 && (
+                       <div className="w-10 h-10 bg-white/5 border border-white/5 flex items-center justify-center text-[10px] text-white/40 font-black z-0">
+                          +{players.length - 6}
+                       </div>
+                     )}
+                  </div>
+                </div>
+             </div>
+
+             <div className="text-right">
+                <div className="text-[8px] text-white/20 uppercase font-black tracking-widest mb-2 font-space">Current_Volume</div>
+                <div className="text-3xl font-black text-white tabular-nums tracking-tighter leading-none font-space">
+                  {pot.toFixed(2)} <span className="text-red-500 text-[10px] align-top ml-1 font-space">OCT</span>
+                </div>
+             </div>
+          </div>
+          
+          <button className={`w-full py-5 text-[10px] font-black uppercase tracking-[0.5em] transition-all duration-500 border rounded-none ${
+            isPast ? "border-white/5 text-white/10 cursor-default" : "bg-white text-black border-white group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
+          }`}>
+            {isPast ? "SECTOR_CLOSED" : "INITIATE_POSITION"}
+          </button>
+        </div>
       </div>
     </motion.div>
   );

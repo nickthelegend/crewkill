@@ -64,7 +64,7 @@ export default function GameBettingPage() {
 
   return (
     <SpaceBackground>
-      <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 relative z-10 w-full font-sans">
+      <div className="min-h-screen pt-24 pb-12 px-2 md:px-4 relative z-10 w-full font-sans">
         <div className="max-w-[1500px] mx-auto">
           {/* Dashboard Header */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12">
@@ -100,7 +100,7 @@ export default function GameBettingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-1 bg-white/5 border border-white/10 backdrop-blur-[100px] rounded-none">
+          <div className="grid grid-cols-1 lg:grid-cols-12 bg-white/5 border border-white/10 backdrop-blur-[100px] rounded-none overflow-hidden shadow-2xl">
              {/* Left Panel: The Market (8/12) */}
               <div className="lg:col-span-8 p-8 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto max-h-[85vh] custom-scrollbar">
                   <PredictionMarket 
@@ -165,7 +165,7 @@ export default function GameBettingPage() {
                 </div>
 
                 {/* Fixed Footer Actions */}
-                <div className="p-8 border-t border-white/5 bg-black/60">
+                <div className="p-8 border-t border-white/10 bg-black/60">
                    <div className="p-6 border border-emerald-500/20 bg-emerald-500/5 mb-6">
                       <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
                         <span className="w-1 h-1 bg-emerald-400 animate-pulse" />

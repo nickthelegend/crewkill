@@ -68,7 +68,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
               {/* Logo Glow */}
               <div className="absolute inset-0 bg-cyan-400/20 blur-[100px] rounded-full scale-150 animate-pulse" />
               
-              <div className="flex items-center justify-center gap-8 relative">
+              <div className="flex items-center justify-center gap-0 relative">
                  <motion.div
                   animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
                   transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -133,7 +133,7 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                  </button>
 
                  <Link
-                   href="/bet"
+                   href="/market"
                    className="group relative px-12 py-6 rounded-[2rem] bg-transparent border-2 border-red-500 text-red-500 text-xl md:text-2xl font-black uppercase tracking-tighter transition-all hover:scale-110 active:scale-95 hover:bg-red-500 hover:text-white"
                  >
                      Prediction Market
