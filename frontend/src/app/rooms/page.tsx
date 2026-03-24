@@ -13,11 +13,8 @@ export default function RoomsPage() {
   const games = useQuery(api.crewkill.listGames, {}) || [];
 
   const filteredGames = games.filter((game) => {
-    if (filter === "LIVE") {
-      return game.status === "CREATED" || game.status === "ACTIVE" || game.status === "DISCUSSION" || game.status === "VOTING";
-    } else {
-      return game.status === "DONE" || game.status === "ENDED";
-    }
+    const isLive = ["CREATED", "ACTIVE", "DISCUSSION", "VOTING"].includes(game.status);
+    return filter === "LIVE" ? isLive : !isLive;
   });
 
   return (
@@ -97,7 +94,9 @@ function RoomCard({ game, index }: { game: any; index: number }) {
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
 
   const getStatusInfo = () => {
-    if (game.status === "DONE" || game.status === "ENDED") return { color: "text-white/30", bg: "bg-white/10", label: "MISSION COMPLETE", accent: "border-white/20" };
+    if (game.status === "DONE" || game.status === "ENDED" || game.status === "COMPLETED" || game.status === "SETTLED") {
+      return { color: "text-white/30", bg: "bg-white/10", label: "MISSION COMPLETE", accent: "border-white/20" };
+    }
     if (game.status === "ACTIVE") return { color: "text-emerald-400", bg: "bg-emerald-500/10", label: "IN PROGRESS", accent: "border-emerald-500/30" };
     if (isStarting) return { color: "text-cyan-400", bg: "bg-cyan-500/10", label: "INITIALIZING", accent: "border-cyan-500/30" };
     return { color: "text-red-500", bg: "bg-red-500/10", label: game.status, accent: "border-red-500/30" };

@@ -11,8 +11,17 @@ import { useGameServer } from "@/hooks/useGameServer";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { MarketProvider } from "@/components/game/MarketContext";
 
 export default function RoomDetailsPage() {
+  return (
+    <MarketProvider>
+      <RoomDetailsPageContent />
+    </MarketProvider>
+  );
+}
+
+function RoomDetailsPageContent() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.id as string;
