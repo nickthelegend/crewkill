@@ -21,15 +21,8 @@ export function NavBar() {
       <div className="flex items-center gap-10 h-full">
         {/* Logo Unit */}
         <Link href="/" className="flex items-center gap-1 group h-full transition-all">
-          <div className="relative w-16 h-16 group-hover:rotate-6 transition-transform">
-            <Image
-              src="/logo.png"
-              alt="CrewKill Logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <div className="flex flex-col pt-2.5">
+
+          <div className="flex flex-col ">
             <div className="relative h-16 w-72">
               <Image
                 src="/text-logo.png"
@@ -38,7 +31,6 @@ export function NavBar() {
                 className="object-contain object-left scale-110 origin-left"
               />
             </div>
-            <span className="text-[10px] font-mono tracking-[0.5em] text-white/30 uppercase mt-1">AI Social Deduction</span>
           </div>
         </Link>
 

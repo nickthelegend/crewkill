@@ -36,14 +36,14 @@ export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase
 
   return (
     <div className="bg-[#0f1721] border border-red-500/50 backdrop-blur-3xl overflow-hidden flex flex-col h-full shadow-[0_0_50px_rgba(239,68,68,0.1)]">
-      <div className="bg-red-600/10 border-b border-white/5 p-6 md:p-8">
+      <div className="bg-red-600/10 border-b border-white/5 p-4 md:p-6">
         <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] flex items-center gap-3 font-space">
            <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
            Place Hedging Order
         </h3>
       </div>
       
-      <div className="p-8 flex-1 space-y-8">
+      <div className="p-6 flex-1 space-y-4">
         <div className="space-y-4">
            <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-black border border-white/10 flex items-center justify-center">
@@ -79,7 +79,7 @@ export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase
                  type="number"
                  value={betAmount}
                  onChange={(e) => setBetAmount(e.target.value)}
-                 className="w-full bg-black/40 border border-white/10 focus:border-red-500/50 py-6 px-6 text-3xl font-black text-white outline-none transition-all tabular-nums font-space"
+                 className="w-full bg-black/40 border border-white/10 focus:border-red-500/50 py-4 px-6 text-3xl font-black text-white outline-none transition-all tabular-nums font-space"
                  placeholder="0.00"
               />
               <div className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-black text-red-500 font-space">OCT</div>

@@ -106,9 +106,9 @@ export function PredictionMarket({
   const { suspectPools, userBet, convexBets, bettingOpen } = useMarketLogic(gameId, marketObjectId, gamePlayers, gamePhase);
 
   return (
-    <div className={`w-full ${isSidebar ? "max-w-none space-y-4" : "max-w-7xl mx-auto space-y-12"}`}>
+    <div className={`w-full ${isSidebar ? "max-w-none space-y-4" : "max-w-7xl mx-auto space-y-8"}`}>
       <div className="bg-white/[0.03] border border-white/10 p-0 overflow-hidden relative backdrop-blur-3xl">
-        <div className="p-8 md:p-12 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
              <div className="flex items-center gap-3 mb-4">
                <div className="w-2.5 h-2.5 bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse" />
@@ -122,12 +122,12 @@ export function PredictionMarket({
           </div>
         </div>
 
-        <div className="p-8 md:p-12 border-b border-white/5">
+        <div className="p-6 md:p-8 border-b border-white/5">
            <MarketChart players={gamePlayers} bets={convexBets} totalPot={totalPot} />
         </div>
 
         <div className="divide-y divide-white/5 bg-black/20">
-          <div className="grid grid-cols-12 p-6 md:p-8 bg-white/[0.02] border-b border-white/5">
+          <div className="grid grid-cols-12 p-4 md:p-6 bg-white/[0.02] border-b border-white/5">
              <div className="col-span-12 md:col-span-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space mb-4 md:mb-0">Contender_Outcome</div>
              <div className="hidden md:block md:col-span-2 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Confidence_Sync</div>
              <div className="hidden md:block md:col-span-4 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Hedging_Order_Matrix</div>
@@ -143,7 +143,10 @@ export function PredictionMarket({
               <motion.div
                 key={player.address}
                 onClick={() => bettingOpen && setSelectedSuspect(player.address)}
-                className={`grid grid-cols-12 items-center p-6 md:p-8 transition-all group cursor-pointer ${isSelected ? "bg-red-500/[0.05]" : "hover:bg-white/[0.03]"}`}
+                className={`grid grid-cols-12 items-center p-4 md:p-6 transition-all group cursor-pointer ${
+                  !bettingOpen ? "opacity-30 grayscale cursor-not-allowed" : 
+                  isSelected ? "bg-red-500/[0.05]" : "hover:bg-white/[0.03]"
+                }`}
               >
                 <div className="col-span-12 md:col-span-6 flex items-center gap-6 mb-4 md:mb-0">
                    <div className={`w-14 h-14 border-l-2 ${colors[idx % colors.length]} bg-black flex items-center justify-center relative`}>
@@ -165,19 +168,13 @@ export function PredictionMarket({
                    </div>
                 </div>
 
-                <div className="col-span-6 md:col-span-4 flex justify-end gap-2">
+                <div className="col-span-6 md:col-span-4 flex justify-end">
                    <button 
-                      className={`flex-1 md:flex-none md:w-32 py-3 font-black text-[11px] uppercase tracking-widest transition-all duration-300 border-2 font-space ${
-                         isSelected ? "bg-cyan-500 text-black border-cyan-500" : "bg-white/[0.03] text-cyan-400 border-cyan-400/20 group-hover:border-cyan-400"
+                      className={`w-full md:w-48 py-3 font-black text-[11px] uppercase tracking-widest transition-all duration-300 border-2 font-space pointer-events-none ${
+                         isSelected ? "bg-cyan-500 text-black border-cyan-500" : "bg-white/[0.03] text-cyan-400 border-cyan-400/20 group-hover:border-cyan-400 group-hover:bg-cyan-400/10"
                       }`}
                    >
-                      YES {prob.toFixed(0)}¢
-                   </button>
-                   <button 
-                      disabled
-                      className="hidden md:block md:w-32 py-3 font-black text-[11px] uppercase tracking-widest bg-white/[0.03] text-red-500/10 border-2 border-white/5 cursor-not-allowed font-space"
-                   >
-                      NO { (100-prob).toFixed(0) }¢
+                      SUBMIT YES {prob.toFixed(0)}¢
                    </button>
                 </div>
               </motion.div>
@@ -187,16 +184,16 @@ export function PredictionMarket({
       </div>
 
       {isResolved && userBet && (
-        <div className="bg-white/[0.02] backdrop-blur-3xl border-y border-white/5 py-24 text-center space-y-10">
+        <div className="bg-white/[0.02] backdrop-blur-3xl border-y border-white/5 py-12 text-center space-y-6">
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
-            className={`w-32 h-32 border flex items-center justify-center mx-auto text-5xl relative ${userBet.correct ? "border-emerald-500/50 bg-emerald-500/10" : "border-red-500/50 bg-red-500/10"}`}
+            className={`w-24 h-24 border flex items-center justify-center mx-auto text-4xl relative ${userBet.correct ? "border-emerald-500/50 bg-emerald-500/10" : "border-red-500/50 bg-red-500/10"}`}
           >
             {userBet.correct ? "🏆" : "💀"}
           </motion.div>
           <div>
-            <h3 className="text-5xl font-black text-white uppercase tracking-tighter mb-4 font-space">
+            <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4 font-space">
               {userBet.correct ? "Prediction Complete" : "Prediction Failed"}
             </h3>
             <p className="text-white/20 text-[10px] font-mono tracking-[0.4em] uppercase max-w-md mx-auto leading-relaxed">

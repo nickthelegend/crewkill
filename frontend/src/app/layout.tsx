@@ -6,6 +6,9 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'CrewKill — AI Social Deduction on OneChain',
   description: 'Watch autonomous AI agents play Among Us with real OCT stakes',
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 export default function RootLayout({

@@ -79,12 +79,12 @@ function GameBettingContent() {
 
   return (
     <SpaceBackground>
-      <div className="min-h-screen pt-24 pb-12 px-6 md:px-12 relative z-10 w-full font-sans">
+      <div className="min-h-screen pt-12 pb-8 px-6 md:px-12 relative z-10 w-full font-sans">
         <div className="max-w-[1800px] mx-auto">
           {/* Dashboard Header */}
-          <header className="mb-16">
+          <header className="mb-10">
             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-              <div className="flex items-center gap-4 mb-8 text-[10px] font-black uppercase tracking-[0.4em] text-white/30">
+              <div className="flex items-center gap-4 mb-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30">
                 <Link href="/market" className="hover:text-red-500 transition-colors">Prediction Markets</Link>
                 <span>&gt;</span>
                 <span className="text-white">MISSION_#{displayId.slice(-8).toUpperCase()}</span>
@@ -116,9 +116,9 @@ function GameBettingContent() {
             </motion.div>
           </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
              {/* Left Panel: The Market & Outcomes (8/12) */}
-              <div className="lg:col-span-8 space-y-12">
+              <div className="lg:col-span-8 space-y-8">
                   <PredictionMarket 
                     gameId={dbGame.roomId}
                     marketObjectId={dbGame.marketId || ""}
@@ -140,16 +140,16 @@ function GameBettingContent() {
                 />
                 
                 <section className="bg-white/[0.03] border border-white/10 backdrop-blur-3xl overflow-hidden p-0 h-fit">
-                   <div className="bg-red-600/10 border-b border-white/5 p-6 md:p-8">
+                   <div className="bg-red-600/10 border-b border-white/5 p-4 md:p-6">
                       <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] flex items-center gap-3 font-space">
                          <span className="w-1.5 h-1.5 bg-red-500" />
                          Mission Intel
                       </h3>
                    </div>
-                   <div className="p-8 space-y-8">
+                   <div className="p-6 space-y-6">
                       <TaskBar completed={tasksCompleted} total={totalTasks} />
                       
-                      <div className="space-y-6 pt-4 border-t border-white/5">
+                      <div className="space-y-4 pt-4 border-t border-white/5">
                          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest font-space">
                             <span className="text-white/20">Active Operatives</span>
                             <span className="text-white">{players.filter(p => p.isAlive).length} / {players.length}</span>
@@ -163,16 +163,16 @@ function GameBettingContent() {
                          </div>
                       </div>
 
-                      <div className="bg-black/60 border border-white/5 p-6">
+                      <div className="bg-black/60 border border-white/5 p-4">
                          <h4 className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em] mb-4 font-space">Comms Feed</h4>
-                         <GameLogPanel logs={logs} maxHeight="400px" />
+                         <GameLogPanel logs={logs} maxHeight="300px" />
                       </div>
                    </div>
                 </section>
                 
                 <button 
                     onClick={() => router.push(`/game/${actualRoomId}/live`)}
-                    className="w-full h-24 bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-black group transition-all duration-500 flex items-center justify-between px-10 relative overflow-hidden"
+                    className="w-full h-20 bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-black group transition-all duration-500 flex items-center justify-between px-10 relative overflow-hidden"
                 >
                     <div className="relative z-10">
                         <span className="block text-[10px] font-black text-white/20 uppercase tracking-[0.4em] group-hover:text-red-500 transition-colors">Switch_Interface</span>
