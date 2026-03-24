@@ -1190,10 +1190,10 @@ export class WebSocketRelayServer {
     const phaseValue = isInitialBoarding ? 1 : 2;
 
     // Assign impostors randomly
-    const impostorCount = Math.min(
+    const impostorCount = Math.max(1, Math.min(
       room.impostorCount,
-      Math.floor(room.players.length / 3),
-    );
+      room.players.length // Up to all players being impostors for testing, or just 1
+    ));
     const impostorIndices = new Set<number>();
     while (impostorIndices.size < impostorCount) {
       impostorIndices.add(Math.floor(Math.random() * room.players.length));

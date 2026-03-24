@@ -54,9 +54,12 @@ export class ServerAgent {
   private taskLocations: number[] = [];
   private activeSabotage: number = 0;
 
-  // Track other players as seen in game state updates
   private players: AgentStrategyContext["alivePlayers"] = [];
   private deadBodies: AgentStrategyContext["deadBodies"] = [];
+  
+  // Track accusations in chat to "join in" or "oppose"
+  private chatAccusations: Map<string, number> = new Map();
+  private topChatSuspect: string | null = null;
 
   // Reference to the send-to-server function
   private sendToServer: ((msg: any) => void) | null = null;
@@ -157,9 +160,37 @@ export class ServerAgent {
         // Lobby locked, game is fully in progress
         break;
 
+      case "server:chat":
+        this.handleChatMessage(msg);
+        break;
+
       default:
         // Ignore other messages (welcome, room_update, etc.)
         break;
+    }
+  }
+
+  private handleChatMessage(msg: any): void {
+    if (!msg.message || !this.isAlive) return;
+
+    const text = msg.message.toLowerCase();
+    
+    // Look for color names in chat to identify suspects
+    for (let i = 0; i < ServerAgent.COLOR_NAMES.length; i++) {
+        const color = ServerAgent.COLOR_NAMES[i].toLowerCase();
+        if (text.includes(color) && (text.includes("sus") || text.includes("imp") || text.includes("vote") || text.includes("it's") || text.includes("was"))) {
+            // Find player address for this color
+            const player = this.players.find(p => p.colorId === i);
+            if (player && player.address !== this.address) {
+                const count = (this.chatAccusations.get(player.address) || 0) + 1;
+                this.chatAccusations.set(player.address, count);
+                
+                // Update top suspect
+                if (!this.topChatSuspect || count > (this.chatAccusations.get(this.topChatSuspect) || 0)) {
+                    this.topChatSuspect = player.address;
+                }
+            }
+        }
     }
   }
 
@@ -177,8 +208,17 @@ export class ServerAgent {
 
   private handlePhaseChanged(msg: any): void {
     const previousPhase = this.phase;
+    const previousRound = this.round; // Store current round before update
     this.phase = msg.phase;
-    this.round = msg.round;
+    this.round = msg.round; // Update round
+
+    // Clear chatAccusations when round increases or when entering phase 4 (discussion).
+    if (this.round > previousRound || this.phase === 4) {
+      this.chatAccusations.clear();
+      this.topChatSuspect = null;
+    }
+
+    this.memory.setCurrentRound(this.round);
     logger.debug(`[${this.name}] Phase changed: ${previousPhase} -> ${this.phase}, role=${this.role}, alive=${this.isAlive}, timers=${this.pendingTimers.length}`);
 
     // Clear any pending action timers when leaving action phase (2)
@@ -333,6 +373,7 @@ export class ServerAgent {
       tasksCompleted: this.tasksCompleted,
       totalTasks: this.totalTasks,
       activeSabotage: this.activeSabotage,
+      topChatSuspect: this.topChatSuspect,
     };
   }
 
@@ -583,11 +624,29 @@ export class ServerAgent {
     return messages.slice(0, Math.min(3, Math.max(1, messages.length)));
   }
 
+  private randomChoice<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
   private generateCrewmateChat(context: AgentStrategyContext): string[] {
     const msgs: string[] = [];
     const myColor = this.getColorName(
       this.players.find((p) => p.address === this.address)?.colorId ?? 0,
     );
+
+    // Join in on chat accusations
+    if (this.topChatSuspect && this.topChatSuspect !== this.address) {
+        const susColor = this.getPlayerColorName(this.topChatSuspect);
+        if (susColor) {
+            const joinMsgs = [
+                `Yeah, I agree about ${susColor}. Super sus.`,
+                `I saw ${susColor} too! Let's vote them.`,
+                `${susColor} has to be the one.`,
+                `Let's just vote ${susColor} and see.`,
+            ];
+            msgs.push(this.randomChoice(joinMsgs));
+        }
+    }
 
     // Report what we observed during the action phase
     const lastKills = this.memory.getRecentKills();
@@ -674,6 +733,29 @@ export class ServerAgent {
       ? crewmates[Math.floor(Math.random() * crewmates.length)]
       : null;
     const targetColor = randomTarget ? this.getColorName(randomTarget.colorId) : null;
+
+    // Deflect if we are the top suspect in chat
+    if (this.topChatSuspect === this.address) {
+        const deflectMsgs = [
+            "It's not me! I was doing tasks!",
+            "Stop blaming me, I have witnesses.",
+            "You guys are making a mistake, I'm crew.",
+            "Why is everyone pointing at me suddenly?",
+        ];
+        msgs.push(this.randomChoice(deflectMsgs));
+    } else if (this.topChatSuspect && !context.impostors?.includes(this.topChatSuspect)) {
+        // Frame the current chat suspect if they are a crewmate
+        const susColor = this.getPlayerColorName(this.topChatSuspect);
+        if (susColor) {
+            const frameMsgs = [
+                `Yeah, ${susColor} is super sus.`,
+                `I saw ${susColor} vent!`,
+                `${susColor} has to go right now.`,
+                `Let's just vote ${susColor} and be done with it.`,
+            ];
+            msgs.push(this.randomChoice(frameMsgs));
+        }
+    }
 
     switch (this.impostorStyle) {
       case "aggressive":

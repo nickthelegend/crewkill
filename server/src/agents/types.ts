@@ -63,4 +63,5 @@ export interface AgentStrategyContext {
   tasksCompleted: number;
   totalTasks: number;
   activeSabotage: number;
+  topChatSuspect?: string | null;
 }

@@ -269,6 +269,14 @@ export class CrewmateStrategy extends BaseStrategy {
   decideVote(context: AgentStrategyContext): string | null {
     const { alivePlayers, myAddress } = context;
 
+    // Vote based on top suspect in chat if we have any doubt
+    if (context.topChatSuspect && context.topChatSuspect !== myAddress) {
+        const topSus = alivePlayers.find(p => p.address === context.topChatSuspect && p.isAlive);
+        if (topSus && Math.random() > 0.3) { // 70% chance to follow chat consensus
+            return context.topChatSuspect;
+        }
+    }
+
     // Vote based on suspicion scores
     const scores = this.memory.getAllSuspicionScores();
     for (const score of scores) {

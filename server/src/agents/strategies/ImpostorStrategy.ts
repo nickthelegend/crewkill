@@ -39,10 +39,9 @@ export class ImpostorStrategy extends BaseStrategy {
 
     if (playersHere.length === 0) return null;
 
-    // Prefer isolated targets (fewer witnesses)
     const allHere = this.getPlayersAtLocation(alivePlayers, myLocation);
-    if (allHere.length <= 2) {
-      // Just us and the target — ideal
+    // Relaxed for more action: Kill if there's at most 1 witness (3 people total)
+    if (allHere.length <= 3) {
       return playersHere[0];
     }
 
@@ -51,7 +50,7 @@ export class ImpostorStrategy extends BaseStrategy {
       return this.randomChoice(playersHere);
     }
 
-    return null; // Too many witnesses for other styles
+    return null; // Still too many witnesses for stealth/manipulator styles
   }
 
   // Actively find a room with exactly 1 crewmate and walk toward it
@@ -327,6 +326,14 @@ export class ImpostorStrategy extends BaseStrategy {
       if (target) {
         return this.framesTarget;
       }
+    }
+
+    // Frame the chat suspect if they are a crewmate
+    if (context.topChatSuspect && context.topChatSuspect !== myAddress && !context.impostors?.includes(context.topChatSuspect)) {
+        const susPlayer = alivePlayers.find(p => p.address === context.topChatSuspect && p.isAlive);
+        if (susPlayer) {
+            return context.topChatSuspect;
+        }
     }
 
     // Vote for most suspicious (who isn't us or fellow impostor)
