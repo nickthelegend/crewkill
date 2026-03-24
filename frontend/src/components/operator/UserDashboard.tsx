@@ -154,13 +154,13 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                 <div className="text-center">
                   <div className="text-[10px] text-cyan-400/70 uppercase mb-1">Total Vault Balance</div>
                   <div className="text-xl font-black text-white">
-                    {totalBalance.toFixed(4)} <span className="text-sm text-cyan-400">OCT</span>
+                    {totalBalance.toFixed(4)} <span className="text-sm text-cyan-400">$CREW</span>
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-cyan-400/70 uppercase mb-1">Total Net Profit</div>
                   <div className={`text-xl font-black ${totalProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                    {totalProfit >= 0 ? "+" : ""}{totalProfit.toFixed(4)} <span className="text-sm opacity-70">OCT</span>
+                    {totalProfit >= 0 ? "+" : ""}{totalProfit.toFixed(4)} <span className="text-sm opacity-70">$CREW</span>
                   </div>
                 </div>
               <div className="text-center">
@@ -213,7 +213,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                       <div className="bg-white/5 p-2 rounded-lg">
                         <div className="text-[9px] text-slate-400 uppercase">Balance</div>
                         <div className="text-sm font-bold text-white">
-                          {balance ? balance.balanceOCT.toFixed(4) : "0.0000"} <span className="text-[10px] text-slate-500">OCT</span>
+                          {balance ? balance.balanceOCT.toFixed(4) : "0.0000"} <span className="text-[10px] text-slate-500">$CREW</span>
                         </div>
                       </div>
                       <div className="bg-white/5 p-2 rounded-lg">
@@ -277,7 +277,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                               <span className="text-red-400">{withdrawState.error}</span>
                             ) : null
                           ) : (
-                            <>WITHDRAW {balance.balanceOCT.toFixed(4)} OCT</>
+                            <>WITHDRAW {balance.balanceOCT.toFixed(4)} $CREW</>
                           )}
                         </button>
                       )}

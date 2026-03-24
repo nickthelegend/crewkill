@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@onelabs/dapp-kit';
 import { Transaction } from '@onelabs/sui/transactions';
-import { suiClient, PACKAGE_ID, OCT_TOKEN_TYPE } from '@/lib/onechain';
+import { suiClient, PACKAGE_ID, CREW_TOKEN_TYPE } from '@/lib/onechain';
 import { DynamicFieldInfo } from '@onelabs/sui/client';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/../convex/_generated/api";
@@ -12,8 +12,11 @@ import { useMarket } from '@/components/game/MarketContext';
 
 const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 
+import { useRouter } from 'next/navigation';
+
 export function useMarketLogic(gameId: string, marketObjectId: string, gamePlayers: Player[], gamePhase: number) {
   const account = useCurrentAccount();
+  const router = useRouter();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { 
     selectedSuspect, setSelectedSuspect, 
@@ -160,15 +163,20 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
       const tx = new Transaction();
       const betMist = BigInt(Math.floor(Number(betAmount) * 1e9));
 
-      // FIX: Prediction Market expects OCT tokens, not SUI. 
-      // We must find an OCT coin object in the user's wallet.
+      // Use CREW Token for betting instead of OCT
       const coins = await suiClient.getCoins({
         owner: account.address,
-        coinType: OCT_TOKEN_TYPE,
+        coinType: CREW_TOKEN_TYPE,
       });
 
       if (coins.data.length === 0) {
-        throw new Error(`Insufficient OCT balance. Need ${betAmount} OCT.`);
+        setTxStatus('error');
+        setTxMsg(`INSUFFICIENT $CREW BALANCE. REDIRECTING TO SWAP...`);
+        setTimeout(() => {
+          router.push('/swap');
+        }, 1500);
+        setLoading(false);
+        return;
       }
 
       // Simple coin selection: pick the first one with enough balance or just any if it's the only one
@@ -177,7 +185,13 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
       const bestCoin = sortedCoins[0];
 
       if (BigInt(bestCoin.balance) < betMist) {
-        throw new Error(`Preferred OCT coin has insufficient balance. Largest coin: ${Number(bestCoin.balance) / 1e9} OCT.`);
+        setTxStatus('error');
+        setTxMsg(`INSUFFICIENT $CREW BALANCE. REDIRECTING TO SWAP...`);
+        setTimeout(() => {
+          router.push('/swap');
+        }, 1500);
+        setLoading(false);
+        return;
       }
 
       const [betCoin] = tx.splitCoins(tx.object(bestCoin.coinObjectId), [tx.pure.u64(betMist)]);

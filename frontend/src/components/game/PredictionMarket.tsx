@@ -131,7 +131,7 @@ export function PredictionMarket({
           </div>
           <div className="text-left md:text-right">
              <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.3em] mb-2 font-space">Global Volume</div>
-             <div className="text-3xl md:text-5xl font-black text-white font-space tracking-tighter">{(totalPot / 1e9).toFixed(2)} <span className="text-red-500 text-sm">OCT</span></div>
+             <div className="text-3xl md:text-5xl font-black text-white font-space tracking-tighter">{(totalPot / 1e9).toFixed(2)} <span className="text-red-500 text-sm">$CREW</span></div>
           </div>
         </div>
 

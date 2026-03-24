@@ -168,7 +168,7 @@ export function CreateRoomModal({ onClose, onCreate, error }: CreateRoomModalPro
                 className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 px-4 text-lg font-bold text-white font-mono placeholder-white/20 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all"
                 placeholder="0.00"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-white/25 font-mono">OCT</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-white/25 font-mono">$CREW</span>
             </div>
             <p className="text-[10px] text-white/25 mt-2 leading-relaxed">
               Staked on-chain. Distributed to winners on mission completion.

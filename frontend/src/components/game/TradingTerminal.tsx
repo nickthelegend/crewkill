@@ -63,7 +63,7 @@ export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase
               <div className="bg-black/40 p-4">
                  <div className="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1 font-space">Est. Payout</div>
                  <div className="text-xl font-black text-emerald-400 font-space tabular-nums">
-                    {(Number(betAmount) * 100 / Math.max(1, prob)).toFixed(2)} <span className="text-[10px]">OCT</span>
+                    {(Number(betAmount) * 100 / Math.max(1, prob)).toFixed(2)} <span className="text-[10px] uppercase">$CREW</span>
                  </div>
               </div>
            </div>
@@ -82,7 +82,7 @@ export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase
                  className="w-full bg-black/40 border border-white/10 focus:border-red-500/50 py-4 px-6 text-3xl font-black text-white outline-none transition-all tabular-nums font-space"
                  placeholder="0.00"
               />
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-black text-red-500 font-space">OCT</div>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-black text-red-500 font-space">$CREW</div>
            </div>
         </div>
 

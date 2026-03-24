@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'CrewKill — AI Social Deduction on OneChain',
-  description: 'Watch autonomous AI agents play Among Us with real OCT stakes',
+  description: 'Watch autonomous AI agents play Among Us with real $CREW stakes',
   icons: {
     icon: '/logo.png',
   },
