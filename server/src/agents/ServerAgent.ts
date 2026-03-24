@@ -192,9 +192,18 @@ export class ServerAgent {
       this.scheduleAction();
     }
 
-    // Voting phase (5) — cast a vote
+    // Discussion phase (4) — chat about observations
+    if (msg.phase === 4) {
+      this.scheduleDiscussionChat();
+    }
+
+    // Voting phase (5) — cast a vote and maybe send a final chat
     if (msg.phase === 5) {
       this.scheduleVote();
+      // Sometimes add a quick chat during voting for dramatic effect
+      if (Math.random() > 0.4) {
+        this.scheduleVotingChat();
+      }
     }
   }
 
@@ -247,6 +256,14 @@ export class ServerAgent {
       // it means we got stuck. Restart the action loop.
       logger.debug(`[${this.name}] Phase 2 with no pending actions, restarting action loop`);
       this.scheduleAction();
+    }
+
+    // CHAT PHASE DETECTION: Schedule chat if we're in discussion/voting and have no timers
+    if (this.phase === 4 && this.role !== "none" && this.isAlive && this.pendingTimers.length === 0) {
+      this.scheduleDiscussionChat();
+    }
+    if (this.phase === 5 && this.role !== "none" && this.isAlive && this.pendingTimers.length === 0) {
+      this.scheduleVote();
     }
   }
 
@@ -366,7 +383,7 @@ export class ServerAgent {
             totalTasks: this.totalTasks,
             location: this.myLocation,
           });
-        }, 10000);
+        }, 20000); // 20 seconds to complete a task
         this.pendingTimers.push(doTaskTimer);
         break;
 
@@ -434,9 +451,9 @@ export class ServerAgent {
 
     // Schedule another action after a delay (continuous play during action phase)
     if (this.phase === 2 && this.isAlive) {
-      let delay = randomDelay() + 1000;
+      let delay = randomDelay() + 2000;
       if (action.type === ActionType.DoTask || action.type === ActionType.FakeTask) {
-        delay = 10000 + randomDelay();
+        delay = 15000 + randomDelay();
       }
       
       const timer = setTimeout(() => {
@@ -471,6 +488,292 @@ export class ServerAgent {
       target: voteTarget,
       round: this.round,
     });
+  }
+
+  // ============ DISCUSSION CHAT ============
+
+  private static readonly COLOR_NAMES = [
+    "Red", "Blue", "Green", "Pink", "Orange",
+    "Yellow", "Black", "White", "Purple", "Brown",
+    "Cyan", "Lime", "Maroon", "Rose", "Banana",
+  ];
+
+  private static readonly LOCATION_NAMES: Record<number, string> = {
+    0: "Cafeteria", 1: "Admin", 2: "Storage", 3: "Electrical",
+    4: "MedBay", 5: "Upper Engine", 6: "Lower Engine", 7: "Security",
+    8: "Reactor", 9: "Weapons", 10: "Navigation", 11: "Shields",
+    12: "O2", 13: "Communications",
+  };
+
+  private getColorName(colorId: number): string {
+    return ServerAgent.COLOR_NAMES[colorId] || `Player${colorId}`;
+  }
+
+  private getLocationName(loc: number): string {
+    return ServerAgent.LOCATION_NAMES[loc] || `Room${loc}`;
+  }
+
+  /** Get a random ALIVE player's color name (excluding self) */
+  private getRandomPlayerColorName(excludeSelf = true): string | null {
+    const candidates = this.players.filter(
+      (p) => p.isAlive && (!excludeSelf || p.address !== this.address),
+    );
+    if (candidates.length === 0) return null;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    return this.getColorName(pick.colorId);
+  }
+
+  /** Get a specific player's color name */
+  private getPlayerColorName(address: string): string | null {
+    const player = this.players.find((p) => p.address === address);
+    if (!player) return null;
+    return this.getColorName(player.colorId);
+  }
+
+  private scheduleDiscussionChat(): void {
+    if (!this.isAlive || !this.roomId) return;
+
+    const messages = this.generateDiscussionMessages();
+
+    // Send 1-3 messages over the discussion period
+    for (let i = 0; i < messages.length; i++) {
+      const delay = 2000 + (i * 5000) + Math.random() * 4000; // Stagger messages
+      const timer = setTimeout(() => {
+        if (this.phase !== 4 || !this.isAlive) return; // Only chat during discussion
+        this.sendChat(messages[i]);
+      }, delay);
+      this.pendingTimers.push(timer);
+    }
+  }
+
+  private scheduleVotingChat(): void {
+    if (!this.isAlive || !this.roomId) return;
+
+    const message = this.generateVotingMessage();
+    if (!message) return;
+
+    const timer = setTimeout(() => {
+      if (this.phase !== 5 || !this.isAlive) return;
+      this.sendChat(message);
+    }, 1000 + Math.random() * 3000);
+    this.pendingTimers.push(timer);
+  }
+
+  private sendChat(message: string): void {
+    if (!this.sendToServer || !this.roomId) return;
+
+    this.sendToServer({
+      type: "agent:chat",
+      gameId: this.roomId,
+      message,
+    });
+  }
+
+  private generateDiscussionMessages(): string[] {
+    const messages: string[] = [];
+    const context = this.buildContext();
+
+    if (this.role === "impostor") {
+      messages.push(...this.generateImpostorChat(context));
+    } else {
+      messages.push(...this.generateCrewmateChat(context));
+    }
+
+    // Limit to 1-3 messages
+    return messages.slice(0, Math.min(3, Math.max(1, messages.length)));
+  }
+
+  private generateCrewmateChat(context: AgentStrategyContext): string[] {
+    const msgs: string[] = [];
+    const myColor = this.getColorName(
+      this.players.find((p) => p.address === this.address)?.colorId ?? 0,
+    );
+
+    // Report what we observed during the action phase
+    const lastKills = this.memory.getRecentKills();
+    if (lastKills.length > 0) {
+      const kill = lastKills[0];
+      const suspectColors = kill.playersNearby
+        ?.map((addr: string) => this.getPlayerColorName(addr))
+        .filter((c: string | null): c is string => c !== null && c !== myColor);
+      if (suspectColors && suspectColors.length > 0) {
+        msgs.push(`I saw ${suspectColors[0]} near where the body was found. Very suspicious.`);
+      } else {
+        msgs.push("Someone was killed... but I didn't see who did it.");
+      }
+    }
+
+    // Suspicion-based chat
+    const mostSus = this.memory.getMostSuspicious();
+    if (mostSus && mostSus.address !== this.address) {
+      const susColor = this.getPlayerColorName(mostSus.address);
+      if (susColor) {
+        const susMessages = [
+          `I think ${susColor} is sus. They weren't doing any tasks.`,
+          `Has anyone seen ${susColor}? They keep following people around.`,
+          `${susColor} was acting weird near Electrical. Vote them out!`,
+          `I was with ${susColor} and they didn't do a single task. Imp?`,
+          `${susColor} was just standing around doing nothing. Classic impostor move.`,
+        ];
+        msgs.push(susMessages[Math.floor(Math.random() * susMessages.length)]);
+      }
+    }
+
+    // Style-based chat
+    switch (this.crewmateStyle) {
+      case "task-focused":
+        msgs.push(`I was doing tasks in ${this.getLocationName(this.myLocation)}. Can anyone vouch?`);
+        break;
+      case "detective": {
+        const randColor = this.getRandomPlayerColorName();
+        if (randColor) {
+          msgs.push(`I've been tracking movements. ${randColor} has been moving around a lot without doing tasks.`);
+        }
+        break;
+      }
+      case "group-safety":
+        msgs.push("We should stick together. Safety in numbers.");
+        break;
+      case "vigilante": {
+        const targetColor = this.getRandomPlayerColorName();
+        if (targetColor) {
+          msgs.push(`I say we vote ${targetColor}. They're definitely suspicious.`);
+        }
+        break;
+      }
+      case "conservative":
+        msgs.push("Let's not rush to conclusions. We need more evidence.");
+        break;
+    }
+
+    // Fallback generic messages
+    if (msgs.length === 0) {
+      const generic = [
+        "Anyone have any info?",
+        "Where was everyone?",
+        `I was in ${this.getLocationName(this.myLocation)} doing tasks.`,
+        "Who do we think it is?",
+      ];
+      msgs.push(generic[Math.floor(Math.random() * generic.length)]);
+    }
+
+    return msgs;
+  }
+
+  private generateImpostorChat(context: AgentStrategyContext): string[] {
+    const msgs: string[] = [];
+    const myColor = this.getColorName(
+      this.players.find((p) => p.address === this.address)?.colorId ?? 0,
+    );
+
+    // Pick a random non-impostor to blame
+    const crewmates = this.players.filter(
+      (p) => p.isAlive && p.address !== this.address && !context.impostors?.includes(p.address),
+    );
+    const randomTarget = crewmates.length > 0
+      ? crewmates[Math.floor(Math.random() * crewmates.length)]
+      : null;
+    const targetColor = randomTarget ? this.getColorName(randomTarget.colorId) : null;
+
+    switch (this.impostorStyle) {
+      case "aggressive":
+        if (targetColor) {
+          const aggroMsgs = [
+            `It's ${targetColor}! I saw them vent in Electrical!`,
+            `${targetColor} was standing over the body. VOTE THEM OUT!`,
+            `I literally watched ${targetColor} kill someone. Trust me.`,
+            `${targetColor} is 100% the impostor. Vote now.`,
+          ];
+          msgs.push(aggroMsgs[Math.floor(Math.random() * aggroMsgs.length)]);
+        }
+        break;
+      case "stealth": {
+        const stealthMsgs = [
+          `I was doing tasks in ${this.getLocationName(this.myLocation)} the whole time.`,
+          "I didn't see anything suspicious tbh.",
+          "Maybe we should skip this round? I'm not sure.",
+          `I was in ${this.getLocationName(this.myLocation)}, can anyone confirm?`,
+        ];
+        msgs.push(stealthMsgs[Math.floor(Math.random() * stealthMsgs.length)]);
+        break;
+      }
+      case "social-manipulator": {
+        if (targetColor) {
+          const socialMsgs = [
+            `Interesting... I noticed ${targetColor} wasn't doing tasks earlier.`,
+            `I trust most of you, but ${targetColor} has been acting odd.`,
+            `Has anyone noticed ${targetColor} keeps going to isolated rooms?`,
+            "I've been with the group the whole time, you can trust me.",
+          ];
+          msgs.push(socialMsgs[Math.floor(Math.random() * socialMsgs.length)]);
+        } else {
+          msgs.push("I've been doing my tasks. Let's be careful who we vote.");
+        }
+        break;
+      }
+      case "frame-game": {
+        if (targetColor) {
+          const frameMsgs = [
+            `I'm pretty sure it's ${targetColor}. They were near the body.`,
+            `I saw ${targetColor} walk away from the crime scene!`,
+            `${targetColor} was being really weird, following someone then leaving fast.`,
+            `Guys, I hate to say it but I saw ${targetColor} do it.`,
+          ];
+          msgs.push(frameMsgs[Math.floor(Math.random() * frameMsgs.length)]);
+        }
+        break;
+      }
+      case "saboteur": {
+        const sabMsgs = [
+          "It could be anyone... this is chaos.",
+          "The sabotage earlier was crazy. Who fixed it though?",
+          "I think we need more time to figure this out. Skip?",
+          targetColor ? `Idk but ${targetColor} was acting sketchy during the sabotage.` : "Let's just skip for now.",
+        ];
+        msgs.push(sabMsgs[Math.floor(Math.random() * sabMsgs.length)]);
+        break;
+      }
+    }
+
+    // All impostors: sometimes add a deflection
+    if (Math.random() > 0.6) {
+      const deflections = [
+        "Why is nobody suspecting anyone else?",
+        "I swear it's not me, I was doing wires the whole time.",
+        "Can we focus? I finished 3 tasks already.",
+        "Don't waste a vote on me, I'm clean. Check my tasks.",
+      ];
+      msgs.push(deflections[Math.floor(Math.random() * deflections.length)]);
+    }
+
+    return msgs;
+  }
+
+  private generateVotingMessage(): string | null {
+    const context = this.buildContext();
+    const strategy = this.role === "impostor" ? this.impostorStrategy : this.crewmateStrategy;
+    const voteTarget = strategy.decideVote(context);
+
+    if (voteTarget) {
+      const targetColor = this.getPlayerColorName(voteTarget);
+      if (targetColor) {
+        const voteMsgs = [
+          `Voting ${targetColor}.`,
+          `I'm going with ${targetColor}.`,
+          `${targetColor} has to go.`,
+          `My vote is on ${targetColor}. Final answer.`,
+        ];
+        return voteMsgs[Math.floor(Math.random() * voteMsgs.length)];
+      }
+    }
+
+    // Skip messages
+    const skipMsgs = [
+      "I'm skipping. Not enough evidence.",
+      "Skip vote for now.",
+      "I don't have enough info to vote anyone.",
+    ];
+    return skipMsgs[Math.floor(Math.random() * skipMsgs.length)];
   }
 
   // ============ CLEANUP ============

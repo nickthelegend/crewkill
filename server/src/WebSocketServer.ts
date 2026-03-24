@@ -33,6 +33,8 @@ const LOBBY_WAITING_DURATION = 120000; // 2 minutes — betting window before ga
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
 const EJECTION_DURATION = 5000; // 5 seconds
+const ACTION_ROUND_DURATION = 60000; // 60 seconds per action round before auto-meeting
+const MAX_VOTING_ROUNDS = 2; // Game ends after 2 voting rounds if no winner
 const MAX_ROOMS = 100;
 
 // TEMPORARY: Disable wager system to allow free play
@@ -61,6 +63,7 @@ interface ExtendedRoomState extends RoomState {
   currentRound: number;
   currentPhase: GamePhase;
   phaseTimer: NodeJS.Timeout | null;
+  actionRoundTimer: NodeJS.Timeout | null; // Timer for auto-meeting after action phase
   lobbyLocked: boolean; // True after lobby waiting period expires
   lobbyTimer: NodeJS.Timeout | null; // Timer for lobby waiting period
 }
@@ -887,6 +890,7 @@ export class WebSocketRelayServer {
       currentRound: 0,
       currentPhase: room.phase as any, // Lobby
       phaseTimer: null,
+      actionRoundTimer: null, // Will be set when action phase begins
       lobbyLocked: false, // Lobby open for joins
       lobbyTimer: null, // Will be set when first player joins
     };
@@ -1366,6 +1370,11 @@ export class WebSocketRelayServer {
 
     this.broadcastRoomList();
     logger.info(`Game configuration complete for room ${roomId}`);
+
+    // Schedule auto-meeting timer if game is in ActionCommit phase (not boarding)
+    if (phaseValue === 2) {
+      this.scheduleAutoMeeting(roomId);
+    }
   }
 
   private async ensureMarketDeployment(roomId: string): Promise<void> {
@@ -1488,6 +1497,16 @@ export class WebSocketRelayServer {
     const extended = this.extendedState.get(roomId);
     if (!room || !extended) return;
 
+    // Only allow during ActionCommit phase
+    if (extended.currentPhase !== 2) {
+      this.send(client, {
+        type: "server:error",
+        code: "INVALID_PHASE",
+        message: "Can only kill during action phase",
+      });
+      return;
+    }
+
     // Validate killer is an impostor
     if (!this.gameStateManager.isImpostor(roomId, killer)) {
       this.send(client, {
@@ -1498,12 +1517,58 @@ export class WebSocketRelayServer {
       return;
     }
 
+    // Validate killer is alive
+    const killerPlayer = room.players.find(
+      (p) => p.address.toLowerCase() === killer.toLowerCase(),
+    );
+    if (!killerPlayer || !killerPlayer.isAlive) {
+      this.send(client, {
+        type: "server:error",
+        code: "KILLER_DEAD",
+        message: "Dead impostors cannot kill",
+      });
+      return;
+    }
+
+    // Validate victim exists and is alive
+    const victimPlayer = room.players.find(
+      (p) => p.address.toLowerCase() === victim.toLowerCase(),
+    );
+    if (!victimPlayer || !victimPlayer.isAlive) {
+      this.send(client, {
+        type: "server:error",
+        code: "VICTIM_DEAD",
+        message: "Cannot kill a dead player",
+      });
+      return;
+    }
+
+    // CRITICAL: Validate killer and victim are at the SAME location
+    if (killerPlayer.location !== victimPlayer.location) {
+      this.send(client, {
+        type: "server:error",
+        code: "KILL_WRONG_LOCATION",
+        message: `Cannot kill: ${killer.slice(0, 8)} at ${killerPlayer.location}, victim at ${victimPlayer.location}`,
+      });
+      return;
+    }
+
+    // Cannot kill fellow impostors
+    if (this.gameStateManager.isImpostor(roomId, victim)) {
+      this.send(client, {
+        type: "server:error",
+        code: "KILL_FELLOW_IMPOSTOR",
+        message: "Cannot kill fellow impostors",
+      });
+      return;
+    }
+
     // Check kill cooldown
-    if (!this.gameStateManager.canKill(roomId, killer, round)) {
+    if (!this.gameStateManager.canKill(roomId, killer, extended.currentRound)) {
       const cooldown = this.gameStateManager.getKillCooldown(
         roomId,
         killer,
-        round,
+        extended.currentRound,
       );
       this.send(client, {
         type: "server:error",
@@ -1513,34 +1578,55 @@ export class WebSocketRelayServer {
       return;
     }
 
-    const victimPlayer = room.players.find((p) => p.address === victim);
-    if (victimPlayer) {
-      victimPlayer.isAlive = false;
-    }
+    // Execute the kill
+    victimPlayer.isAlive = false;
+
+    // Also update GameStateManager
+    this.gameStateManager.killPlayer(roomId, victim, killerPlayer.location, extended.currentRound);
 
     // Track dead body
     const body: DeadBodyState = {
       victim,
-      location,
-      round,
+      location: killerPlayer.location,
+      round: extended.currentRound,
       reported: false,
     };
     extended.deadBodies.push(body);
 
     // Record kill for cooldown tracking
-    this.gameStateManager.recordKill(roomId, killer, round);
+    this.gameStateManager.recordKill(roomId, killer, extended.currentRound);
 
-    this.broadcastToRoom(roomId, {
-      type: "server:kill_occurred",
+    // SECRET KILL: Only broadcast to impostors and spectators, NOT crewmates
+    // Crewmates should only discover kills by finding dead bodies
+    const killMessage = {
+      type: "server:kill_occurred" as const,
       gameId: roomId,
       killer,
       victim,
-      location,
-      round,
+      location: killerPlayer.location,
+      round: extended.currentRound,
       timestamp: Date.now(),
-    });
+    };
 
-    logger.info(`Kill in room ${roomId}: ${killer} killed ${victim}`);
+    for (const [clientId, targetClient] of this.clients) {
+      if (targetClient.roomId !== roomId) continue;
+
+      const targetAddress = targetClient.address?.toLowerCase();
+      const isImpostor = targetAddress && extended.impostors.has(targetAddress);
+      const isVictimPlayer = targetAddress === victim.toLowerCase();
+      const isSpectator =
+        !targetAddress ||
+        !room.players.find(
+          (p) => p.address.toLowerCase() === targetAddress,
+        );
+
+      // Send to: impostors, the victim, and spectators
+      if (isImpostor || isVictimPlayer || isSpectator) {
+        this.send(targetClient, killMessage);
+      }
+    }
+
+    logger.info(`Kill in room ${roomId}: ${killer} killed ${victim} at location ${killerPlayer.location}`);
 
     // Record kill for agent stats
     this.recordKill(killer);
@@ -1829,6 +1915,9 @@ export class WebSocketRelayServer {
       `Body reported in room ${roomId}: ${reporter} found ${body.victim}`,
     );
 
+    // Clear auto-meeting timer since a manual report triggered discussion
+    this.clearAutoMeetingTimer(roomId);
+
     // Start discussion phase
     this.startDiscussionPhase(roomId);
   }
@@ -1889,6 +1978,9 @@ export class WebSocketRelayServer {
     logger.info(
       `Emergency meeting called in room ${roomId} by ${client.address}`,
     );
+
+    // Clear auto-meeting timer since a manual meeting triggered discussion
+    this.clearAutoMeetingTimer(roomId);
 
     // Start discussion phase
     this.startDiscussionPhase(roomId);
@@ -2660,6 +2752,19 @@ export class WebSocketRelayServer {
       return;
     }
 
+    // Enforce MAX_VOTING_ROUNDS — end game if max rounds reached
+    if (extended.currentRound >= MAX_VOTING_ROUNDS) {
+      logger.info(
+        `Max voting rounds (${MAX_VOTING_ROUNDS}) reached in room ${roomId}. Ending game — crewmates survive.`,
+      );
+      setTimeout(() => {
+        this.endGame(roomId, true, "votes").catch((err) => {
+          logger.error(`Error ending game after max rounds:`, err);
+        });
+      }, EJECTION_DURATION);
+      return;
+    }
+
     // Return to ActionCommit phase after ejection screen
     setTimeout(() => {
       this.returnToActionPhase(roomId);
@@ -2679,6 +2784,7 @@ export class WebSocketRelayServer {
 
     const previousPhase = extended.currentPhase;
     extended.currentPhase = 2; // ActionCommit
+    room.phase = "playing";
 
     // Reset vote states
     extended.votes.clear();
@@ -2686,19 +2792,76 @@ export class WebSocketRelayServer {
       player.hasVoted = false;
     }
 
+    // Also update GameStateManager
+    this.gameStateManager.updatePhase(roomId, 2, extended.currentRound, Date.now() + ACTION_ROUND_DURATION);
+
     this.broadcastToRoom(roomId, {
       type: "server:phase_changed",
       gameId: roomId,
       phase: 2,
       previousPhase,
       round: extended.currentRound,
-      phaseEndTime: Date.now() + 60000,
+      phaseEndTime: Date.now() + ACTION_ROUND_DURATION,
       timestamp: Date.now(),
     });
+
+    // Schedule auto-meeting after ACTION_ROUND_DURATION
+    this.scheduleAutoMeeting(roomId);
 
     logger.info(
       `Returned to ActionCommit phase in room ${roomId}, round ${extended.currentRound}`,
     );
+  }
+
+  /**
+   * Schedule an automatic discussion+voting cycle after the action round expires.
+   * This ensures voting happens every round even if no bodies are reported.
+   */
+  private scheduleAutoMeeting(roomId: string): void {
+    const extended = this.extendedState.get(roomId);
+    if (!extended) return;
+
+    // Clear any existing auto-meeting timer
+    if (extended.actionRoundTimer) {
+      clearTimeout(extended.actionRoundTimer);
+      extended.actionRoundTimer = null;
+    }
+
+    extended.actionRoundTimer = setTimeout(() => {
+      const currentRoom = this.rooms.get(roomId);
+      const currentExtended = this.extendedState.get(roomId);
+      if (!currentRoom || !currentExtended) return;
+
+      // Only trigger if we're still in ActionCommit phase
+      if (currentExtended.currentPhase !== 2) return;
+      // Don't trigger if game has ended
+      if (currentRoom.phase === "ended") return;
+
+      logger.info(`Auto-meeting triggered in room ${roomId} after ${ACTION_ROUND_DURATION / 1000}s action round`);
+
+      // Broadcast that an auto-meeting is happening
+      this.broadcastToRoom(roomId, {
+        type: "server:meeting_called",
+        gameId: roomId,
+        caller: "system",
+        meetingsRemaining: 0,
+        timestamp: Date.now(),
+      });
+
+      // Start discussion phase
+      this.startDiscussionPhase(roomId);
+    }, ACTION_ROUND_DURATION);
+  }
+
+  /**
+   * Clear the auto-meeting timer (called when a manual report/meeting happens first)
+   */
+  private clearAutoMeetingTimer(roomId: string): void {
+    const extended = this.extendedState.get(roomId);
+    if (extended?.actionRoundTimer) {
+      clearTimeout(extended.actionRoundTimer);
+      extended.actionRoundTimer = null;
+    }
   }
 
   // ============ WIN CONDITIONS ============
@@ -2778,6 +2941,7 @@ export class WebSocketRelayServer {
       clearTimeout(extended.phaseTimer);
       extended.phaseTimer = null;
     }
+    this.clearAutoMeetingTimer(roomId);
 
     // Record game stats for all players BEFORE changing phase
     this.recordGameEnd(roomId, crewmatesWon);

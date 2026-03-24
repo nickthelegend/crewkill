@@ -202,6 +202,20 @@ export class GameMemory {
     return behavior.tasksCompleted === 0 && this.currentRound > rounds;
   }
 
+  /**
+   * Get recent kill records (with players nearby info)
+   */
+  getRecentKills(limit = 3): Array<{ victim: string; location: number; round: number; playersNearby: string[] }> {
+    return this.kills
+      .slice(-limit)
+      .map((k) => ({
+        victim: k.victim,
+        location: k.location,
+        round: k.round,
+        playersNearby: k.possibleKillers,
+      }));
+  }
+
   // ============ HELPERS ============
 
   private updatePlayerBehavior(player: string, updater: (behavior: PlayerBehavior) => void): void {
