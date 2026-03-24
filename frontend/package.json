@@ -14,6 +14,7 @@
   "dependencies": {
     "@mysten/sui": "^2.9.1",
     "@onelabs/dapp-kit": "^0.15.6",
+    "@onelabs/sui": "^1.26.2",
     "@privy-io/react-auth": "^3.13.1",
     "@tanstack/react-query": "^5.91.3",
     "convex": "^1.34.0",
