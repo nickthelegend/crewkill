@@ -4,7 +4,7 @@ use one::object::{Self, UID, ID};
 use one::tx_context::{Self, TxContext};
 use one::transfer;
 use one::coin::{Self, Coin};
-use one::oct::OCT;
+use among_agents::crew_token::CREW_TOKEN;
 use one::table::{Self, Table};
 use one::balance::{Self, Balance};
 use one::event;
@@ -36,7 +36,7 @@ public struct MarketRegistry has key {
     markets: Table<ID, bool>, // game_id -> exists
     player_stats: Table<address, PlayerStats>, // address -> stats
     admin: address,
-    protocol_fee_balance: Balance<OCT>,
+    protocol_fee_balance: Balance<CREW_TOKEN>,
 }
 
 public struct PlayerStats has store, copy, drop {
@@ -52,8 +52,8 @@ public struct PredictionMarket has key {
     /// All players in this game (set at market creation)
     game_players: vector<address>,
 
-    /// Total OCT pot
-    total_pot: Balance<OCT>,
+    /// Total CREW pot
+    total_pot: Balance<CREW_TOKEN>,
 
     /// Per-suspect bet pool: suspect_address -> total OCT bet on them
     suspect_pools: Table<address, u64>,
@@ -259,6 +259,62 @@ public entry fun resolve_market(
     });
 }
 
+/// New function to perform PUSH-style disbursement of rewards.
+/// Admin (server) calculates pro-rata shares and pushes them to winners.
+public entry fun settle_market(
+    market: &mut PredictionMarket,
+    registry: &mut MarketRegistry,
+    winners: vector<address>,
+    payouts: vector<u64>,
+    ctx: &mut TxContext,
+) {
+    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
+    assert!(!market.open, E_MARKET_NOT_CLOSED);
+    assert!(market.resolved, E_MARKET_NOT_RESOLVED);
+    
+    let winner_count = vector::length(&winners);
+    assert!(winner_count == vector::length(&payouts), E_INVALID_BET_AMOUNT);
+    
+    // First, take the protocol fee from the pot
+    let total_pot = balance::value(&market.total_pot);
+    let fee = (total_pot * market.protocol_fee_bps) / 10000;
+    if (fee > 0 && balance::value(&market.total_pot) >= fee) {
+        let fee_balance = balance::split(&mut market.total_pot, fee);
+        balance::join(&mut registry.protocol_fee_balance, fee_balance);
+    };
+
+    // Distribute to winners
+    let mut i = 0;
+    while (i < winner_count) {
+        let winner = *vector::borrow(&winners, i);
+        let amount = *vector::borrow(&payouts, i);
+        
+        if (amount > 0 && !table::contains(&market.claimed, winner)) {
+            let actual_payout = if (amount > balance::value(&market.total_pot)) {
+                balance::value(&market.total_pot)
+            } else {
+                amount
+            };
+            
+            if (actual_payout > 0) {
+                let payout_coin = coin::from_balance(
+                    balance::split(&mut market.total_pot, actual_payout),
+                    ctx
+                );
+                transfer::public_transfer(payout_coin, winner);
+                table::add(&mut market.claimed, winner, true);
+                
+                event::emit(WinningsClaimed {
+                    market_id: object::id(market),
+                    bettor: winner,
+                    payout: actual_payout,
+                });
+            };
+        };
+        i = i + 1;
+    };
+}
+
 /// Admin withdraws protocol fees
 public entry fun withdraw_fees(
     registry: &mut MarketRegistry,
@@ -280,7 +336,7 @@ public entry fun withdraw_fees(
 public entry fun place_bet(
     market: &mut PredictionMarket,
     suspect: address,
-    payment: Coin<OCT>,
+    payment: Coin<CREW_TOKEN>,
     ctx: &mut TxContext,
 ) {
     assert!(market.open, E_MARKET_CLOSED);

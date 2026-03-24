@@ -4,7 +4,7 @@ use one::object::{Self, UID, ID};
 use one::tx_context::{Self, TxContext};
 use one::transfer;
 use one::coin::{Self, Coin};
-use one::oct::OCT;
+use among_agents::crew_token::CREW_TOKEN;
 use one::table::{Self, Table};
 use one::balance::{Self, Balance};
 use one::event;
@@ -14,14 +14,14 @@ use one::event;
 public struct WagerVault has key {
     id: UID,
     game_wagers: Table<ID, GameWager>,
-    protocol_fee_balance: Balance<OCT>,
+    protocol_fee_balance: Balance<CREW_TOKEN>,
     admin: address,
     protocol_fee_bps: u64,
 }
 
 public struct GameWager has store {
     game_id: ID,
-    total_pot: Balance<OCT>,
+    total_pot: Balance<CREW_TOKEN>,
     wager_amount: u64,
     players: vector<address>,
     settled: bool,
@@ -75,7 +75,7 @@ public fun init_game_wager(
 public entry fun place_wager(
     vault: &mut WagerVault,
     game_id: ID,
-    payment: Coin<OCT>,
+    payment: Coin<CREW_TOKEN>,
     ctx: &mut TxContext,
 ) {
     assert!(table::contains(&vault.game_wagers, game_id), 1);

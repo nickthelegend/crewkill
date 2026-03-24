@@ -280,6 +280,16 @@ export class DatabaseService {
     }
   }
 
+  async getBetsByGame(gameId: string) {
+    if (!this.enabled) return [];
+    try {
+      return await this.convex.query("bets:getBetsByGame" as any, { gameId });
+    } catch (error) {
+      logger.error(`Failed to get bets for ${gameId} from Convex:`, error);
+      return [];
+    }
+  }
+
   async getGameByRoomId(roomId: string) {
     if (!this.enabled) return null;
     try {

@@ -3083,8 +3083,9 @@ export class WebSocketRelayServer {
 
     // Settle prediction market on-chain (async)
     if (room.marketId) {
-      contractService.resolveMarket(roomId, room.marketId, impostorAddresses)
-         .catch(err => logger.error(`Failed to resolve prediction market for game ${roomId}:`, err));
+      databaseService.getBetsByGame(roomId).then((allBets: any[]) => {
+        return contractService.resolveMarket(roomId, room.marketId!, impostorAddresses, allBets);
+      }).catch((err: Error) => logger.error(`Failed to resolve prediction market for game ${roomId}:`, err));
     }
 
     // Send individual balance updates to each player

@@ -65,15 +65,15 @@ export class ContractService {
     if (!this.operatorKeypair) return false;
     try {
       const tx = new Transaction();
-      const suiGameId = `0x${crypto.createHash('sha256').update(gameId).digest('hex')}`;
+      // gameId is the object ID, don't hash it!
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::settle_game`,
         arguments: [
+          tx.object(gameId), // game: &mut Game
           tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
           tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
           tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID),
-          tx.pure.address(suiGameId),
-          tx.pure.bool(crewmatesWon),
+          tx.pure.bool(crewmatesWon), // winner_side_is_crew
           tx.pure.vector('address', winners),
           tx.pure.vector('u64', playerKills.map(k => BigInt(k))),
           tx.pure.vector('u64', playerTasks.map(t => BigInt(t))),
@@ -81,7 +81,7 @@ export class ContractService {
       });
       await this.fetchGasPayment(tx);
       const result = await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
-      logger.info(`Game settled on-chain. Digest: ${result.digest}`);
+      logger.info(`Game ${gameId} settled on-chain. Digest: ${result.digest}`);
       return true;
     } catch (error) {
       logger.error(`Failed to settle game ${gameId}:`, error);
@@ -169,7 +169,7 @@ export class ContractService {
           target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::create_market`,
           arguments: [
             tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
-            tx.pure.address(suiGameId),
+            tx.pure.address(gameId), // Just pass the ID directly
             tx.pure.vector('address', playerAddresses),
           ],
         });
@@ -248,36 +248,68 @@ export class ContractService {
     }
   }
 
-  async resolveMarket(gameId: string, marketId: string, impostors: string[]): Promise<boolean> {
+  async resolveMarket(gameId: string, marketId: string, impostors: string[], allBets: any[]): Promise<boolean> {
     if (!this.operatorKeypair) return false;
     try {
-      const tx = new Transaction();
-      // Ensure market registry is included from config
-      tx.moveCall({
+      // 1. Resolve market first (reveal impostors)
+      const txResolve = new Transaction();
+      txResolve.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::resolve_market`,
         arguments: [
-          tx.object(marketId),
-          tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
-          tx.pure.vector('address', impostors),
+          txResolve.object(marketId),
+          txResolve.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
+          txResolve.pure.vector('address', impostors),
         ],
       });
-      await this.fetchGasPayment(tx);
+      await this.fetchGasPayment(txResolve);
+      await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: txResolve });
+      logger.info(`Prediction market resolved for game ${gameId}`);
 
-      const result = await this.client.signAndExecuteTransaction({ 
-        signer: this.operatorKeypair, 
-        transaction: tx,
-        options: { showEffects: true }
-      });
-      
-      if (result.effects?.status.status !== 'success') {
-        logger.error(`Prediction market resolution TX failed: ${result.effects?.status.error || "Unknown error"}`);
-        return false;
+      // 2. Calculate and push rewards (disperse)
+      // winners = bettors who picked any of the impostors
+      const winningBets = allBets.filter(b => impostors.includes(b.selection));
+      if (winningBets.length === 0) {
+        logger.info(`No winners for prediction market ${gameId}`);
+        return true;
       }
+
+      const totalPotBalance = allBets.reduce((sum, b) => sum + BigInt(b.amountMist), 0n);
+      const totalWinningBetsBalance = winningBets.reduce((sum, b) => sum + BigInt(b.amountMist), 0n);
       
-      logger.info(`Prediction market resolved for game ${gameId}: ${result.digest}`);
+      // Pro-rata disbursement
+      // Fee: 5%
+      const distributablePot = (totalPotBalance * 95n) / 100n;
+      
+      const winnersAddresses: string[] = [];
+      const winnerPayouts: bigint[] = [];
+
+      for (const bet of winningBets) {
+        const payout = (BigInt(bet.amountMist) * distributablePot) / totalWinningBetsBalance;
+        if (payout > 0n) {
+          winnersAddresses.push(bet.address);
+          winnerPayouts.push(payout);
+        }
+      }
+
+      if (winnersAddresses.length > 0) {
+        const txSettle = new Transaction();
+        txSettle.moveCall({
+          target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::settle_market`,
+          arguments: [
+            txSettle.object(marketId),
+            txSettle.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
+            txSettle.pure.vector('address', winnersAddresses),
+            txSettle.pure.vector('u64', winnerPayouts),
+          ],
+        });
+        await this.fetchGasPayment(txSettle);
+        const result = await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: txSettle });
+        logger.info(`Prediction market rewards dispersed for game ${gameId}. Digest: ${result.digest}`);
+      }
+
       return true;
     } catch (error) {
-      logger.error(`Failed to resolve market for game ${gameId}:`, error);
+      logger.error(`Failed to resolve/settle market for game ${gameId}:`, error);
       return false;
     }
   }

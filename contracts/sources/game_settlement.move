@@ -378,28 +378,52 @@ public entry fun settle_game(
     manager: &GameManager,
     vault: &mut WagerVault,
     registry: &mut AgentRegistry,
+    winner_side_is_crew: bool,
     winners: vector<address>,
-    winner_side: u8,
+    player_kills: vector<u64>,
+    player_tasks: vector<u64>,
     ctx: &mut TxContext,
 ) {
     assert!(ctx.sender() == manager.admin, 13);
     assert!(!game.ended, 15);
 
     game.ended = true;
-    game.winner = winner_side;
+    game.winner = if (winner_side_is_crew) { WIN_CREWMATES } else { WIN_IMPOSTORS };
     game.phase = PHASE_ENDED;
 
     let winner_count = vector::length(&winners);
-    let payout_estimate = if (winner_count > 0) {
-        (game.wager_amount * vector::length(&game.players) * 95 / 100) / winner_count
-    } else { 0 };
+    let player_count = vector::length(&game.players);
+    
+    // Pot distribution estimate for registry
+    let total_wagered = game.wager_amount * player_count;
+    let distributed_pot = (total_wagered * 95) / 100;
+    let payout_per_winner = if (winner_count > 0) { distributed_pot / winner_count } else { 0 };
 
     let mut i = 0;
-    let len = vector::length(&game.players);
-    while (i < len) {
+    while (i < player_count) {
         let player = *vector::borrow(&game.players, i);
+        
+        // Update kills/tasks stats from vectors
+        if (i < vector::length(&player_kills)) {
+            let kills = *vector::borrow(&player_kills, i);
+            let mut k = 0;
+            while (k < kills) {
+                agent_registry::record_kill(registry, player);
+                k = k + 1;
+            };
+        };
+        
+        if (i < vector::length(&player_tasks)) {
+            let tasks = *vector::borrow(&player_tasks, i);
+            let mut t = 0;
+            while (t < tasks) {
+                agent_registry::record_task(registry, player);
+                t = t + 1;
+            };
+        };
+
         if (vector::contains(&winners, &player)) {
-            agent_registry::record_win(registry, player, payout_estimate);
+            agent_registry::record_win(registry, player, payout_per_winner);
         } else {
             agent_registry::record_loss(registry, player);
         };
@@ -408,7 +432,7 @@ public entry fun settle_game(
 
     wager_vault::settle_wager(vault, object::id(game), winners, ctx);
 
-    event::emit(GameEnded { game_id: object::id(game), winner: winner_side, round: game.round });
+    event::emit(GameEnded { game_id: object::id(game), winner: game.winner, round: game.round });
 }
 
 // ======== View Functions ========
