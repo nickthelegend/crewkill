@@ -56,7 +56,9 @@ export default function RoomDetailsPage() {
   const startAt = dbGame ? (dbGame.scheduledAt ? new Date(dbGame.scheduledAt) : null) : null;
   const bettingEndsAt = dbGame ? (dbGame.bettingEndsAt ? new Date(dbGame.bettingEndsAt) : null) : null;
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
-  const isLive = dbGame ? ((currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && dbGame.status !== "COMPLETED") : false;
+  
+  const isEnded = dbGame ? (dbGame.status === "COMPLETED" || dbGame.status === "SETTLED" || dbGame.phase === "ended" || currentRoom?.phase === "ended") : false;
+  const isLive = dbGame ? ((currentRoom?.phase === "playing" || dbGame.status === "ACTIVE") && !isEnded) : false;
 
   if (!dbGame) {
     return (
@@ -90,7 +92,7 @@ export default function RoomDetailsPage() {
                 <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase ${
                   isLive ? "bg-red-500/20 text-red-500 border border-red-500/30" : "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                 }`}>
-                  {isLive ? "● LIVE GAME" : dbGame.status === "COMPLETED" ? "GAME OVER" : "LOBBY OPEN"}
+                  {isLive ? "● LIVE GAME" : isEnded ? "GAME OVER" : "LOBBY OPEN"}
                 </div>
                 <div className="h-4 w-px bg-white/10" />
                 <span className="text-cyan-400 font-black text-[10px] uppercase tracking-widest bg-cyan-400/10 px-3 py-1 border border-cyan-400/20">
@@ -130,7 +132,7 @@ export default function RoomDetailsPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
                 <span className="relative z-10 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                  📋 {dbGame.status === "COMPLETED" ? "View Recap" : "View Events"}
+                  📋 {isEnded ? "View Recap" : "View Events"}
                 </span>
               </Link>
               
