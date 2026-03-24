@@ -211,6 +211,7 @@ export const endGame = mutation({
     crewmatesWon: v.boolean(),
     winReason: v.string(),
     winningsPerPlayer: v.string(),
+    impostorAddresses: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const game = await ctx.db
@@ -225,6 +226,7 @@ export const endGame = mutation({
       crewmatesWon: args.crewmatesWon,
       winReason: args.winReason,
       winningsPerPlayer: args.winningsPerPlayer,
+      impostorAddresses: args.impostorAddresses,
       endedAt: Date.now(),
     });
     return game;

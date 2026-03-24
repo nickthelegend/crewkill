@@ -143,6 +143,30 @@ export default function RoomDetailsPage() {
             </motion.div>
           </div>
 
+          {/* Victory/Outcome Banner */}
+          {isEnded && (
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className={`mb-12 p-8 rounded-[2.5rem] border-2 flex flex-col items-center justify-center text-center relative overflow-hidden ${
+                dbGame.crewmatesWon 
+                  ? "bg-emerald-500/10 border-emerald-500/30" 
+                  : "bg-red-500/10 border-red-500/30"
+              }`}
+            >
+              <div className={`absolute top-0 left-0 w-full h-1 ${dbGame.crewmatesWon ? "bg-emerald-500" : "bg-red-500"}`} />
+              <div className="text-sm font-black uppercase tracking-[0.4em] text-white/40 mb-2">Simulated Outcome</div>
+              <h2 className={`text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 ${dbGame.crewmatesWon ? "text-emerald-400" : "text-red-400"}`}>
+                {dbGame.crewmatesWon ? "Crewmates Win" : "Impostors Win"}
+              </h2>
+              <div className="flex items-center gap-4 text-white/60 font-black uppercase tracking-widest text-xs">
+                 <span>REASON: {dbGame.winReason?.toUpperCase()}</span>
+                 <span className="w-1 h-1 rounded-full bg-white/20" />
+                 <span>DURATION: {Math.floor(((dbGame.endedAt || 0) - (dbGame.startedAt || 0)) / 1000)}s</span>
+              </div>
+            </motion.div>
+          )}
+
           {/* Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
@@ -183,8 +207,8 @@ export default function RoomDetailsPage() {
                   <AnimatePresence mode="popLayout">
                     {currentRoom?.players.map((p, idx) => {
                       const isDead = !p.isAlive;
-                      const isImpostor = p.role === 2;
                       const isGameOver = dbGame.status === "COMPLETED" || wsPhase === 7;
+                      const isImpostor = p.role === 2 || (isGameOver && dbGame.impostorAddresses?.includes(p.address.toLowerCase()));
                       return (
                         <motion.div 
                           key={p.address}

@@ -38,8 +38,14 @@ export default function LiveRoomPage() {
     if (isConnected && id) {
       joinRoom(id, true); // Join as spectator
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, id]);
+
+  // Redirect to recap if game is over
+  useEffect(() => {
+    if (phase === GamePhase.Ended) {
+      router.replace(`/game/${id}/recap`);
+    }
+  }, [phase, id, router]);
 
   if (!isConnected) {
     return (

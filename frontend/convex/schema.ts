@@ -88,6 +88,7 @@ export default defineSchema({
       })),
     }))),
     createdAt: v.number(),
+    impostorAddresses: v.optional(v.array(v.string())),
     marketId: v.optional(v.string()),
     settlementTxHash: v.optional(v.string()),
   }).index("by_roomId", ["roomId"])

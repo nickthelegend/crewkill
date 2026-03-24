@@ -260,6 +260,7 @@ export class DatabaseService {
         crewmatesWon: result.crewmatesWon,
         winReason: result.winReason,
         winningsPerPlayer: result.winningsPerPlayer.toString(),
+        impostorAddresses: result.impostorAddresses,
       });
     } catch (error) {
       logger.error(`Failed to end game ${roomId} via Convex:`, error);

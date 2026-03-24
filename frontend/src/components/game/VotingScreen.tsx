@@ -57,15 +57,23 @@ export function VotingScreen({
 
   return (
     <motion.div
-      className="fixed inset-0 z-40 flex items-center justify-center"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* Dark background */}
-      <div className="absolute inset-0 bg-black/90" />
-
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto p-4">
+      {/* Semi-transparent blur background */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+      
+      {/* Content Container (The Modal Box) */}
+      <motion.div 
+        className="relative z-10 w-full max-w-5xl bg-gray-900/90 border border-white/10 rounded-[2.5rem] shadow-[0_0_100px_rgba(34,211,238,0.2)] overflow-hidden flex flex-col max-h-[90vh]"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+      >
+        {/* Dynamic Header Decoration */}
+        <div className={`h-1.5 w-full bg-gradient-to-r ${isDiscussion ? 'from-cyan-500 via-blue-500 to-cyan-500' : 'from-red-500 via-yellow-500 to-red-500'}`} />
+        
+        <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1">
         {/* Header */}
         <div className="text-center mb-8">
           <motion.h1
@@ -261,5 +269,6 @@ export function VotingScreen({
         </motion.div>
       </div>
     </motion.div>
+  </motion.div>
   );
 }

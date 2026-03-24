@@ -254,7 +254,7 @@ export function HomeInner({
           />
         )}
 
-        {state.view === "game" && (
+        {(state.view === "game" || state.view === "voting") && (
           <GameView
             key="game"
             players={players}
@@ -272,6 +272,7 @@ export function HomeInner({
             showInviteModal={state.showGameInviteModal}
             onShowInviteModal={(show) => dispatch({ type: "SET_SHOW_GAME_INVITE_MODAL", show })}
             onBack={handleBack}
+            gamePhase={phase}
           />
         )}
 
