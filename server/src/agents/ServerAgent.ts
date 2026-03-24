@@ -388,20 +388,25 @@ export class ServerAgent {
 
   private executeAction(): void {
     if (!this.isAlive || !this.roomId || !this.sendToServer) return;
-    // Phase guard: only act during action phase (2)
-    if (this.phase !== 2) return;
+    
+    // If not in action phase, just poll until we are
+    if (this.phase !== 2) {
+      const pollTimer = setTimeout(() => this.executeAction(), 2000);
+      this.pendingTimers.push(pollTimer);
+      return;
+    }
 
     const context = this.buildContext();
     const strategy = this.role === "impostor" ? this.impostorStrategy : this.crewmateStrategy;
     const action = strategy.decideAction(context);
 
-    logger.debug(`[${this.name}] Action: type=${action.type} role=${this.role} phase=${this.phase} loc=${this.myLocation}`);
+    logger.debug(`[${this.name}] Executing Action: ${action.type}`);
 
-    // Translate action to server messages
+    let nextActionDelay = randomDelay(); // Base delay 1-3s
+
     switch (action.type) {
       case ActionType.Move:
         if (action.destination !== undefined) {
-          // Don't update myLocation here — wait for server confirmation via server:player_moved
           this.sendToServer({
             type: "agent:position_update",
             gameId: this.roomId,
@@ -412,10 +417,10 @@ export class ServerAgent {
         break;
 
       case ActionType.DoTask:
-        const doTaskTimer = setTimeout(() => {
+        nextActionDelay = 10000 + randomDelay(); // Task takes 11-13s
+        const taskTimer = setTimeout(() => {
           if (!this.isAlive || this.phase !== 2) return;
           this.tasksCompleted++;
-          this.memory.recordTaskCompletion(this.address);
           this.sendToServer?.({
             type: "agent:task_complete",
             gameId: this.roomId!,
@@ -424,90 +429,51 @@ export class ServerAgent {
             totalTasks: this.totalTasks,
             location: this.myLocation,
           });
-        }, 20000); // 20 seconds to complete a task
-        this.pendingTimers.push(doTaskTimer);
+        }, nextActionDelay - 500); // Finish just before next action
+        this.pendingTimers.push(taskTimer);
         break;
 
       case ActionType.FakeTask:
-        // Fake tasks don't send anything to the server
-        // Just waste time to look like we're doing a task
+        nextActionDelay = 3000 + randomDelay(); // Fake for 4-6s
         break;
 
       case ActionType.Kill:
         if (action.target) {
           this.sendToServer({
-            type: "agent:kill",
-            gameId: this.roomId,
-            killer: this.address,
-            victim: action.target,
-            location: this.myLocation,
-            round: this.round,
+            type: "agent:kill", gameId: this.roomId, killer: this.address,
+            victim: action.target, location: this.myLocation, round: this.round,
           });
         }
         break;
 
       case ActionType.Report:
-        this.memory.recordReport(this.address, this.round);
         this.sendToServer({
-          type: "agent:report_body",
-          gameId: this.roomId,
-          reporter: this.address,
-          bodyLocation: this.myLocation,
-          round: this.round,
-        });
-        break;
-
-      case ActionType.CallMeeting:
-        this.sendToServer({
-          type: "agent:call_meeting",
-          gameId: this.roomId,
+          type: "agent:report_body", gameId: this.roomId, reporter: this.address,
+          victim: action.target, location: this.myLocation, round: this.round,
         });
         break;
 
       case ActionType.Sabotage:
         if (action.sabotage !== undefined) {
-          this.sendToServer({
-            type: "agent:sabotage",
-            gameId: this.roomId,
-            sabotageType: action.sabotage,
-          });
+          this.sendToServer({ type: "agent:sabotage", gameId: this.roomId, sabotageType: action.sabotage });
         }
         break;
 
       case ActionType.FixSabotage:
         if (action.targetLocation !== undefined) {
-          this.sendToServer({
-            type: "agent:fix_sabotage",
-            gameId: this.roomId,
-            location: action.targetLocation,
-          });
+          this.sendToServer({ type: "agent:fix_sabotage", gameId: this.roomId, location: action.targetLocation });
         }
         break;
-
-      case ActionType.Skip:
-      case ActionType.None:
-        // Do nothing
+        
+      default:
         break;
     }
 
-    // Schedule another action after a shorter delay for high intensity
-    if (this.phase === 2 && this.isAlive) {
-      let delay = randomDelay(); // Reduced base delay
-      
-      if (action.type === ActionType.DoTask) {
-        delay = 25000 + randomDelay(); // Real tasks take much longer now
-      } else if (action.type === ActionType.FakeTask) {
-        // Impostors fake tasks much faster so they can move and kill again
-        delay = (this.role === "impostor" ? 2000 : 12000) + randomDelay();
-      }
-      
-      const timer = setTimeout(() => {
-        if (this.isAlive && this.phase === 2) {
-          this.scheduleAction();
-        }
-      }, delay);
-      this.pendingTimers.push(timer);
-    }
+    // Schedule next decision loop
+    const nextTimer = setTimeout(() => {
+      this.executeAction();
+    }, nextActionDelay);
+    this.pendingTimers.push(nextTimer);
   }
 
   private scheduleVote(): void {

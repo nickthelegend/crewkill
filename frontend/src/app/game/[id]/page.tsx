@@ -111,8 +111,8 @@ export default function RoomDetailsPage() {
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
-              {/* Live View button for active games */}
-              {isLive && (
+              {/* Watch Live button — available if game is not ended */}
+              {!isEnded && (
                 <Link 
                   href={`/game/${roomId}/live`}
                   className="group relative px-12 py-6 bg-red-600 hover:bg-red-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(220,38,38,0.4)] overflow-hidden"
@@ -132,7 +132,7 @@ export default function RoomDetailsPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
                 <span className="relative z-10 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                  📋 {isEnded ? "View Recap" : "View Events"}
+                  📋 Recap
                 </span>
               </Link>
               

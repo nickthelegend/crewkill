@@ -6,7 +6,7 @@ ws.on('open', () => {
         type: 'client:create_room',
         maxPlayers: 10,
         impostorCount: 2,
-        aiAgentCount: 10
+        aiAgentCount: 5
     }));
 });
 

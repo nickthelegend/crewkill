@@ -3172,6 +3172,10 @@ export class WebSocketRelayServer {
     room.players.push(playerState);
     this.gameStateManager.updatePlayer(roomId, playerState);
 
+    // Sync to Convex and check start conditions
+    this.updateConvexPlayers(roomId);
+    this.onPlayerJoinedRoom(roomId);
+
     // Track in agent stats
     this.getOrCreateAgentStats(agent.address, agent.name);
 

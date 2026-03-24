@@ -359,7 +359,7 @@ export function useGameServer(): UseGameServerReturn {
               };
             });
             break;
-
+          case "server:player_voted":
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
