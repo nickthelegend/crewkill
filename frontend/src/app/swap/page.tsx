@@ -85,7 +85,7 @@ export default function SwapPage() {
       {/* Main Container */}
       <div className="w-full max-w-[480px] z-10">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">
+          <h1 className="text-4xl font-black tracking-tight text-white uppercase">
             Command <span className="text-red-500">Swap</span>
           </h1>
           <div className="flex gap-2">
@@ -116,10 +116,10 @@ export default function SwapPage() {
               <span className="text-xs font-mono font-bold uppercase tracking-widest text-white/40 group-hover:text-white/60 transition-colors">Sell</span>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono text-white/20 tracking-tighter uppercase font-bold">Reserves:</span>
-                <span className="text-xs font-mono text-red-500/80 font-bold italic">
+                <span className="text-xs font-mono text-red-500/80 font-bold">
                   {reserves ? (fromToken.symbol === 'OCT' ? formatUnits(reserves.x, 9) : formatUnits(reserves.y, 9)) : '...'}
                 </span>
-                <button className="text-[10px] font-black italic text-red-500/40 hover:text-red-500 tracking-widest uppercase transition-colors">MAX</button>
+                <button className="text-[10px] font-black text-red-500/40 hover:text-red-500 tracking-widest uppercase transition-colors">MAX</button>
               </div>
             </div>
             
@@ -139,7 +139,7 @@ export default function SwapPage() {
                 onClick={handleSwapTokens}
                 className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl py-2 px-3 transition-all active:scale-95 group/btn"
               >
-                <span className="text-xl font-black italic tracking-tight">{fromToken.symbol}</span>
+                <span className="text-xl font-black tracking-tight">{fromToken.symbol}</span>
                 <ChevronDown size={18} className="text-white/20 group-hover/btn:text-white transition-colors" />
               </button>
             </div>
@@ -164,7 +164,7 @@ export default function SwapPage() {
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-mono font-bold uppercase tracking-widest text-white/40 group-hover:text-white/60 transition-colors">Buy</span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-white/20 tracking-tighter uppercase font-bold italic">Low Impact</span>
+                <span className="text-[10px] font-mono text-white/20 tracking-tighter uppercase font-bold">Low Impact</span>
               </div>
             </div>
             
@@ -183,7 +183,7 @@ export default function SwapPage() {
                 onClick={handleSwapTokens}
                 className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl py-2 px-3 transition-all active:scale-95 group/btn"
               >
-                <span className="text-xl font-black italic tracking-tight">{toToken.symbol}</span>
+                <span className="text-xl font-black tracking-tight">{toToken.symbol}</span>
                 <ChevronDown size={18} className="text-white/20 group-hover/btn:text-white transition-colors" />
               </button>
             </div>
@@ -195,7 +195,7 @@ export default function SwapPage() {
             whileTap={{ scale: 0.98 }}
             disabled={!fromAmount || isSwapping || !account}
             onClick={executeSwap}
-            className="w-full mt-4 py-6 rounded-[24px] bg-red-600 hover:bg-red-500 text-white font-black italic text-2xl uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(239, 68, 68, 0.2)] disabled:opacity-50 disabled:bg-white/5 transition-all flex items-center justify-center gap-3 group"
+            className="w-full mt-4 py-6 rounded-[24px] bg-red-600 hover:bg-red-500 text-white font-black text-2xl uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(239, 68, 68, 0.2)] disabled:opacity-50 disabled:bg-white/5 transition-all flex items-center justify-center gap-3 group"
           >
             {isSwapping ? (
               <div className="flex items-center gap-2">
