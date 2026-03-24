@@ -130,12 +130,12 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
         </div>
 
         <div className="mb-auto">
-          <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4 group-hover:text-red-500 transition-colors duration-500 font-space">
-             Confidence <br /><span className="text-red-500">Market</span>
+          <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4 group-hover:text-red-500 transition-colors duration-500 font-space truncate whitespace-nowrap" title={game.roomId}>
+             {game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
           </h3>
           <div className="flex items-center gap-3">
              <div className="h-[1px] w-8 bg-white/10" />
-             <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">OneChain_Protocol_V1</p>
+             <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">HEDGING_POOL_V1</p>
           </div>
         </div>
 
@@ -146,13 +146,17 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
                   <div className="text-[8px] text-white/20 uppercase font-black tracking-widest font-space">Active Operatives</div>
                   <div className="flex -space-x-3">
                      {players.slice(0, 6).map((p: any, i: number) => (
-                       <div key={i} className={`w-10 h-10 border border-white/5 bg-black/60 flex items-center justify-center overflow-hidden transition-all group-hover:-translate-y-1 relative z-[${10-i}] backdrop-blur-md`}>
+                       <div 
+                         key={i} 
+                         className="w-10 h-10 border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:-translate-y-1 relative backdrop-blur-md"
+                         style={{ zIndex: 10 - i }}
+                       >
                           <AmongUsSprite colorId={p.colorId ?? (i % 12)} size={24} isGhost={!p.isAlive} />
-                          {!p.isAlive && <div className="absolute inset-0 bg-red-900/40 backdrop-grayscale" />}
+                          {!p.isAlive && <div className="absolute inset-0 bg-red-500/10 pointer-events-none" />}
                        </div>
                      ))}
                      {players.length > 6 && (
-                       <div className="w-10 h-10 bg-white/5 border border-white/5 flex items-center justify-center text-[10px] text-white/40 font-black z-0">
+                       <div className="w-10 h-10 bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-white/40 font-black z-0">
                           +{players.length - 6}
                        </div>
                      )}

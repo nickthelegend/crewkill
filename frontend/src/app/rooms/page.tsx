@@ -129,7 +129,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
                 {status.label}
               </span>
             </div>
-            <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none mb-2 truncate max-w-[240px] font-space">
+            <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none mb-2 truncate whitespace-nowrap max-w-full font-space" title={game.roomId}>
               {game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
             </h3>
             <span className="text-[9px] text-white/20 font-space uppercase tracking-[0.3em] block">
@@ -139,7 +139,11 @@ function RoomCard({ game, index }: { game: any; index: number }) {
 
           <div className="flex items-center -space-x-4 opacity-40 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="w-12 h-12 rounded-none border border-white/5 bg-black/60 flex items-center justify-center backdrop-blur-xl relative">
+              <div 
+                key={i} 
+                className="w-12 h-12 rounded-none border border-white/5 bg-black/60 flex items-center justify-center backdrop-blur-xl relative"
+                style={{ zIndex: 3 - i }}
+              >
                 <AmongUsSprite colorId={i + (game.roomId.length % 12)} size={28} />
               </div>
             ))}
