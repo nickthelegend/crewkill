@@ -13,6 +13,7 @@ const logger = createLogger("game-state-manager");
 // Game constants
 const KILL_COOLDOWN_ROUNDS = 0; // Cooldown managed by agent loop delay for faster games
 const MAX_EMERGENCY_MEETINGS_PER_PLAYER = 1; // Each player gets 1 emergency meeting
+const MAX_MEETINGS_PER_GAME = 2; // GLOBAL LIMIT: only 2 voting rounds allowed per game
 const SABOTAGE_COOLDOWN_MS = 30000; // 30 seconds between sabotages
 
 // Sabotage configuration
@@ -112,6 +113,7 @@ interface GameInternalState {
   lastSabotageTime: number; // timestamp of last sabotage
   playersInVent: Set<string>; // players currently hiding in vents
   playersOnCameras: Set<string>; // players currently watching cameras
+  totalMeetingsCalled: number; // GLOBAL tracking of voting rounds
 }
 
 export interface WinConditionResult {
@@ -154,6 +156,7 @@ export class GameStateManager {
         lastSabotageTime: 0,
         playersInVent: new Set(),
         playersOnCameras: new Set(),
+        totalMeetingsCalled: 0,
       });
       logger.info(`Created new game state: ${gameId}`);
     }
@@ -646,8 +649,12 @@ export class GameStateManager {
     const meetingsUsed = internal.emergencyMeetingsUsed.get(playerKey) ?? 0;
     const remaining = MAX_EMERGENCY_MEETINGS_PER_PLAYER - meetingsUsed;
 
+    if (internal.totalMeetingsCalled >= MAX_MEETINGS_PER_GAME) {
+      return { canCall: false, reason: "Maximum voting rounds (2) reached for this game", remaining: 0 };
+    }
+
     if (remaining <= 0) {
-      return { canCall: false, reason: "No emergency meetings remaining", remaining: 0 };
+      return { canCall: false, reason: "You have already used your emergency meeting", remaining: 0 };
     }
 
     return { canCall: true, remaining };
@@ -663,6 +670,7 @@ export class GameStateManager {
     const playerKey = playerAddress.toLowerCase();
     const meetingsUsed = (internal.emergencyMeetingsUsed.get(playerKey) ?? 0) + 1;
     internal.emergencyMeetingsUsed.set(playerKey, meetingsUsed);
+    internal.totalMeetingsCalled++;
 
     const remaining = MAX_EMERGENCY_MEETINGS_PER_PLAYER - meetingsUsed;
     logger.info(`Emergency meeting called by ${playerAddress}, ${remaining} meetings remaining`);

@@ -26,7 +26,7 @@ export interface RoomInfo {
   }>;
   spectators: number;
   maxPlayers: number;
-  phase: "lobby" | "playing" | "ended";
+  phase: "lobby" | "boarding" | "playing" | "ended";
   createdAt: number;
   creator?: string;
   wagerAmount?: string;

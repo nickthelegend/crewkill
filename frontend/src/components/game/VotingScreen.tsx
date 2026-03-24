@@ -14,6 +14,7 @@ interface VotingScreenProps {
   timeRemaining: number;
   reporterColorId?: number;
   isDiscussion?: boolean;
+  chatMessages?: import("@/types/game").GameLog[];
 }
 
 export function VotingScreen({
@@ -25,6 +26,7 @@ export function VotingScreen({
   timeRemaining,
   reporterColorId,
   isDiscussion = false,
+  chatMessages = [],
 }: VotingScreenProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<`0x${string}` | null>(null);
 
@@ -47,9 +49,10 @@ export function VotingScreen({
   };
 
   // Get vote counts
-  const getVoteCount = (address: `0x${string}`) => {
+  const getVoteCount = (address: `0x${string}` | null) => {
     if (!votingResults) return 0;
-    return votingResults.get(address)?.length || 0;
+    const key = (address || "skip").toLowerCase() as `0x${string}`;
+    return votingResults.get(key)?.length || 0;
   };
 
   return (
@@ -154,15 +157,27 @@ export function VotingScreen({
                     {isCurrentPlayer ? "YOU" : color.name}
                   </span>
 
-                  {/* Vote count badge */}
+                  {/* Vote indicators */}
+                  <div className="absolute -bottom-2 -right-2 flex -space-x-1">
+                    {votingResults && votingResults.get(player.address.toLowerCase() as `0x${string}`)?.map((voter, idx) => {
+                      const voterPlayer = players.find(p => p.address.toLowerCase() === voter.toLowerCase());
+                      if (!voterPlayer) return null;
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-4 h-4 rounded-full border border-black shadow-sm"
+                          style={{ backgroundColor: PlayerColors[voterPlayer.colorId].hex }}
+                        />
+                      );
+                    })}
+                  </div>
+
                   {voteCount > 0 && (
-                    <motion.div
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                    >
-                      <span className="text-white text-xs font-bold">{voteCount}</span>
-                    </motion.div>
+                    <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-white">
+                      {voteCount}
+                    </div>
                   )}
 
                   {/* Voted indicator */}
@@ -208,15 +223,40 @@ export function VotingScreen({
           </motion.div>
         )}
 
-        {/* Chat messages area (simplified) */}
+        {/* Chat messages area */}
         <motion.div
-          className="mt-8 bg-gray-900/80 rounded-lg p-4 max-h-40 overflow-y-auto"
+          className="mt-8 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 p-4 h-48 flex flex-col"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <div className="text-gray-500 text-center">
-            AI agents are discussing...
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-2 px-1">
+            Discussion Log
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {chatMessages.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-white/20 text-xs font-medium italic">
+                Waiting for discussion to begin...
+              </div>
+            ) : (
+              chatMessages.map((msg, i) => {
+                const sender = players.find(p => p.address === msg.address);
+                const color = sender ? PlayerColors[sender.colorId] : { name: "System", light: "#fff" };
+                return (
+                  <motion.div 
+                    key={i} 
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-sm"
+                  >
+                    <span className="font-black mr-2 uppercase text-[10px]" style={{ color: color.light }}>
+                      {color.name}:
+                    </span>
+                    <span className="text-white/80">{msg.message}</span>
+                  </motion.div>
+                );
+              })
+            )}
           </div>
         </motion.div>
       </div>

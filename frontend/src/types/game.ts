@@ -126,7 +126,7 @@ export interface DeadBody {
 }
 
 export interface GameLog {
-  type: "kill" | "report" | "meeting" | "vote" | "eject" | "task" | "sabotage" | "join" | "start" | "move";
+  type: "kill" | "report" | "meeting" | "vote" | "eject" | "task" | "sabotage" | "join" | "start" | "move" | "chat";
   message: string;
   timestamp: number;
   round?: bigint;

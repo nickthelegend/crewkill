@@ -135,6 +135,7 @@ export interface UseGameServerReturn {
   startGame: () => void;
   addAIAgent: (roomId: string) => void;
   removeAIAgent: (roomId: string) => void;
+  votingResults: Map<string, string[]>;
 }
 
 export function useGameServer(): UseGameServerReturn {
@@ -149,6 +150,7 @@ export function useGameServer(): UseGameServerReturn {
   const [leaderboard, setLeaderboard] = useState<AgentStats[]>([]);
   const [deadBodies, setDeadBodies] = useState<DeadBody[]>([]);
   const [logs, setLogs] = useState<GameLog[]>([]);
+  const [votingResults, setVotingResults] = useState<Map<string, string[]>>(new Map());
 
   // Track current room ID for filtering logs
   const currentRoomIdRef = useRef<string | null>(null);
@@ -333,6 +335,9 @@ export function useGameServer(): UseGameServerReturn {
                 detailedPhase: message.phase 
               };
             });
+            if (message.phase === GamePhase.ActionCommit) {
+              setVotingResults(new Map());
+            }
             break;
 
           case "server:task_completed":
@@ -355,8 +360,6 @@ export function useGameServer(): UseGameServerReturn {
             });
             break;
 
-          case "server:vote_cast":
-            addLog("vote", `🗳️ ${message.voter.slice(0,8)}... voted ${message.target ? 'to eject ' + message.target.slice(0,8) + '...' : 'to skip'}`, message.gameId, message.voter, message.target);
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
@@ -365,6 +368,15 @@ export function useGameServer(): UseGameServerReturn {
                   p.address === message.voter ? { ...p, hasVoted: true } : p,
                 ),
               };
+            });
+            setVotingResults((prev) => {
+              const next = new Map(prev);
+              const target = message.target?.toLowerCase() || 'skip';
+              const currentVoters = next.get(target) || [];
+              if (!currentVoters.includes(message.voter)) {
+                next.set(target, [...currentVoters, message.voter]);
+              }
+              return next;
             });
             break;
 
@@ -411,12 +423,16 @@ export function useGameServer(): UseGameServerReturn {
             setCurrentRoom((prev) => {
               if (!prev || prev.roomId !== message.gameId) return prev;
               return {
-                ...prev,
-                players: prev.players.map((p) =>
-                  p.address === message.ejected ? { ...p, isAlive: false } : p,
-                ),
-              };
+                  ...prev,
+                  players: prev.players.map((p) =>
+                    p.address === message.ejected ? { ...p, isAlive: false } : p,
+                  ),
+                };
             });
+            break;
+
+          case "server:chat":
+            addLog("chat", message.message, message.gameId, message.address);
             break;
 
           case "server:game_ended": // Restored case
@@ -587,5 +603,6 @@ export function useGameServer(): UseGameServerReturn {
     startGame,
     addAIAgent,
     removeAIAgent,
+    votingResults,
   };
 }

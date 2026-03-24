@@ -66,13 +66,14 @@ export function HomeInner({
     players,
     deadBodies,
     logs,
-    phase,
-    tasksCompleted,
-    totalTasks,
     joinRoom,
     leaveRoom,
     addAIAgent,
     removeAIAgent,
+    votingResults,
+    phase,
+    tasksCompleted,
+    totalTasks,
   } = useGameServer();
 
   // Use WebSocket data when connected for real-time updates, fallback to HTTP
@@ -118,8 +119,10 @@ export function HomeInner({
 
   // Watch for phase changes from WebSocket
   useEffect(() => {
-    if (phase === GamePhase.ActionCommit && state.view === "lobby") {
+    if (phase === GamePhase.ActionCommit && (state.view === "lobby" || state.view === "voting")) {
       dispatch({ type: "SET_VIEW", view: "game" });
+    } else if ((phase === GamePhase.Discussion || phase === GamePhase.Voting) && state.view === "game") {
+      dispatch({ type: "SET_VIEW", view: "voting" });
     } else if (phase === GamePhase.Ended && state.view === "game") {
       dispatch({ type: "SHOW_GAME_END" });
     }
@@ -276,6 +279,9 @@ export function HomeInner({
             hasVoted={state.hasVoted}
             timeRemaining={state.timeRemaining}
             reporterColorId={0}
+            isDiscussion={phase === GamePhase.Discussion}
+            votingResults={votingResults as any}
+            chatMessages={logs.filter(l => l.type === 'chat')}
           />
         )}
       </AnimatePresence>
