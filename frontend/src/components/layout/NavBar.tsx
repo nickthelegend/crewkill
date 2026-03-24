@@ -12,6 +12,7 @@ export function NavBar() {
   const links = [
     { name: "Live Market", href: "/market" },
     { name: "Rooms", href: "/rooms" },
+    { name: "Swap", href: "/swap" },
     { name: "Leaderboard", href: "/leaderboard" },
   ];
 
