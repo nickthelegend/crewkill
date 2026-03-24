@@ -87,6 +87,8 @@ export default function RoomsPage() {
   );
 }
 
+import { getExplorerObjectUrl, getExplorerTxUrl } from "@/lib/onechain";
+
 function RoomCard({ game, index }: { game: any; index: number }) {
   const isStarting = game.status === "CREATED";
   const startAt = game.scheduledAt ? new Date(game.scheduledAt) : null;
@@ -133,9 +135,21 @@ function RoomCard({ game, index }: { game: any; index: number }) {
                 ? `${game.roomId.slice(0, 8)}...${game.roomId.slice(-6)}`
                 : game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
             </h3>
-            <span className="text-[9px] text-white/20 font-space uppercase tracking-[0.3em] block">
-              SECTOR_ID_#{game.roomId.slice(-8).toUpperCase()}
-            </span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] text-white/20 font-space uppercase tracking-[0.3em] block">
+                SECTOR_ID_#{game.roomId.slice(-8).toUpperCase()}
+              </span>
+              {game.marketId && (
+                <a 
+                  href={getExplorerObjectUrl(game.marketId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[8px] font-mono text-cyan-400/50 hover:text-cyan-400 transition-colors uppercase tracking-widest"
+                >
+                  [SCAN_MARKET]
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center -space-x-4 opacity-40 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110">
@@ -158,11 +172,23 @@ function RoomCard({ game, index }: { game: any; index: number }) {
           <div className="space-y-6">
              {/* Init Step */}
              <div className="flex gap-4 items-start relative pb-6 border-l border-white/10 ml-1.5 font-space">
-               <div className="absolute -left-[4.5px] top-0 w-2 h-2 bg-white/20 border border-black" />
-               <div className="flex-1 -mt-1 pl-4">
-                 <div className="text-[8px] text-white/20 font-black tracking-widest uppercase mb-1">Initialized</div>
-                 <div className="text-[10px] text-white/70 uppercase font-black">{createdAt ? format(createdAt, "MMM dd HH:mm") : "---"}</div>
-               </div>
+                <div className="absolute -left-[4.5px] top-0 w-2 h-2 bg-white/20 border border-black" />
+                <div className="flex-1 -mt-1 pl-4 flex justify-between items-start">
+                  <div>
+                    <div className="text-[8px] text-white/20 font-black tracking-widest uppercase mb-1">Initialized</div>
+                    <div className="text-[10px] text-white/70 uppercase font-black">{createdAt ? format(createdAt, "MMM dd HH:mm") : "---"}</div>
+                  </div>
+                  {game.creationDigest && (
+                    <a 
+                      href={getExplorerTxUrl(game.creationDigest)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[8px] font-mono text-cyan-400 hover:text-cyan-300"
+                    >
+                      [SCAN]
+                    </a>
+                  )}
+                </div>
              </div>
 
              {/* Start Step */}
@@ -196,7 +222,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
             <div className="space-y-1">
               <span className="text-[8px] text-white/20 font-black tracking-widest uppercase block">Pool Volume</span>
               <span className="text-lg font-black text-yellow-500/90 leading-none">
-                {(parseFloat(game.totalPot || "0") / 1e9).toFixed(2)} <span className="text-[10px] text-white/30 ml-1">OCT</span>
+                {(parseFloat(game.totalPot || "0") / 1e9).toFixed(2)} <span className="text-[10px] text-white/30 ml-1">$CREW</span>
               </span>
             </div>
             <div className="text-right space-y-1">

@@ -33,6 +33,8 @@ export interface LobbyViewProps {
   onRemoveAIAgent?: (roomId: string) => void;
 }
 
+import { getExplorerTxUrl, getExplorerObjectUrl } from '@/lib/onechain';
+
 export function LobbyView({
   isConnected,
   rooms,
@@ -135,7 +137,20 @@ export function LobbyView({
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-white/80 font-mono tracking-tighter">NODE_{getDisplayId(room.roomId, room.marketId)}</span>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-white/80 font-mono tracking-tighter uppercase">NODE_{getDisplayId(room.roomId, room.marketId)}</span>
+                              {room.marketId && (
+                                <a 
+                                  href={getExplorerObjectUrl(room.marketId)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[8px] font-mono text-cyan-400/50 hover:text-cyan-400 uppercase tracking-widest mt-1"
+                                >
+                                  SCAN_MARKET
+                                </a>
+                              )}
+                            </div>
                             <div className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
                               isPlaying ? "bg-rose-500/10 text-rose-500" : "bg-cyan-500/10 text-cyan-400"
                             }`}>
@@ -186,7 +201,7 @@ export function LobbyView({
                            {currentRoom.wagerAmount && (
                              <div className="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2">
                                <div className="w-1 h-1 bg-yellow-400 rotate-45" />
-                               {Number(currentRoom.wagerAmount) / 1e9} OCT ENTRY
+                               {Number(currentRoom.wagerAmount) / 1e9} $CREW ENTRY
                              </div>
                            )}
                         </div>
@@ -195,28 +210,28 @@ export function LobbyView({
                       <div className="text-right hidden sm:block">
                          <div className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-2 font-mono">Total Prize Pool</div>
                          <div className="text-5xl font-black text-white tracking-tighter tabular-nums leading-none">
-                            {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-ml-1">OCT</span>
+                            {(Number(currentRoom.wagerAmount || 0) * currentRoom.players.length / 1e9).toFixed(1)} <span className="text-yellow-400 text-sm not-ml-1">$CREW</span>
                           </div>
                        </div>
                     </div>
 
                     {/* On-Chain Verification */}
                     {currentRoom.creationDigest && (
-                      <div className="mb-8 p-4 bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="mb-8 p-4 bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-1.5 h-1.5 bg-cyan-400 rotate-45" />
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-[10px] text-cyan-400 font-black uppercase tracking-widest">On-Chain Room Verified</p>
-                            <p className="text-[9px] font-mono text-white/40">{currentRoom.creationDigest}</p>
+                            <p className="text-[9px] font-mono text-white/40 truncate">{currentRoom.creationDigest}</p>
                           </div>
                         </div>
                         <a 
-                          href={`https://explorer.onechain.network/txblock/${currentRoom.creationDigest}`}
+                          href={getExplorerTxUrl(currentRoom.creationDigest)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[9px] font-black text-cyan-400 uppercase tracking-widest hover:text-cyan-300 underline decoration-cyan-400/30"
+                          className="shrink-0 text-[9px] font-black text-white bg-cyan-600 hover:bg-cyan-500 px-3 py-2 uppercase tracking-widest transition-colors flex items-center gap-2"
                         >
-                          View Transaction
+                          VIEW_ON_SCAN [{currentRoom.creationDigest.slice(0, 8)}...]
                         </a>
                       </div>
                     )}

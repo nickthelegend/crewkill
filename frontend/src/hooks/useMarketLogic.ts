@@ -30,6 +30,7 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
   const [userBet, setUserBet] = useState<any | null>(null);
   const [txStatus, setTxStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [txMsg, setTxMsg] = useState('');
+  const [txDigest, setTxDigest] = useState<string | null>(null);
   const [hasSynced, setHasSynced] = useState(false);
 
   const convexBets = useQuery(api.bets.getBetsByGame, { gameId }) || [];
@@ -137,6 +138,7 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
     const betMist = Math.round(parseFloat(betAmount) * 1_000_000_000);
     setLoading(true);
     setTxStatus('idle');
+    setTxDigest(null);
 
     if (IS_OFFLINE) {
       try {
@@ -211,6 +213,7 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
           onSuccess: (result) => {
             setTxStatus('success');
             setTxMsg('Order Executed Successfully');
+            setTxDigest(result.digest);
             setLoading(false);
             fetchMarketState();
             console.log('Bet result:', result);
@@ -241,6 +244,7 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
     loading,
     txStatus,
     txMsg,
+    txDigest,
     handlePlaceBet,
     convexBets
   };

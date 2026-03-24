@@ -1,9 +1,10 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useMarket } from './MarketContext';
 import { useMarketLogic } from '@/hooks/useMarketLogic';
 import { Player } from './PredictionMarket';
+import { getExplorerTxUrl } from '@/lib/onechain';
 
 export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase }: { 
   gameId: string, 
@@ -12,7 +13,7 @@ export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase
   gamePhase: number 
 }) {
   const { selectedSuspect, setSelectedSuspect, betAmount, setBetAmount } = useMarket();
-  const { account, suspectPools, bettingOpen, loading, txStatus, txMsg, handlePlaceBet } = useMarketLogic(gameId, marketObjectId, gamePlayers, gamePhase);
+  const { account, suspectPools, bettingOpen, loading, txStatus, txMsg, txDigest, handlePlaceBet } = useMarketLogic(gameId, marketObjectId, gamePlayers, gamePhase);
 
   const selectedPlayer = gamePlayers.find(p => p.address === selectedSuspect);
   const pool = suspectPools.find(p => p.address === selectedSuspect);
@@ -100,7 +101,19 @@ export function TradingTerminal({ gameId, marketObjectId, gamePlayers, gamePhase
               <div className={`mt-6 p-4 text-[10px] font-black uppercase tracking-[0.2em] border font-space ${
                  txStatus === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-500"
               }`}>
-                 {txMsg}
+                 <div className="flex justify-between items-center">
+                    <span>{txMsg}</span>
+                    {txStatus === 'success' && txDigest && (
+                       <a 
+                          href={getExplorerTxUrl(txDigest)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-cyan-400 hover:text-cyan-300 underline underline-offset-4"
+                       >
+                          VIEW_ON_SCAN [{txDigest.slice(0, 10)}...]
+                       </a>
+                    )}
+                 </div>
               </div>
            )}
         </div>

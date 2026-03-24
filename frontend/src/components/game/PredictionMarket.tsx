@@ -101,6 +101,8 @@ export function MarketChart({ players, bets, totalPot }: { players: Player[], be
 
 const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 
+import { getExplorerObjectUrl, getExplorerAccountUrl } from '@/lib/onechain';
+
 export function PredictionMarket({
   gameId, marketObjectId, gamePlayers, isResolved, gamePhase, isSidebar = false 
 }: PredictionMarketProps) {
@@ -131,7 +133,19 @@ export function PredictionMarket({
           </div>
           <div className="text-left md:text-right">
              <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.3em] mb-2 font-space">Global Volume</div>
-             <div className="text-3xl md:text-5xl font-black text-white font-space tracking-tighter">{(totalPot / 1e9).toFixed(2)} <span className="text-red-500 text-sm">$CREW</span></div>
+             <div className="text-3xl md:text-5xl font-black text-white font-space tracking-tighter">
+                {(totalPot / 1e9).toFixed(2)} <span className="text-red-500 text-sm">$CREW</span>
+                {marketObjectId && (
+                  <a 
+                    href={getExplorerObjectUrl(marketObjectId)} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block text-[8px] text-cyan-400/50 hover:text-cyan-400 font-mono mt-1"
+                  >
+                    SCAN_ID: {marketObjectId.slice(0, 10)}...
+                  </a>
+                )}
+             </div>
           </div>
         </div>
 
@@ -168,9 +182,15 @@ export function PredictionMarket({
                    </div>
                    <div className="flex flex-col gap-1 min-w-0">
                       <span className="text-xl font-black text-white uppercase tracking-tighter font-space truncate">{player.name}</span>
-                      <span className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] font-space truncate">
-                         {player.isAlive ? "Active Agent" : "Agent Terminated"}
-                      </span>
+                      <a 
+                        href={getExplorerAccountUrl(player.address)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] font-space truncate hover:text-cyan-400 transition-colors"
+                      >
+                         {player.address.slice(0, 10)}... {player.isAlive ? " (ACTIVE)" : " (TERMINATED)"}
+                      </a>
                    </div>
                 </div>
                 
