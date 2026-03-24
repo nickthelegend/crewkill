@@ -93,25 +93,37 @@ function GameBettingContent() {
               <div className="flex flex-col lg:flex-row justify-between items-end gap-12">
                 <div className="flex-1">
                    <h2 className="text-[11px] font-black text-red-500 uppercase tracking-[0.5em] mb-4 flex items-center gap-3 font-space">
-                     <span className="w-2.5 h-2.5 bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse" />
-                     LIVE_DEPLOYMENT_ACTIVE
+                     <span className={`w-2.5 h-2.5 ${dbGame.status === "CREATED" ? "bg-red-600 animate-pulse" : "bg-white/20"} shadow-[0_0_15px_rgba(220,38,38,0.5)]`} />
+                     {dbGame.status === "CREATED" ? "LIVE_DEPLOYMENT_ACTIVE" : "MISSION_TERMINATED_PREDICTIONS_CLOSED"}
                    </h2>
                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none font-space max-w-4xl">
-                     WHO IS THE <span className="text-red-500">IMPOSTOR?</span>
+                     {dbGame.status === "CREATED" ? (
+                       <>WHO IS THE <span className="text-red-500">IMPOSTOR?</span></>
+                     ) : (
+                       <>GAME OVER / <span className="text-white/40">PREDICTION OVER</span></>
+                     )}
                    </h1>
                 </div>
 
-                <div className="hidden lg:flex flex-col gap-6 items-end pb-2">
-                   <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div className="text-[9px] text-white/20 uppercase font-black tracking-[0.3em] leading-none mb-2 font-space">HEDGING_STATUS</div>
-                        <div className="text-[11px] text-emerald-400 font-black tracking-widest font-space uppercase">SECURE_LINK_VERIFIED</div>
-                      </div>
-                      <div className="w-12 h-12 border border-emerald-500/20 flex items-center justify-center bg-emerald-500/5 backdrop-blur-md">
-                        <div className="w-2.5 h-2.5 bg-emerald-500 animate-ping" />
-                      </div>
-                   </div>
-                </div>
+                 <div className="hidden lg:flex flex-col gap-6 items-end pb-2">
+                    <div className="flex items-center gap-6">
+                       <div className="text-right">
+                         <div className="text-[9px] text-white/20 uppercase font-black tracking-[0.3em] leading-none mb-2 font-space">HEDGING_STATUS</div>
+                         <div className={`text-[11px] font-black tracking-widest font-space uppercase ${
+                           dbGame.status === "CREATED" ? "text-emerald-400" : "text-white/20"
+                         }`}>
+                           {dbGame.status === "CREATED" ? "SECURE_LINK_VERIFIED" : "LINK_TERMINATED"}
+                         </div>
+                       </div>
+                       <div className={`w-12 h-12 border flex items-center justify-center backdrop-blur-md ${
+                         dbGame.status === "CREATED" ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/10 bg-white/5"
+                       }`}>
+                         <div className={`w-2.5 h-2.5 ${
+                           dbGame.status === "CREATED" ? "bg-emerald-500 animate-ping" : "bg-white/20"
+                         }`} />
+                       </div>
+                    </div>
+                 </div>
               </div>
             </motion.div>
           </header>
@@ -121,7 +133,7 @@ function GameBettingContent() {
               <div className="lg:col-span-8 space-y-8">
                   <PredictionMarket 
                     gameId={dbGame.roomId}
-                    marketObjectId={dbGame.marketId || ""}
+                    marketObjectId={dbGame.marketId || dbGame.roomId}
                     gamePlayers={marketPlayers}
                     isResolved={dbGame.status === "COMPLETED" || dbGame.status === "ENDED"}
                     actualImpostors={[]} 
@@ -131,10 +143,10 @@ function GameBettingContent() {
               </div>
 
              {/* Right Panel: Trading Terminal & Intel (4/12) */}
-             <div className="lg:col-span-4 flex flex-col gap-8 relative">
+              <div className="lg:col-span-4 flex flex-col gap-8 relative">
                 <TradingTerminal 
                    gameId={dbGame.roomId}
-                   marketObjectId={dbGame.marketId || ""}
+                   marketObjectId={dbGame.marketId || dbGame.roomId}
                    gamePlayers={marketPlayers}
                    gamePhase={gamePhaseNum}
                 />
@@ -170,19 +182,21 @@ function GameBettingContent() {
                    </div>
                 </section>
                 
-                <button 
-                    onClick={() => router.push(`/game/${actualRoomId}/live`)}
-                    className="w-full h-20 bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-black group transition-all duration-500 flex items-center justify-between px-10 relative overflow-hidden"
-                >
-                    <div className="relative z-10">
-                        <span className="block text-[10px] font-black text-white/20 uppercase tracking-[0.4em] group-hover:text-red-500 transition-colors">Switch_Interface</span>
-                        <span className="block text-xl font-black text-white uppercase tracking-tighter mt-1 font-space">Live Map Feed</span>
-                    </div>
-                    <svg className="w-6 h-6 text-white group-hover:translate-x-2 transition-transform relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                    <div className="absolute inset-0 bg-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity translate-x-12 group-hover:translate-x-0 transition-transform duration-700" />
-                </button>
+                {dbGame.status === "CREATED" && (
+                  <button 
+                      onClick={() => router.push(`/game/${actualRoomId}/live`)}
+                      className="w-full h-20 bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-black group transition-all duration-500 flex items-center justify-between px-10 relative overflow-hidden"
+                  >
+                      <div className="relative z-10">
+                          <span className="block text-[10px] font-black text-white/20 uppercase tracking-[0.4em] group-hover:text-red-500 transition-colors">Switch_Interface</span>
+                          <span className="block text-xl font-black text-white uppercase tracking-tighter mt-1 font-space">Live Map Feed</span>
+                      </div>
+                      <svg className="w-6 h-6 text-white group-hover:translate-x-2 transition-transform relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                      <div className="absolute inset-0 bg-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity translate-x-12 group-hover:translate-x-0 transition-transform duration-700" />
+                  </button>
+                )}
              </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GameLog as GameLogType, PlayerColors } from "@/types/game";
 import {
@@ -88,9 +88,13 @@ export function GameLogPanel({ logs: rawLogs, maxHeight = "400px" }: GameLogProp
 
      streamingRef.current = true;
      const next = queueRef.current.shift();
+     if (!next) {
+        streamingRef.current = false;
+        return;
+     }
      
      // Mock the time to be NOW as requested
-     const mockedLog = {
+     const mockedLog: DisplayLogType = {
         ...next,
         displayTime: new Date().toLocaleTimeString("en-US", {
            hour: "2-digit",

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@onelabs/dapp-kit';
 import { Transaction } from '@onelabs/sui/transactions';
-import { suiClient, PACKAGE_ID, MARKET_REGISTRY_ID } from '@/lib/onechain';
+import { suiClient, PACKAGE_ID, OCT_TOKEN_TYPE } from '@/lib/onechain';
 import { DynamicFieldInfo } from '@onelabs/sui/client';
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/../convex/_generated/api";
@@ -137,6 +137,7 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
 
     if (IS_OFFLINE) {
       try {
+        const betMist = Math.round(parseFloat(betAmount) * 1_000_000_000);
         await placeConvexBet({
           address: account.address,
           gameId: gameId,
@@ -157,28 +158,59 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
 
     try {
       const tx = new Transaction();
-      const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betMist)]);
-      tx.moveCall({
-         target: `${PACKAGE_ID}::prediction_market::place_bet`,
-         arguments: [tx.object(marketObjectId), tx.pure.address(selectedSuspect), betCoin],
+      const betMist = BigInt(Math.floor(Number(betAmount) * 1e9));
+
+      // FIX: Prediction Market expects OCT tokens, not SUI. 
+      // We must find an OCT coin object in the user's wallet.
+      const coins = await suiClient.getCoins({
+        owner: account.address,
+        coinType: OCT_TOKEN_TYPE,
       });
 
-      signAndExecute({ transaction: tx }, {
-          onSuccess: () => {
+      if (coins.data.length === 0) {
+        throw new Error(`Insufficient OCT balance. Need ${betAmount} OCT.`);
+      }
+
+      // Simple coin selection: pick the first one with enough balance or just any if it's the only one
+      // (For production, we might want to merge coins if needed, but for now we pick the strongest one)
+      const sortedCoins = [...coins.data].sort((a, b) => Number(BigInt(b.balance) - BigInt(a.balance)));
+      const bestCoin = sortedCoins[0];
+
+      if (BigInt(bestCoin.balance) < betMist) {
+        throw new Error(`Preferred OCT coin has insufficient balance. Largest coin: ${Number(bestCoin.balance) / 1e9} OCT.`);
+      }
+
+      const [betCoin] = tx.splitCoins(tx.object(bestCoin.coinObjectId), [tx.pure.u64(betMist)]);
+      
+      tx.moveCall({
+        target: `${PACKAGE_ID}::prediction_market::place_bet`,
+        arguments: [
+          tx.object(marketObjectId), 
+          tx.pure.address(selectedSuspect), 
+          betCoin
+        ],
+      });
+
+      signAndExecute(
+        { transaction: tx },
+        {
+          onSuccess: (result) => {
             setTxStatus('success');
-            setTxMsg(`ORDER SUBMITTED`);
+            setTxMsg('Order Executed Successfully');
             setLoading(false);
             fetchMarketState();
+            console.log('Bet result:', result);
           },
           onError: (err) => {
             setTxStatus('error');
-            setTxMsg(err.message || 'TX FAILED');
+            setTxMsg(err.message || 'Transmission Failed');
             setLoading(false);
           },
-      });
-    } catch (e: any) {
+        }
+      );
+    } catch (err: any) {
       setTxStatus('error');
-      setTxMsg(e.message || 'BUILD ERROR');
+      setTxMsg(err.message || 'Dry Run Fault Detected');
       setLoading(false);
     }
   };
