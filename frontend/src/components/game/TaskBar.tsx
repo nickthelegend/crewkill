@@ -11,7 +11,7 @@ export function TaskBar({ completed, total }: TaskBarProps) {
   const progress = total > 0 ? (completed / total) * 100 : 0;
 
   return (
-    <div className="fixed top-4 left-4 z-50">
+    <div className="">
       <div className="flex flex-col gap-1">
         {/* Task bar container */}
         <div

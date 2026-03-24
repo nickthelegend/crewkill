@@ -13,7 +13,7 @@ const MIN_KILL_ROUND = 0; // Kills allowed early
 export class ImpostorStrategy extends BaseStrategy {
   private style: ImpostorStyle;
   private memory: GameMemory;
-  private lastKillRound: number = 0; // Start at 0 so cooldown applies from game start
+  private lastKillRound: number = -1; // -1 allows killing on round 0
   private framesTarget: string | null = null;
 
   constructor(style: ImpostorStyle, memory: GameMemory) {

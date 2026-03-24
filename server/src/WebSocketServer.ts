@@ -1635,6 +1635,15 @@ export class WebSocketRelayServer {
     playerState.tasksCompleted = tasksCompleted;
     playerState.totalTasks = totalTasks;
 
+    const internalPlayer = extended.players.find((p) => p.address.toLowerCase() === player.toLowerCase());
+    if (internalPlayer) {
+      internalPlayer.tasksCompleted = tasksCompleted;
+      internalPlayer.totalTasks = totalTasks;
+    }
+
+    // Update GameStateManager's game
+    this.gameStateManager.updateTaskProgress(roomId, player, tasksCompleted, totalTasks);
+
     // Calculate total progress
     const totalDone = room.players.reduce(
       (sum, p) => sum + p.tasksCompleted,

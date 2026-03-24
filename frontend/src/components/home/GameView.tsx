@@ -181,52 +181,57 @@ export function GameView({
       <div className="fixed inset-0 pointer-events-none z-40">
         
         {/* Top Header Bar */}
-        <div className="p-4 flex items-start justify-between w-full">
-           <div className="pointer-events-auto flex items-center gap-3">
-              <button 
-                onClick={onBack}
-                className="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all text-white/50 hover:text-white"
-              >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-              </button>
-              <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3">
-                 <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"}`} />
-                 <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">{isConnected ? "LIVE" : "OFFLINE"}</span>
-                 <div className="h-4 w-px bg-white/10" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-wider">
-                    #{(activeRoom?.roomId || "LOBBY").slice(-6).toUpperCase()}
+        <div className="p-4 mt-16 flex flex-col w-full gap-4 pointer-events-none">
+           {/* Primary Header Row */}
+           <div className="flex items-start justify-between w-full">
+             <div className="pointer-events-auto flex flex-wrap items-center gap-3">
+                <button 
+                  onClick={onBack}
+                  className="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all text-white/50 hover:text-white"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3">
+                   <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"}`} />
+                   <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">{isConnected ? "LIVE" : "OFFLINE"}</span>
+                   <div className="h-4 w-px bg-white/10" />
+                    <span className="text-[10px] font-black text-white uppercase tracking-wider">
+                      #{(activeRoom?.roomId || "LOBBY").slice(-6).toUpperCase()}
+                    </span>
+                </div>
+                {/* Phase indicator */}
+                <div className={`bg-black/60 backdrop-blur-xl border rounded-xl px-4 py-2 ${isEnded ? "border-red-500/30" : "border-cyan-500/30"}`}>
+                  <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isEnded ? "text-red-400" : "text-cyan-400"}`}>
+                    {isEnded ? "GAME OVER" : gamePhase >= 4 ? "DISCUSSION" : gamePhase >= 2 ? "ACTION PHASE" : "BOARDING"}
                   </span>
-              </div>
-              {/* Phase indicator */}
-              <div className={`bg-black/60 backdrop-blur-xl border rounded-xl px-4 py-2 ${isEnded ? "border-red-500/30" : "border-cyan-500/30"}`}>
-                <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isEnded ? "text-red-400" : "text-cyan-400"}`}>
-                  {isEnded ? "GAME OVER" : gamePhase >= 4 ? "DISCUSSION" : gamePhase >= 2 ? "ACTION PHASE" : "BOARDING"}
-                </span>
-              </div>
+                </div>
+             </div>
+
+             {/* Right: Stats */}
+             <div className="pointer-events-auto flex items-center gap-3">
+                <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3 hidden sm:flex">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[8px] font-black text-white/20 uppercase">ALIVE</span>
+                    <span className="text-lg font-black text-emerald-400 leading-none">{aliveCount}</span>
+                  </div>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-[8px] font-black text-white/20 uppercase">DEAD</span>
+                    <span className="text-lg font-black text-red-400 leading-none">{deadCount}</span>
+                  </div>
+                </div>
+                <ConnectWallet />
+             </div>
            </div>
 
-           {/* Center: Task bar */}
-           <div className="pointer-events-auto flex flex-col items-center">
+           {/* Secondary Header Row: Task Bar (Top Left below headers) */}
+           <div className="pointer-events-auto flex flex-col items-start mt-2 ml-1">
               <TaskBar completed={tasksCompleted} total={totalTasks} />
-              <div className="mt-1 text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">{tasksCompleted}/{totalTasks} Tasks</div>
-           </div>
-
-           {/* Right: Stats */}
-           <div className="pointer-events-auto flex items-center gap-3">
-              <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3">
-                <div className="flex flex-col items-center">
-                  <span className="text-[8px] font-black text-white/20 uppercase">ALIVE</span>
-                  <span className="text-lg font-black text-emerald-400 leading-none">{aliveCount}</span>
-                </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div className="flex flex-col items-center">
-                  <span className="text-[8px] font-black text-white/20 uppercase">DEAD</span>
-                  <span className="text-lg font-black text-red-400 leading-none">{deadCount}</span>
-                </div>
+              <div className="mt-2 text-[10px] font-black text-white/60 uppercase tracking-[0.3em]">
+                Tasks Progress: {tasksCompleted}/{totalTasks}
               </div>
-              <ConnectWallet />
            </div>
         </div>
 
