@@ -13,7 +13,7 @@ export const AGENT_REGISTRY_ID = '0x4864f93d3c3adf25eb91caca86addc8b11fe72f92739
 export const MARKET_REGISTRY_ID = '0xddd4cfea1f4f1ca989f614d675151afa584e316db115fac7526f8652e123a4ca';
 // New AMM and Token IDs
 export const CREW_TOKEN_TYPE = `${PACKAGE_ID}::crew_token::CREW_TOKEN`;
-export const AMM_POOL_ID = '0x704a1b1d2adb5ea07797195a850fe3dfb4eeaf58f66b8bc0f894b5f819c3395f';
+export const AMM_POOL_ID = '0x04e39a065daa7466f33c58385cf3f1a70b631b33146b5e7478baf9b3cb4c7530';
 export const OCT_TOKEN_TYPE = '0x2::oct::OCT';
 
 export const ONECHAIN_EXPLORER = 'https://onescan.cc/testnet';
