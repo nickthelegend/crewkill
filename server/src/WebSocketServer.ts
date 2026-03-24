@@ -501,20 +501,26 @@ export class WebSocketRelayServer {
     if (!room) {
       const dbGame = await databaseService.getGameByRoomId(normalizedRoomId);
       if (dbGame) {
-        logger.info(`Restoring room ${normalizedRoomId} from DB on-the-fly...`);
-        const result = await this.createRoom(
-          undefined,
-          10,
-          2,
-          dbGame.wagerAmount || "100000000",
-          8,
-          normalizedRoomId
-        );
-        if ('error' in result) {
-          this.sendError(client, "ROOM_NOT_FOUND", `Failed to restore room ${normalizedRoomId}`);
-          return;
+        // Double check if room was created while we were awaiting DB
+        const existingRoom = this.rooms.get(normalizedRoomId);
+        if (existingRoom) {
+          room = existingRoom;
+        } else {
+          logger.info(`Restoring room ${normalizedRoomId} from DB on-the-fly...`);
+          const result = await this.createRoom(
+            undefined,
+            10,
+            2,
+            dbGame.wagerAmount || "100000000",
+            8,
+            normalizedRoomId
+          );
+          if (result && 'error' in result) {
+            this.sendError(client, "ROOM_NOT_FOUND", `Failed to restore room ${normalizedRoomId}`);
+            return;
+          }
+          room = result as RoomState;
         }
-        room = result;
       } else {
         this.sendError(client, "ROOM_NOT_FOUND", `Room ${normalizedRoomId} not found`);
         return;
@@ -622,6 +628,19 @@ export class WebSocketRelayServer {
       hasVoted: false,
     };
 
+    // Final capacity check before pushing
+    if (activeRoom.players.length >= effectiveMaxPlayers) {
+      this.sendError(client, "ROOM_FULL", `Room filled up (max ${effectiveMaxPlayers} players)`);
+      return;
+    }
+    
+    // Check if player already in room
+    const exists = activeRoom.players.some(p => p.address.toLowerCase() === (client.address || client.id).toLowerCase());
+    if (exists) {
+      this.sendError(client, "ALREADY_IN_ROOM", "You have already joined this room.");
+      return;
+    }
+    
     activeRoom.players.push(playerState);
 
     // Register player with GameStateManager
@@ -705,6 +724,20 @@ export class WebSocketRelayServer {
           totalTasks: 30, // Dramatically increased for harder games
           hasVoted: false,
         };
+
+        // Check capacity again after await
+        const effectiveMaxPlayers = Math.min(room.maxPlayers, MAX_PLAYERS_PER_ROOM);
+        if (room.players.length >= effectiveMaxPlayers) {
+          this.sendError(client, "ROOM_FULL", `Room filled up (max ${effectiveMaxPlayers} players) while verifying wager.`);
+          return;
+        }
+
+        // Check if player already in room
+        const exists = room.players.some(p => p.address.toLowerCase() === (client.address || client.id).toLowerCase());
+        if (exists) {
+          logger.warn(`Player ${client.name} already in room ${roomId}, skipping second join.`);
+          return;
+        }
 
         room.players.push(playerState);
 
@@ -822,13 +855,18 @@ export class WebSocketRelayServer {
   }
 
   public async createRoom(
-    creatorAddress: string | undefined,
-    maxPlayers = 10,
-    impostorCount = 2,
-    wagerAmount?: string,
+    creatorAddress?: string,
+    maxPlayers: number = 10,
+    impostorCount: number = 2,
+    wagerAmount: string = "100000000",
     aiAgentCount?: number,
     forcedRoomId?: string,
   ): Promise<RoomState | { error: string }> {
+    // If room already exists in memory, just return it
+    if (forcedRoomId && this.rooms.has(forcedRoomId)) {
+      logger.info(`Room ${forcedRoomId} already exists in memory, returning existing.`);
+      return this.rooms.get(forcedRoomId)!;
+    }
     // Limit: one active room per creator
     if (creatorAddress) {
       const existingRoom = Array.from(this.rooms.values()).find(
@@ -3140,6 +3178,18 @@ export class WebSocketRelayServer {
     // Join the room as a player
     const room = this.rooms.get(roomId);
     if (!room) return;
+
+    // Check capacity
+    if (room.players.length >= room.maxPlayers) {
+      logger.warn(`Cannot register AI agent ${agent.name}: Room ${roomId} is full (${room.players.length}/${room.maxPlayers})`);
+      return;
+    }
+
+    // Check for duplicate address
+    if (room.players.some(p => p.address.toLowerCase() === agent.address.toLowerCase())) {
+      logger.warn(`AI agent ${agent.name} (${agent.address}) already in room ${roomId}`);
+      return;
+    }
 
     // Get agent stats for win rate
     const stats = this.getAgentStats(agent.address);
