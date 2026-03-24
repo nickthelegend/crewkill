@@ -54,6 +54,38 @@ export class ImpostorStrategy extends BaseStrategy {
     return null; // Too many witnesses for other styles
   }
 
+  // Actively find a room with exactly 1 crewmate and walk toward it
+  private huntTarget(context: AgentStrategyContext): AgentAction | null {
+    const { myLocation, alivePlayers, myAddress, impostors } = context;
+    
+    // Find all alive crewmates and bucket them by location
+    const locationsWithCrew: Record<number, number> = {};
+    for (const p of alivePlayers) {
+      if (p.address !== myAddress && p.isAlive && !impostors?.includes(p.address)) {
+        locationsWithCrew[p.location] = (locationsWithCrew[p.location] || 0) + 1;
+      }
+    }
+
+    // Find a location with exactly 1 crewmate (lone target)
+    const loneTargets: number[] = [];
+    for (const locStr in locationsWithCrew) {
+      if (locationsWithCrew[locStr] === 1) {
+        loneTargets.push(parseInt(locStr));
+      }
+    }
+
+    if (loneTargets.length > 0) {
+      // Pick one and move toward it
+      const targetLoc = this.randomChoice(loneTargets);
+      const dest = this.moveToward(myLocation, targetLoc);
+      if (dest !== myLocation) {
+        return { type: ActionType.Move, destination: dest };
+      }
+    }
+
+    return null;
+  }
+
   decideAction(context: AgentStrategyContext): AgentAction {
     const { myLocation, deadBodies } = context;
 
@@ -110,6 +142,12 @@ export class ImpostorStrategy extends BaseStrategy {
       return { type: ActionType.FakeTask };
     }
 
+    // Actively hunt for a lone target
+    if (this.canKill(context)) {
+      const huntAction = this.huntTarget(context);
+      if (huntAction) return huntAction;
+    }
+
     const adjacent = this.getAdjacentLocations(myLocation);
     return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
   }
@@ -139,6 +177,11 @@ export class ImpostorStrategy extends BaseStrategy {
     }
 
     // Move aggressively seeking targets
+    if (this.canKill(context)) {
+      const huntAction = this.huntTarget(context);
+      if (huntAction) return huntAction;
+    }
+
     const adjacent = this.getAdjacentLocations(myLocation);
     return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
   }
@@ -178,6 +221,11 @@ export class ImpostorStrategy extends BaseStrategy {
       return { type: ActionType.FakeTask };
     }
 
+    if (this.canKill(context)) {
+      const huntAction = this.huntTarget(context);
+      if (huntAction) return huntAction;
+    }
+
     const adjacent = this.getAdjacentLocations(myLocation);
     return { type: ActionType.Move, destination: this.randomChoice(adjacent) };
   }
@@ -212,6 +260,11 @@ export class ImpostorStrategy extends BaseStrategy {
 
     if (Math.random() > 0.3) {
       return { type: ActionType.FakeTask };
+    }
+
+    if (this.canKill(context)) {
+      const huntAction = this.huntTarget(context);
+      if (huntAction) return huntAction;
     }
 
     const adjacent = this.getAdjacentLocations(myLocation);

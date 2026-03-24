@@ -35,6 +35,7 @@ export interface AgentAction {
   destination?: number; // Location enum value
   taskId?: number;
   sabotage?: number;
+  targetLocation?: number;
 }
 
 export interface AgentStrategyContext {
@@ -61,4 +62,5 @@ export interface AgentStrategyContext {
   taskLocations?: number[]; // Assigned task locations
   tasksCompleted: number;
   totalTasks: number;
+  activeSabotage: number;
 }

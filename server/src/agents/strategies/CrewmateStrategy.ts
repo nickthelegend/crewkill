@@ -26,6 +26,17 @@ export class CrewmateStrategy extends BaseStrategy {
       return { type: ActionType.Report };
     }
 
+    // Universal: fix sabotages
+    if (context.activeSabotage > 0) {
+      const fixLoc = this.getFixLocation(context.activeSabotage);
+      if (myLocation === fixLoc) {
+        return { type: ActionType.FixSabotage, targetLocation: fixLoc };
+      } else {
+        const dest = this.moveToward(myLocation, fixLoc);
+        return { type: ActionType.Move, destination: dest };
+      }
+    }
+
     switch (this.style) {
       case "task-focused":
         return this.taskFocusedAction(context);
@@ -39,6 +50,16 @@ export class CrewmateStrategy extends BaseStrategy {
         return this.conservativeAction(context);
       default:
         return this.taskFocusedAction(context);
+    }
+  }
+
+  private getFixLocation(sabotageType: number): number {
+    switch (sabotageType) {
+      case 1: return 3; // Electrical (Lights)
+      case 2: return 8; // Reactor
+      case 3: return 1; // Admin (O2)
+      case 4: return 1; // Admin (Comms)
+      default: return 0;
     }
   }
 

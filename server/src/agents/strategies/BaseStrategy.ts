@@ -50,6 +50,7 @@ const ActionType = {
   Sabotage: 8,
   UseCams: 9,
   Skip: 10,
+  FixSabotage: 11,
 } as const;
 
 export { AdjacentRooms, VentConnections, TaskRooms, ActionType };

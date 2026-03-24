@@ -52,6 +52,7 @@ export class ServerAgent {
   private tasksCompleted: number = 0;
   private totalTasks: number = 10;
   private taskLocations: number[] = [];
+  private activeSabotage: number = 0;
 
   // Track other players as seen in game state updates
   private players: AgentStrategyContext["alivePlayers"] = [];
@@ -215,6 +216,7 @@ export class ServerAgent {
     }));
 
     this.deadBodies = state.deadBodies || [];
+    this.activeSabotage = state.activeSabotage || 0;
 
     // Update our own state
     const me = this.players.find((p) => p.address === this.address);
@@ -313,6 +315,7 @@ export class ServerAgent {
       taskLocations: this.taskLocations,
       tasksCompleted: this.tasksCompleted,
       totalTasks: this.totalTasks,
+      activeSabotage: this.activeSabotage,
     };
   }
 
@@ -409,6 +412,16 @@ export class ServerAgent {
             type: "agent:sabotage",
             gameId: this.roomId,
             sabotageType: action.sabotage,
+          });
+        }
+        break;
+
+      case ActionType.FixSabotage:
+        if (action.targetLocation !== undefined) {
+          this.sendToServer({
+            type: "agent:fix_sabotage",
+            gameId: this.roomId,
+            location: action.targetLocation,
           });
         }
         break;
