@@ -343,3 +343,22 @@ export const logTransaction = mutation({
     });
   },
 });
+
+export const clearAllData = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const games = await ctx.db.query("games").collect();
+    for (const g of games) await ctx.db.delete(g._id);
+    
+    const bets = await ctx.db.query("bets").collect();
+    for (const b of bets) await ctx.db.delete(b._id);
+    
+    const txs = await ctx.db.query("transactions").collect();
+    for (const t of txs) await ctx.db.delete(t._id);
+
+    const users = await ctx.db.query("users").collect();
+    for (const u of users) await ctx.db.delete(u._id);
+    
+    return true;
+  },
+});

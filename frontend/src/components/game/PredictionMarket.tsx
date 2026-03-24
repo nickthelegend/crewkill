@@ -99,6 +99,8 @@ export function MarketChart({ players, bets, totalPot }: { players: Player[], be
   );
 }
 
+const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
+
 export function PredictionMarket({
   gameId, marketObjectId, gamePlayers, isResolved, gamePhase, isSidebar = false 
 }: PredictionMarketProps) {
@@ -111,10 +113,21 @@ export function PredictionMarket({
         <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
              <div className="flex items-center gap-3 mb-4">
-               <div className="w-2.5 h-2.5 bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse" />
-               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] font-space">{isOpen ? "Market Live" : "Market Resolved"}</h3>
+                <div className={`w-2.5 h-2.5 shadow-[0_0_15px_rgba(220,38,38,0.5)] ${bettingOpen ? "bg-red-600 animate-pulse" : "bg-white/20"}`} />
+                <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.4em] font-space flex items-center gap-2">
+                   Prediction_Matrix
+                   <span className={`text-[10px] px-2 py-0.5 border ${
+                      bettingOpen ? "text-red-500 border-red-500/30" : 
+                      (!marketObjectId && !IS_OFFLINE) ? "text-yellow-500 border-yellow-500/30" : "text-white/20 border-white/10"
+                   }`}>
+                      {bettingOpen ? "MARKET_LIVE" : 
+                       (!marketObjectId && !IS_OFFLINE) ? "SYNCING_NODE" : "MARKET_LOCKED"}
+                   </span>
+                </h2>
              </div>
-             <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter font-space">Market Sentiment</h2>
+             <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none font-space">
+                {isResolved ? "Market Settled" : "Active Betting"}
+             </h3>
           </div>
           <div className="text-left md:text-right">
              <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.3em] mb-2 font-space">Global Volume</div>
@@ -144,7 +157,7 @@ export function PredictionMarket({
                 key={player.address}
                 onClick={() => bettingOpen && setSelectedSuspect(player.address)}
                 className={`grid grid-cols-12 items-center p-4 md:p-6 transition-all group cursor-pointer ${
-                  !bettingOpen ? "opacity-30 grayscale cursor-not-allowed" : 
+                  !bettingOpen ? "opacity-50 cursor-not-allowed" : 
                   isSelected ? "bg-red-500/[0.05]" : "hover:bg-white/[0.03]"
                 }`}
               >

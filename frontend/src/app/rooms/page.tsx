@@ -129,8 +129,10 @@ function RoomCard({ game, index }: { game: any; index: number }) {
                 {status.label}
               </span>
             </div>
-            <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none mb-2 truncate whitespace-nowrap max-w-full font-space" title={game.roomId}>
-              {game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2 truncate whitespace-nowrap font-space" title={game.roomId}>
+              {game.roomId.length > 20 
+                ? `${game.roomId.slice(0, 8)}...${game.roomId.slice(-6)}`
+                : game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
             </h3>
             <span className="text-[9px] text-white/20 font-space uppercase tracking-[0.3em] block">
               SECTOR_ID_#{game.roomId.slice(-8).toUpperCase()}
