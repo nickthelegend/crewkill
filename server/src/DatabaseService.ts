@@ -255,7 +255,12 @@ export class DatabaseService {
       }
       
       // 2. Settlement log for the game itself
-      // In progress - could add more logs here
+      await this.convex.mutation("crewkill:endGame" as any, {
+        roomId,
+        crewmatesWon: result.crewmatesWon,
+        winReason: result.winReason,
+        winningsPerPlayer: result.winningsPerPlayer.toString(),
+      });
     } catch (error) {
       logger.error(`Failed to end game ${roomId} via Convex:`, error);
     }

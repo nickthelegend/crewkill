@@ -351,16 +351,20 @@ export class ServerAgent {
         break;
 
       case ActionType.DoTask:
-        this.tasksCompleted++;
-        this.memory.recordTaskCompletion(this.address);
-        this.sendToServer({
-          type: "agent:task_complete",
-          gameId: this.roomId,
-          player: this.address,
-          tasksCompleted: this.tasksCompleted,
-          totalTasks: this.totalTasks,
-          location: this.myLocation,
-        });
+        const doTaskTimer = setTimeout(() => {
+          if (!this.isAlive || this.phase !== 2) return;
+          this.tasksCompleted++;
+          this.memory.recordTaskCompletion(this.address);
+          this.sendToServer?.({
+            type: "agent:task_complete",
+            gameId: this.roomId!,
+            player: this.address,
+            tasksCompleted: this.tasksCompleted,
+            totalTasks: this.totalTasks,
+            location: this.myLocation,
+          });
+        }, 10000);
+        this.pendingTimers.push(doTaskTimer);
         break;
 
       case ActionType.FakeTask:
@@ -417,9 +421,14 @@ export class ServerAgent {
 
     // Schedule another action after a delay (continuous play during action phase)
     if (this.phase === 2 && this.isAlive) {
+      let delay = randomDelay() + 1000;
+      if (action.type === ActionType.DoTask || action.type === ActionType.FakeTask) {
+        delay = 10000 + randomDelay();
+      }
+      
       const timer = setTimeout(() => {
         this.executeAction();
-      }, randomDelay() + 1000);
+      }, delay);
       this.pendingTimers.push(timer);
     }
   }

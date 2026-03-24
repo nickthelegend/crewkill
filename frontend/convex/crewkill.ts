@@ -205,6 +205,32 @@ export const startGame = mutation({
   },
 });
 
+export const endGame = mutation({
+  args: {
+    roomId: v.string(),
+    crewmatesWon: v.boolean(),
+    winReason: v.string(),
+    winningsPerPlayer: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .first();
+    if (!game) return null;
+
+    await ctx.db.patch(game._id, {
+      status: "COMPLETED",
+      phase: "ended",
+      crewmatesWon: args.crewmatesWon,
+      winReason: args.winReason,
+      winningsPerPlayer: args.winningsPerPlayer,
+      endedAt: Date.now(),
+    });
+    return game;
+  },
+});
+
 export const getGameByRoomId = query({
   args: { roomId: v.string() },
   handler: async (ctx, args) => {
