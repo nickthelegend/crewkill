@@ -29,7 +29,7 @@ const logger = createLogger("websocket-server");
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
 const MIN_PLAYERS_TO_START = 1; // Lowered to 1 for solo testing
-const LOBBY_WAITING_DURATION = 120000; // 2 minutes — betting window before game starts
+const LOBBY_WAITING_DURATION = 600000; // 10 minutes — give plenty of time for bets
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
 const EJECTION_DURATION = 5000; // 5 seconds
@@ -935,6 +935,10 @@ export class WebSocketRelayServer {
 
     this.rooms.set(roomId, room);
     this.extendedState.set(roomId, extended);
+
+    if (roomId.startsWith("TEST")) {
+      this.ensureMarketDeployment(roomId);
+    }
     this.gameStateManager.getOrCreateGame(roomId);
 
     // Register game in database with 7-minute betting window by default
@@ -1232,9 +1236,16 @@ export class WebSocketRelayServer {
       room.impostorCount,
       room.players.length // Up to all players being impostors for testing, or just 1
     ));
+    const isTestRoom = roomId.startsWith("TEST");
     const impostorIndices = new Set<number>();
-    while (impostorIndices.size < impostorCount) {
-      impostorIndices.add(Math.floor(Math.random() * room.players.length));
+    
+    if (isTestRoom && room.players.length > 0) {
+      impostorIndices.add(0); // Pick the first player as the impostor
+      logger.warn(`TEST ROOM DETECTED: Picking ${room.players[0].address} as fixed impostor!`);
+    } else {
+      while (impostorIndices.size < impostorCount) {
+        impostorIndices.add(Math.floor(Math.random() * room.players.length));
+      }
     }
 
     const impostorAddresses: string[] = [];

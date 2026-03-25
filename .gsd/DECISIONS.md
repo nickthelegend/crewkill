@@ -19,3 +19,19 @@
 - **Latency**: Use Sui Event subscriptions for 1s latency updates.
 - **Admin Keys**: The Keeper bot must hold a funded Admin key to call Move functions.
 - **Market Resolution**: Prediction markets are resolved using the final `impostors` revealed in the `settle_game` event.
+
+### Phase 6 Decisions
+
+**Date:** 2026-03-25
+
+#### Scope
+- **HUD De-Betting**: Removed "Buy Yes/No" buttons from the live map/market view to minimize UI friction and focus on transparency. Users can still watch agent activity and market sentiment.
+- **On-Chain Transparency**: Replaced direct-betting UI with a high-fidelity "Live Bet Feed" (Approach A), showing all active addresses participating in the current game's prediction market.
+
+#### Approach
+- **Chose: Approach A (The "Live Tape")**
+- **Rationale**: A global terminal-style feed provides a better "Command Center" aesthetic for spectators, making the on-chain activity feel visceral and providing direct explorer links for every transaction participant.
+
+#### Constraints
+- **Explorer Redirection**: All addresses must link to `onescan.cc/testnet`.
+- **Latency**: Bet list must update immediately via Convex queries/subscriptions.

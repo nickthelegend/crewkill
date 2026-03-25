@@ -157,7 +157,7 @@ export function PredictionMarket({
           <div className="grid grid-cols-12 p-4 md:p-6 bg-white/[0.02] border-b border-white/5">
              <div className="col-span-12 md:col-span-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space mb-4 md:mb-0">Contender_Outcome</div>
              <div className="hidden md:block md:col-span-2 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Confidence_Sync</div>
-             <div className="hidden md:block md:col-span-4 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Hedging_Order_Matrix</div>
+             <div className="hidden md:block md:col-span-4 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Status</div>
           </div>
           
           {gamePlayers.map((player, idx) => {
@@ -170,8 +170,7 @@ export function PredictionMarket({
               <motion.div
                 key={player.address}
                 onClick={() => bettingOpen && setSelectedSuspect(player.address)}
-                className={`grid grid-cols-12 items-center p-4 md:p-6 transition-all group cursor-pointer ${
-                  !bettingOpen ? "opacity-50 cursor-not-allowed" : 
+                className={`grid grid-cols-12 items-center p-4 md:p-6 transition-all group ${
                   isSelected ? "bg-red-500/[0.05]" : "hover:bg-white/[0.03]"
                 }`}
               >
@@ -180,14 +179,14 @@ export function PredictionMarket({
                       <AmongUsSprite colorId={player.colorId ?? idx} size={32} isGhost={!player.isAlive} />
                       {!player.isAlive && <div className="absolute inset-0 bg-red-900/40 backdrop-grayscale" />}
                    </div>
-                   <div className="flex flex-col gap-1 min-w-0">
+                   <div className="flex flex-col gap-1 min-w-0 text-left">
                       <span className="text-xl font-black text-white uppercase tracking-tighter font-space truncate">{player.name}</span>
                       <a 
                         href={getExplorerAccountUrl(player.address)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] font-space truncate hover:text-cyan-400 transition-colors"
+                        className="text-[9px] text-cyan-400/30 font-black uppercase tracking-[0.2em] font-space truncate hover:text-cyan-400 transition-colors"
                       >
                          {player.address.slice(0, 10)}... {player.isAlive ? " (ACTIVE)" : " (TERMINATED)"}
                       </a>
@@ -202,17 +201,70 @@ export function PredictionMarket({
                 </div>
 
                 <div className="col-span-6 md:col-span-4 flex justify-end">
-                   <button 
-                      className={`w-full md:w-48 py-3 font-black text-[11px] uppercase tracking-widest transition-all duration-300 border-2 font-space pointer-events-none ${
-                         isSelected ? "bg-cyan-500 text-black border-cyan-500" : "bg-white/[0.03] text-cyan-400 border-cyan-400/20 group-hover:border-cyan-400 group-hover:bg-cyan-400/10"
-                      }`}
-                   >
-                      SUBMIT YES {prob.toFixed(0)}¢
-                   </button>
+                   <div className="flex flex-col items-end">
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${player.isAlive ? "text-emerald-500" : "text-red-500"}`}>
+                        {player.isAlive ? "NORMAL_OPS" : "NODE_OFFLINE"}
+                      </span>
+                      <div className="text-[9px] text-white/20 font-mono tracking-widest mt-1">
+                        SENSORS_STABLE_00{idx}
+                      </div>
+                   </div>
                 </div>
               </motion.div>
             );
           })}
+        </div>
+      </div>
+
+      {/* ─── LIVE BET TAPE (APPROACH A) ─── */}
+      <div className="bg-white/[0.02] border border-white/5 overflow-hidden">
+        <div className="bg-white/[0.03] p-4 flex justify-between items-center border-b border-white/5">
+           <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] font-space flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-cyan-500 animate-pulse rounded-full" />
+              LIVE_ORDER_EXECUTIONS
+           </h4>
+           <div className="text-[9px] text-white/20 font-mono tracking-widest">
+              BUFFER_SYNC: {convexBets.length} [NODE_1092]
+           </div>
+        </div>
+        <div className="max-h-64 overflow-y-auto scrollbar-hide divide-y divide-white/5 font-space">
+           {convexBets.length === 0 ? (
+             <div className="p-12 text-center text-white/10 text-[10px] uppercase font-black tracking-widest">
+                Nodes awaiting primary market liquidity...
+             </div>
+           ) : (
+             [...convexBets].reverse().map((bet: any, i: number) => {
+               const suspect = gamePlayers.find(p => p.address.toLowerCase() === bet.selection.toLowerCase());
+               return (
+                 <div key={i} className="grid grid-cols-12 p-3 md:p-4 items-center gap-4 hover:bg-white/[0.02] transition-colors">
+                    <div className="col-span-5 md:col-span-4 flex flex-col gap-0.5 min-w-0">
+                       <span className="text-[8px] text-white/20 font-black uppercase tracking-[0.1em]">Bettor_Address</span>
+                       <a 
+                         href={getExplorerAccountUrl(bet.address)}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="text-[11px] text-cyan-400 font-bold truncate hover:underline"
+                       >
+                          {bet.address.slice(0, 10)}...{bet.address.slice(-4)}
+                       </a>
+                    </div>
+                    <div className="col-span-4 md:col-span-4 flex flex-col items-center">
+                       <span className="text-[8px] text-white/20 font-black uppercase tracking-[0.1em]">Target_Suspect</span>
+                       <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[11px] text-white font-black uppercase tracking-tight">{suspect?.name || "REDACTED"}</span>
+                          <span className="text-[9px] px-1.5 border border-red-500/30 text-red-500 bg-red-500/10">YES</span>
+                       </div>
+                    </div>
+                    <div className="col-span-3 md:col-span-4 flex flex-col items-end">
+                       <span className="text-[8px] text-white/20 font-black uppercase tracking-[0.1em]">Amount_CREW</span>
+                       <span className="text-sm font-black text-white tracking-tighter">
+                          {(bet.amountMist / 1e9).toFixed(2)}
+                       </span>
+                    </div>
+                 </div>
+               );
+             })
+           )}
         </div>
       </div>
 
