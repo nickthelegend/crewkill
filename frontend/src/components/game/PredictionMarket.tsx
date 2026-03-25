@@ -107,7 +107,7 @@ export function PredictionMarket({
   gameId, marketObjectId, gamePlayers, isResolved, gamePhase, isSidebar = false 
 }: PredictionMarketProps) {
   const { selectedSuspect, setSelectedSuspect, totalPot, isOpen } = useMarket();
-  const { suspectPools, userBet, convexBets, bettingOpen } = useMarketLogic(gameId, marketObjectId, gamePlayers, gamePhase);
+  const { suspectPools, userBet, convexBets, bettingOpen, handlePlaceBet } = useMarketLogic(gameId, marketObjectId, gamePlayers, gamePhase);
 
   return (
     <div className={`w-full ${isSidebar ? "max-w-none space-y-4" : "max-w-7xl mx-auto space-y-8"}`}>
@@ -193,7 +193,7 @@ export function PredictionMarket({
                    </div>
                 </div>
                 
-                <div className="col-span-6 md:col-span-2 text-left md:text-center">
+                <div className="col-span-6 md:col-span-2 text-left md:text-center mt-4 md:mt-0">
                    <div className="text-[10px] md:hidden text-white/20 font-black uppercase tracking-widest mb-1 font-space">Confidence</div>
                    <div className="text-2xl font-black text-white font-space tracking-tighter">
                       {prob.toFixed(0)}%
@@ -201,7 +201,21 @@ export function PredictionMarket({
                 </div>
 
                 <div className="col-span-6 md:col-span-4 flex justify-end">
-                   <div className="flex flex-col items-end">
+                  {bettingOpen ? (
+                   <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedSuspect(player.address);
+                        handlePlaceBet();
+                      }}
+                      className={`w-full md:w-48 py-3 font-black text-[11px] uppercase tracking-widest transition-all duration-300 border-2 font-space ${
+                         isSelected ? "bg-cyan-500 text-black border-cyan-500 shadow-[0_0_20px_rgba(34,211,238,0.4)]" : "bg-white/[0.03] text-cyan-400 border-cyan-400/20 hover:border-cyan-400 hover:bg-cyan-400/10"
+                      }`}
+                   >
+                      BUY YES {prob.toFixed(0)}¢
+                   </button>
+                  ) : (
+                   <div className="flex flex-col items-end opacity-40">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${player.isAlive ? "text-emerald-500" : "text-red-500"}`}>
                         {player.isAlive ? "NORMAL_OPS" : "NODE_OFFLINE"}
                       </span>
@@ -209,6 +223,7 @@ export function PredictionMarket({
                         SENSORS_STABLE_00{idx}
                       </div>
                    </div>
+                  )}
                 </div>
               </motion.div>
             );
