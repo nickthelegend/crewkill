@@ -1266,11 +1266,19 @@ export class WebSocketRelayServer {
     }
 
     // Automated Market Closure when game transitions to PLAYING (Phase 2)
-    if (phaseValue === 2 && room.marketId) {
-      logger.info(`Closing prediction market for starting game in room ${roomId}...`);
-      contractService.closeMarket(roomId, room.marketId).catch((err: any) => {
-        logger.error(`Failed to close market for ${roomId}:`, err);
-      });
+    if (phaseValue === 2) {
+      // 1. Close in database (Convex)
+      await databaseService.closeBetting(roomId);
+      
+      // 2. Close on-chain (if market exists)
+      if (room.marketId) {
+        logger.info(`Closing prediction market for starting game in room ${roomId}...`);
+        try {
+          await contractService.closeMarket(roomId, room.marketId);
+        } catch (err: any) {
+          logger.error(`Failed to close market for ${roomId}:`, err);
+        }
+      }
     }
 
     // Also register with GameStateManager

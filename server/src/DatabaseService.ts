@@ -183,6 +183,16 @@ export class DatabaseService {
     }
   }
 
+  async closeBetting(roomId: string) {
+    if (!this.enabled) return;
+    try {
+      await this.convex.mutation("crewkill:closeBetting" as any, { roomId });
+      logger.info(`Betting closed for room ${roomId} via Convex`);
+    } catch (error) {
+      logger.error(`Failed to close betting for ${roomId} via Convex:`, error);
+    }
+  }
+
   async updateGamePlayers(roomId: string, players: Array<{
     address: string;
     name: string;

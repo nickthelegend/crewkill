@@ -172,6 +172,22 @@ export const createScheduledGame = mutation({
   },
 });
 
+export const closeBetting = mutation({
+  args: { roomId: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
+      .first();
+    if (!game) return null;
+
+    await ctx.db.patch(game._id, {
+      bettingEndsAt: Date.now(),
+    });
+    return game;
+  },
+});
+
 export const listActiveAgents = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
