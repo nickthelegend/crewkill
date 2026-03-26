@@ -311,10 +311,6 @@ function RoomDetailsPageContent() {
                 </div>
               </div>
 
-                  {/* Volume Chart */}
-                  <div className="mt-8">
-                    <TotalSalesChart />
-                  </div>
             </div>
 
           </div>
