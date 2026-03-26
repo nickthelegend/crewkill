@@ -24,7 +24,7 @@ function MarketContent() {
   if (allGames === undefined) {
     return (
        <div className="min-h-screen flex items-center justify-center font-mono text-[11px] tracking-[0.6em] text-white/20 uppercase animate-pulse">
-          SCANNING_MARKET_SECTORS...
+          LOADING_MARKETS...
        </div>
     );
   }
@@ -56,7 +56,7 @@ function MarketContent() {
               <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Live & Upcoming Matches</h2>
            </div>
            <div className="hidden md:block text-[10px] font-mono text-white/20 uppercase tracking-[0.3em]">
-              ACTIVE_HEDGING_POOLS: {activeGames.length}
+              ACTIVE_MARKETS: {activeGames.length}
            </div>
         </div>
 
@@ -111,7 +111,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
       <div className="p-8 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-10">
           <div className="flex flex-col gap-1">
-             <span className="text-[9px] font-space text-white/30 uppercase tracking-[0.2em]">ROOM_SIG</span>
+             <span className="text-[9px] font-space text-white/30 uppercase tracking-[0.2em]">ROOM_ID</span>
              <div className="text-[11px] font-black text-white uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/5 font-space">
                 {(game.roomId || "").slice(-8).toUpperCase()}
              </div>
@@ -125,7 +125,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
                (game.status === "ACTIVE" || game.phase === "playing") ? "bg-emerald-400 animate-pulse" : 
                (game.status === "CREATED" || game.phase === "lobby") ? "bg-cyan-400 animate-pulse" : "bg-white/20"
             }`} />
-            {game.phase === "playing" ? "MISSION_ENGAGED" : game.status}
+            {game.phase === "playing" ? "PLAYING" : game.status}
           </div>
         </div>
 
@@ -135,7 +135,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
           </h3>
           <div className="flex items-center gap-3">
              <div className="h-[1px] w-8 bg-white/10" />
-             <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">HEDGING_POOL_V1</p>
+             <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">PREDICTION_POOL</p>
           </div>
         </div>
 
@@ -143,7 +143,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
           <div className="flex justify-between items-end border-t border-white/5 pt-8">
              <div className="space-y-4">
                 <div className="flex flex-col gap-2">
-                  <div className="text-[8px] text-white/20 uppercase font-black tracking-widest font-space">Active Operatives</div>
+                  <div className="text-[8px] text-white/20 uppercase font-black tracking-widest font-space">Active Players</div>
                   <div className="flex -space-x-3">
                      {players.slice(0, 6).map((p: any, i: number) => (
                        <div 
@@ -165,7 +165,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
              </div>
 
              <div className="text-right">
-                <div className="text-[8px] text-white/20 uppercase font-black tracking-widest mb-2 font-space">Current_Volume</div>
+                <div className="text-[8px] text-white/20 uppercase font-black tracking-widest mb-2 font-space">Total_Pot</div>
                 <div className="text-3xl font-black text-white tabular-nums tracking-tighter leading-none font-space">
                   {pot.toFixed(2)} <span className="text-red-500 text-[10px] align-top ml-1 font-space">OCT</span>
                 </div>
@@ -175,7 +175,7 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
           <button className={`w-full py-5 text-[10px] font-black uppercase tracking-[0.5em] transition-all duration-500 border rounded-none ${
             isPast ? "border-white/5 text-white/10 cursor-default" : "bg-white text-black border-white group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
           }`}>
-            {isPast ? "SECTOR_CLOSED" : "INITIATE_POSITION"}
+            {isPast ? "CLOSED" : "PLACE_BET"}
           </button>
         </div>
       </div>

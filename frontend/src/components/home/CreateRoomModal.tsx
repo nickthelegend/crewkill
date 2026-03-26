@@ -129,10 +129,10 @@ export function CreateRoomModal({ onClose, onCreate, error }: CreateRoomModalPro
             </div>
           </div>
 
-          {/* AI Agents */}
+          {/* Bots */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <label className="text-xs font-medium text-white/50">AI Agents</label>
+              <label className="text-xs font-medium text-white/50">Bots</label>
               <span className="text-sm font-bold text-purple-400 font-mono">{aiAgentCount}</span>
             </div>
             <input
@@ -148,7 +148,7 @@ export function CreateRoomModal({ onClose, onCreate, error }: CreateRoomModalPro
               <span className="text-[10px] text-white/25">{maxAI} max</span>
             </div>
             <p className="text-[10px] text-white/25 mt-1 leading-relaxed">
-              Server-side AI players that join automatically. You spectate.
+              Server-side bots that join automatically. You spectate.
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export function CreateRoomModal({ onClose, onCreate, error }: CreateRoomModalPro
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-white/25 font-mono">$CREW</span>
             </div>
             <p className="text-[10px] text-white/25 mt-2 leading-relaxed">
-              Staked on-chain. Distributed to winners on mission completion.
+              Staked on-chain. Distributed to winners on game completion.
             </p>
           </div>
 

@@ -116,7 +116,7 @@ export function LobbyView({
                     <div className="mb-8 border border-white/10 p-6 opacity-40">
                       <AmongUsSprite colorId={11} size={64} />
                     </div>
-                    <p className="text-white text-[10px] font-black uppercase tracking-[0.3em]">No Signal Detected</p>
+                    <p className="text-white text-[10px] font-black uppercase tracking-[0.3em]">No Rooms Found</p>
                   </div>
                 ) : (
                   <AnimatePresence>
@@ -138,7 +138,7 @@ export function LobbyView({
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
-                              <span className="text-xs font-black text-white/80 font-mono tracking-tighter uppercase">NODE_{getDisplayId(room.roomId, room.marketId)}</span>
+                              <span className="text-xs font-black text-white/80 font-mono tracking-tighter uppercase">ROOM_{getDisplayId(room.roomId, room.marketId)}</span>
                               {room.marketId && (
                                 <a 
                                   href={getExplorerObjectUrl(room.marketId)}
@@ -147,14 +147,14 @@ export function LobbyView({
                                   onClick={(e) => e.stopPropagation()}
                                   className="text-[8px] font-mono text-cyan-400/50 hover:text-cyan-400 uppercase tracking-widest mt-1"
                                 >
-                                  SCAN_MARKET
+                                  VIEW_MARKET
                                 </a>
                               )}
                             </div>
                             <div className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
                               isPlaying ? "bg-rose-500/10 text-rose-500" : "bg-cyan-500/10 text-cyan-400"
                             }`}>
-                              {isPlaying ? "ENGAGED" : "OPEN"}
+                              {isPlaying ? "PLAYING" : "OPEN"}
                             </div>
                           </div>
                           <div className="flex items-center justify-between">
@@ -165,7 +165,7 @@ export function LobbyView({
                                   </div>
                                 ))}
                              </div>
-                             <span className="font-mono text-[10px] text-white/40 tracking-[0.2em]">{room.players.length}/{room.maxPlayers} AGENTS</span>
+                             <span className="font-mono text-[10px] text-white/40 tracking-[0.2em]">{room.players.length}/{room.maxPlayers} PLAYERS</span>
                           </div>
                         </motion.button>
                       );
@@ -192,7 +192,7 @@ export function LobbyView({
                            <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em]">Connection Active: ROOM_{getDisplayId(currentRoom.roomId, currentRoom.marketId)}</p>
                         </div>
                         <h2 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none mb-6">
-                           GAME <span className="text-cyan-400">PROFILE</span>
+                           ROOM <span className="text-cyan-400">INFO</span>
                         </h2>
                         <div className="flex items-center gap-6">
                            <div className="px-5 py-2 bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest">
@@ -231,7 +231,7 @@ export function LobbyView({
                           rel="noopener noreferrer"
                           className="shrink-0 text-[9px] font-black text-white bg-cyan-600 hover:bg-cyan-500 px-3 py-2 uppercase tracking-widest transition-colors flex items-center gap-2"
                         >
-                          VIEW_ON_SCAN [{currentRoom.creationDigest.slice(0, 8)}...]
+                          VIEW EXPLORER [{currentRoom.creationDigest.slice(0, 8)}...]
                         </a>
                       </div>
                     )}
@@ -307,7 +307,7 @@ export function LobbyView({
                                     onClick={() => onAddAIAgent?.(currentRoom.roomId)}
                                     className="px-8 py-5 bg-cyan-600 text-white text-[10px] font-black uppercase hover:bg-cyan-500 transition-all tracking-widest shadow-[0_0_30px_rgba(34,211,238,0.2)]"
                                    >
-                                    DEPLOY AI AGENT
+                                    ADD BOT
                                    </button>
                                  </>
                                ) : (
@@ -338,7 +338,7 @@ export function LobbyView({
                           className="px-12 py-6 bg-red-600 hover:bg-red-500 text-white text-sm font-black uppercase tracking-[0.2em] transition-all shadow-[0_20px_40px_rgba(255,0,0,0.2)] flex items-center gap-3"
                         >
                           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                          ENTER MARKET FLOOR
+                          PLACE BETS
                         </Link>
                      </div>
                   )}

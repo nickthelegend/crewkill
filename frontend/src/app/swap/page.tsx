@@ -117,7 +117,7 @@ export default function SwapPage() {
         <div className="w-full max-w-[480px] z-10">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-4xl font-black tracking-tight text-white uppercase">
-              Command <span className="text-red-500">Swap</span>
+              Token <span className="text-red-500">Swap</span>
             </h1>
             <div className="flex gap-2">
               <button 
@@ -146,7 +146,7 @@ export default function SwapPage() {
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-mono font-bold uppercase tracking-widest text-white/40 group-hover:text-white/60 transition-colors">Sell</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-white/20 tracking-tighter uppercase font-bold">Reserves:</span>
+                  <span className="text-[10px] font-mono text-white/20 tracking-tighter uppercase font-bold">Pool:</span>
                   <span className="text-xs font-mono text-red-500/80 font-bold">
                     {reserves ? (fromToken.symbol === 'OCT' ? formatUnits(reserves.x, 9) : formatUnits(reserves.y, 9)) : '...'}
                   </span>
@@ -236,7 +236,7 @@ export default function SwapPage() {
               ) : (
                 <>
                   <Repeat className="group-hover:rotate-180 transition-transform duration-500" size={24} />
-                  <span>{account ? 'Execute Swap' : 'Connect Wallet'}</span>
+                  <span>{account ? 'Swap Now' : 'Connect Wallet'}</span>
                 </>
               )}
             </motion.button>
@@ -269,7 +269,7 @@ export default function SwapPage() {
           <div className="mt-6 text-center">
             <p className="text-[10px] font-mono text-white/10 uppercase tracking-[0.4em] leading-relaxed">
               OneChain Liquidity Powered by CrewKill Engine v2.0 <br />
-              Secure P2P Automated Market Maker Module 
+              Secure P2P Liquidity Pool Module 
             </p>
           </div>
         </div>

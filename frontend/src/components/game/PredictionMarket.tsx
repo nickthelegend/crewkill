@@ -117,13 +117,13 @@ export function PredictionMarket({
              <div className="flex items-center gap-3 mb-4">
                 <div className={`w-2.5 h-2.5 shadow-[0_0_15px_rgba(220,38,38,0.5)] ${bettingOpen ? "bg-red-600 animate-pulse" : "bg-white/20"}`} />
                 <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.4em] font-space flex items-center gap-2">
-                   Prediction_Matrix
+                   Prediction_Market
                    <span className={`text-[10px] px-2 py-0.5 border ${
                       bettingOpen ? "text-red-500 border-red-500/30" : 
                       (!marketObjectId && !IS_OFFLINE) ? "text-yellow-500 border-yellow-500/30" : "text-white/20 border-white/10"
                    }`}>
-                      {bettingOpen ? "MARKET_LIVE" : 
-                       (!marketObjectId && !IS_OFFLINE) ? "SYNCING_NODE" : "MARKET_LOCKED"}
+                      {bettingOpen ? "LIVE" : 
+                       (!marketObjectId && !IS_OFFLINE) ? "SYNCING" : "LOCKED"}
                    </span>
                 </h2>
              </div>
@@ -155,8 +155,8 @@ export function PredictionMarket({
 
         <div className="divide-y divide-white/5 bg-black/20">
           <div className="grid grid-cols-12 p-4 md:p-6 bg-white/[0.02] border-b border-white/5">
-             <div className="col-span-12 md:col-span-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space mb-4 md:mb-0">Contender_Outcome</div>
-             <div className="hidden md:block md:col-span-2 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Confidence_Sync</div>
+             <div className="col-span-12 md:col-span-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space mb-4 md:mb-0">Player</div>
+             <div className="hidden md:block md:col-span-2 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Win Probability</div>
              <div className="hidden md:block md:col-span-4 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Status</div>
           </div>
           
@@ -217,10 +217,10 @@ export function PredictionMarket({
                   ) : (
                    <div className="flex flex-col items-end opacity-40">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${player.isAlive ? "text-emerald-500" : "text-red-500"}`}>
-                        {player.isAlive ? "NORMAL_OPS" : "NODE_OFFLINE"}
+                        {player.isAlive ? "ACTIVE" : "ELIMINATED"}
                       </span>
                       <div className="text-[9px] text-white/20 font-mono tracking-widest mt-1">
-                        SENSORS_STABLE_00{idx}
+                        READY
                       </div>
                    </div>
                   )}
@@ -236,10 +236,10 @@ export function PredictionMarket({
         <div className="bg-white/[0.03] p-4 flex justify-between items-center border-b border-white/5">
            <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] font-space flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-cyan-500 animate-pulse rounded-full" />
-              LIVE_ORDER_EXECUTIONS
+              RECENT_BETS
            </h4>
            <div className="text-[9px] text-white/20 font-mono tracking-widest">
-              BUFFER_SYNC: {convexBets.length} [NODE_1092]
+              TOTAL_BETS: {convexBets.length}
            </div>
         </div>
         <div className="max-h-64 overflow-y-auto scrollbar-hide divide-y divide-white/5 font-space">

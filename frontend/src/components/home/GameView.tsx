@@ -86,16 +86,16 @@ function renderLogMessage(log: GameLog, players: Player[]) {
 
   if (player) {
     const shortAddr = `${player.address.slice(0,8)}...`;
-    msg = msg.replace(shortAddr, `[AGENT_${player.colorId}]`);
+    msg = msg.replace(shortAddr, `[PLAYER_${player.colorId}]`);
   }
   if (target) {
     const targetShortAddr = `${target.address.slice(0,8)}...`;
-    msg = msg.replace(targetShortAddr, `[AGENT_${target.colorId}]`);
+    msg = msg.replace(targetShortAddr, `[PLAYER_${target.colorId}]`);
   }
 
-  const parts = msg.split(/(\[AGENT_\d+\])/);
+  const parts = msg.split(/(\[PLAYER_\d+\])/);
   return parts.map((part, i) => {
-    const match = part.match(/\[AGENT_(\d+)\]/);
+    const match = part.match(/\[PLAYER_(\d+)\]/);
     if (match) {
       const colorId = parseInt(match[1]);
       const colorData = PlayerColors[colorId];
@@ -204,7 +204,7 @@ export function GameView({
                 {/* Phase indicator */}
                 <div className={`bg-black/60 backdrop-blur-xl border rounded-xl px-4 py-2 ${isEnded ? "border-red-500/30" : "border-cyan-500/30"}`}>
                   <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isEnded ? "text-red-400" : "text-cyan-400"}`}>
-                    {isEnded ? "GAME OVER" : gamePhase >= 4 ? "DISCUSSION" : gamePhase >= 2 ? "ACTION PHASE" : "BOARDING"}
+                    {isEnded ? "GAME OVER" : gamePhase >= 4 ? "MEETING" : gamePhase >= 2 ? "ACTION" : "WAITING"}
                   </span>
                 </div>
              </div>
@@ -240,7 +240,7 @@ export function GameView({
           {/* Tab Switcher */}
           <div className="flex mb-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
             {([
-              { id: "agents" as const, label: "Crew", icon: "👥" },
+              { id: "agents" as const, label: "Players", icon: "👥" },
               { id: "logs" as const, label: "Logs", icon: "📡" },
               { id: "market" as const, label: "Bets", icon: "📊" },
             ]).map(tab => (
@@ -269,7 +269,7 @@ export function GameView({
             {sidebarTab === "agents" && (
               <>
                 <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                  <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Crew Status</span>
+                  <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Player Status</span>
                   <span className="text-[9px] font-black text-emerald-400/60">{aliveCount}/{activePlayers.length}</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
@@ -330,8 +330,8 @@ export function GameView({
             {sidebarTab === "logs" && (
               <>
                 <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                  <span className="text-[9px] font-black text-rose-400/60 uppercase tracking-[0.2em]">Mission Intel</span>
-                  <span className="text-[9px] font-mono text-white/20">{logs.length} events</span>
+                  <span className="text-[9px] font-black text-rose-400/60 uppercase tracking-[0.2em]">Game Events</span>
+                  <span className="text-[9px] font-mono text-white/20">{logs.length} entries</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
                   {logs.length === 0 ? (
