@@ -1,10 +1,11 @@
-import { useSuiClient, useSignAndExecuteTransaction } from '@onelabs/dapp-kit';
+import { useSuiClient, useSignAndExecuteTransaction, useCurrentAccount } from '@onelabs/dapp-kit';
 import { Transaction } from '@onelabs/sui/transactions';
-import { AMM_POOL_ID, PACKAGE_ID, OCT_TOKEN_TYPE, CREW_TOKEN_TYPE } from '@/lib/onechain';
+import { AMM_POOL_ID, PACKAGE_ID, OCT_TOKEN_TYPE, CREW_TOKEN_TYPE, TOKEN_PACKAGE_ID } from '@/lib/onechain';
 import { useState } from 'react';
 
 export function useSwap() {
   const suiClient = useSuiClient();
+  const account = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const [reserves, setReserves] = useState<{ x: string, y: string } | null>(null);
 
@@ -44,16 +45,32 @@ export function useSwap() {
   };
 
   const swap = async (amountIn: string, xToY: boolean) => {
+    if (!account) throw new Error("Wallet not connected");
+
     const txb = new Transaction();
-    
-    // Split coin from gas if it's OCT
-    const [coinIn] = txb.splitCoins(
-        xToY ? txb.gas : txb.object('0x123'), // Placeholder for user's CREW coin object
-        [txb.pure.u64(amountIn)]
-      );
+    let coinIn;
+
+    if (xToY) {
+      // Swapping OCT -> CREW: Use gas (OCT)
+      const [splitCoin] = txb.splitCoins(txb.gas, [txb.pure.u64(amountIn)]);
+      coinIn = splitCoin;
+    } else {
+      // Swapping CREW -> OCT: Must find a CREW coin in wallet
+      const { data: coins } = await suiClient.getCoins({
+        owner: account.address,
+        coinType: CREW_TOKEN_TYPE,
+      });
+
+      if (coins.length === 0) throw new Error("No CREW tokens found in wallet");
+
+      // Pick the first coin that has enough balance or merge them if needed
+      // To keep it simple, we'll pick the first one and split it
+      const [splitCoin] = txb.splitCoins(txb.object(coins[0].coinObjectId), [txb.pure.u64(amountIn)]);
+      coinIn = splitCoin;
+    }
 
     txb.moveCall({
-      target: `${PACKAGE_ID}::amm::swap_${xToY ? 'x_to_y' : 'y_to_x'}`,
+      target: `${TOKEN_PACKAGE_ID}::amm::swap_${xToY ? 'x_to_y' : 'y_to_x'}`,
       typeArguments: [OCT_TOKEN_TYPE, CREW_TOKEN_TYPE],
       arguments: [
         txb.object(AMM_POOL_ID),

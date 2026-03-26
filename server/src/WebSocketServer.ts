@@ -1051,7 +1051,6 @@ export class WebSocketRelayServer {
           logger.info(`Scheduled time reached for room ${roomId}. Starting game.`);
           await this.startGameInternal(roomId);
           extended.lobbyLocked = true;
-          this.reassignRolesAfterLobby(roomId);
           this.broadcastToRoom(roomId, {
             type: "server:lobby_locked",
             gameId: roomId,
@@ -1093,7 +1092,6 @@ export class WebSocketRelayServer {
             });
           }
           
-          this.reassignRolesAfterLobby(roomId);
           this.broadcastToRoom(roomId, {
             type: "server:lobby_locked",
             gameId: roomId,
@@ -1145,79 +1143,10 @@ export class WebSocketRelayServer {
         extended.lobbyTimer = null;
       }
       extended.lobbyLocked = true;
-      this.reassignRolesAfterLobby(roomId);
+      this.startGameInternal(roomId);
     }
   }
 
-  /**
-   * Reassign impostors and tasks after lobby closes (when all players have joined)
-   */
-  private reassignRolesAfterLobby(roomId: string): void {
-    const room = this.rooms.get(roomId);
-    const extended = this.extendedState.get(roomId);
-    if (!room || !extended || room.players.length < 2) return;
-
-    // Reassign impostors based on final player count
-    const impostorCount = Math.max(1, Math.min(
-      room.impostorCount,
-      Math.floor(room.players.length / 3),
-    ));
-    const impostorIndices = new Set<number>();
-    while (impostorIndices.size < impostorCount) {
-      impostorIndices.add(Math.floor(Math.random() * room.players.length));
-    }
-
-    const impostorAddresses: string[] = [];
-    for (const idx of impostorIndices) {
-      impostorAddresses.push(room.players[idx].address);
-    }
-
-    // Update extended state
-    extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
-
-    // Update GameStateManager
-    this.gameStateManager.assignImpostors(roomId, impostorAddresses);
-
-    // Assign tasks to any players who don't have tasks yet
-    for (const player of room.players) {
-      const isImp = extended.impostors.has(player.address.toLowerCase());
-      player.role = isImp ? Role.Impostor : Role.Crewmate;
-
-      if (!isImp) {
-        const existingTasks = this.gameStateManager.getTaskLocations(roomId, player.address);
-        if (!existingTasks || existingTasks.length === 0) {
-          const taskLocations = this.generateTaskLocations(10);
-          this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
-        }
-      }
-    }
-
-    logger.info(
-      `Roles reassigned in room ${roomId}: ${room.players.length} players, ${impostorCount} impostors: ${impostorAddresses.join(", ")}`,
-    );
-
-    // Send individual role assignments and task locations to each player
-    for (const [clientId, client] of this.clients) {
-      if (client.roomId !== roomId || !client.address) continue;
-      const isImpostor = extended.impostors.has(client.address.toLowerCase());
-      this.send(client, {
-        type: "server:role_assigned",
-        gameId: roomId,
-        role: isImpostor ? "impostor" : "crewmate",
-        impostors: isImpostor ? impostorAddresses : undefined,
-      });
-      if (!isImpostor) {
-        const taskLocs = this.gameStateManager.getTaskLocations(roomId, client.address);
-        if (taskLocs.length > 0) {
-          this.send(client, {
-            type: "server:tasks_assigned",
-            gameId: roomId,
-            taskLocations: taskLocs,
-          });
-        }
-      }
-    }
-  }
 
   private async startGameInternal(roomId: string, isInitialBoarding = false): Promise<void> {
     const room = this.rooms.get(roomId);
@@ -1230,31 +1159,39 @@ export class WebSocketRelayServer {
     }
 
     const phaseValue = isInitialBoarding ? 1 : 2;
-
-    // Assign impostors randomly
-    const impostorCount = Math.max(1, Math.min(
-      room.impostorCount,
-      room.players.length // Up to all players being impostors for testing, or just 1
-    ));
-    const isTestRoom = roomId.startsWith("TEST");
-    const impostorIndices = new Set<number>();
-    
-    if (isTestRoom && room.players.length > 0) {
-      impostorIndices.add(0); // Pick the first player as the impostor
-      logger.warn(`TEST ROOM DETECTED: Picking ${room.players[0].address} as fixed impostor!`);
-    } else {
-      while (impostorIndices.size < impostorCount) {
-        impostorIndices.add(Math.floor(Math.random() * room.players.length));
-      }
-    }
-
     const impostorAddresses: string[] = [];
-    for (const idx of impostorIndices) {
-      impostorAddresses.push(room.players[idx].address);
-    }
 
-    // Initialize or update extended room state
-    extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
+    // ONLY assign impostors if transitioning to PLAYING (phase 2) OR if we skipped initial boarding
+    // This prevents double/triple role assignment which leads to too many impostors
+    if (!isInitialBoarding && extended.impostors.size === 0) {
+        const impostorCount = Math.max(1, Math.min(
+            room.impostorCount,
+            Math.floor(room.players.length / 3) // Heuristic: ~1/3 impostors max
+        ));
+        
+        const isTestRoom = roomId.startsWith("TEST");
+        const impostorIndices = new Set<number>();
+        
+        if (isTestRoom && room.players.length > 0) {
+            impostorIndices.add(0);
+            logger.warn(`TEST ROOM: Picking ${room.players[0].address} as impostor`);
+        } else {
+            while (impostorIndices.size < impostorCount) {
+                impostorIndices.add(Math.floor(Math.random() * room.players.length));
+            }
+        }
+
+        for (const idx of impostorIndices) {
+            impostorAddresses.push(room.players[idx].address);
+        }
+        
+        // Update extended state with fresh assignment
+        extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
+        this.gameStateManager.assignImpostors(roomId, impostorAddresses);
+    } else {
+        // Carry over existing impostors if already assigned
+        impostorAddresses.push(...Array.from(extended.impostors));
+    }
     extended.currentRound = 1;
     extended.currentPhase = phaseValue;
 
@@ -1304,20 +1241,15 @@ export class WebSocketRelayServer {
       });
     }
 
-    // Assign tasks to players (if phase is 2)
-    if (phaseValue === 2) {
-        for (const player of room.players) {
-          const isImp = extended.impostors.has(player.address.toLowerCase());
-          player.role = isImp ? Role.Impostor : Role.Crewmate;
-          
-          if (!isImp) {
+    // Sync roles to the actual player objects in the room array for the frontend
+    for (const player of room.players) {
+        const isImp = extended.impostors.has(player.address.toLowerCase());
+        player.role = isImp ? Role.Impostor : Role.Crewmate;
+        
+        // Assign tasks ONLY when moving to playing (phase 2)
+        if (phaseValue === 2 && !isImp) {
             const taskLocations = this.generateTaskLocations(10);
-            this.gameStateManager.assignTasks(
-              roomId,
-              player.address,
-              taskLocations,
-            );
-          }
+            this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
         }
     }
 
