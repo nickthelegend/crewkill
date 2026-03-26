@@ -242,7 +242,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
             </Link>
             {game.status === "CREATED" ? (
               <Link
-                href={`/market?roomId=${game.roomId}`}
+                href={`/game/${game.roomId}/bet`}
                 className="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black py-4 rounded-none text-center transition-all uppercase tracking-[0.3em] shadow-[0_0_20px_rgba(220,38,38,0.2)]"
               >
                 Predict
