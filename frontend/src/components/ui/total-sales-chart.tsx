@@ -132,7 +132,7 @@ const chartConfig: ChartConfig = {
   },
 };
 
-export const TotalSalesChart = () => {
+export const TotalSalesChart = ({ fullWidth = false }: { fullWidth?: boolean }) => {
   const [selectedPeriod, setSelectedPeriod] = React.useState<
     "1d" | "1w" | "1m" | "3m" | "1y"
   >("1m");
@@ -149,7 +149,10 @@ export const TotalSalesChart = () => {
     ];
 
   return (
-    <Card className="flex w-full max-w-[400px] flex-col gap-0 p-5 shadow-none bg-black/40 border-white/10 text-white">
+    <Card className={cn(
+      "flex w-full flex-col gap-0 p-8 shadow-none bg-transparent border-none text-white",
+      !fullWidth && "max-w-[400px] bg-black/40 border-white/10 p-5"
+    )}>
       <CardHeader className="flex flex-row items-center justify-between p-0">
         <CardTitle className="text-base font-semibold text-white/60 uppercase tracking-widest leading-none">
           Total Betting Volume
@@ -191,9 +194,19 @@ export const TotalSalesChart = () => {
 
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[180px] w-full"
+          className={cn("aspect-auto w-full", fullWidth ? "h-[350px]" : "h-[180px]")}
         >
-          <LineChart accessibilityLayer data={salesData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+          <LineChart accessibilityLayer data={salesData} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+            <defs>
+              <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#06b6d4" />
+                <stop offset="100%" stopColor="#c026d3" />
+              </linearGradient>
+              <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
             <CartesianGrid
               vertical={false}
               strokeDasharray="4 4"
@@ -220,13 +233,14 @@ export const TotalSalesChart = () => {
             <Line
               type="monotone"
               dataKey="sales"
-              stroke="#06b6d4"
-              strokeWidth={3}
+              stroke="url(#lineGradient)"
+              strokeWidth={fullWidth ? 4 : 3}
               dot={false}
+              filter="url(#neonGlow)"
               activeDot={{
-                r: 4,
-                fill: "#06b6d4",
-                stroke: "#ffffff",
+                r: 6,
+                fill: "#ffffff",
+                stroke: "#06b6d4",
                 strokeWidth: 2,
               }}
             />

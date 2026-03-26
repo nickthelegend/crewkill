@@ -102,6 +102,7 @@ export function MarketChart({ players, bets, totalPot }: { players: Player[], be
 const IS_OFFLINE = process.env.NEXT_PUBLIC_DISABLE_WAGERS === "true";
 
 import { getExplorerObjectUrl, getExplorerAccountUrl } from '@/lib/onechain';
+import { TotalSalesChart } from '../ui/total-sales-chart';
 
 export function PredictionMarket({
   gameId, marketObjectId, gamePlayers, isResolved, gamePhase, isSidebar = false 
@@ -111,7 +112,7 @@ export function PredictionMarket({
 
   return (
     <div className={`w-full ${isSidebar ? "max-w-none space-y-4" : "max-w-7xl mx-auto space-y-8"}`}>
-      <div className="bg-white/[0.03] border border-white/10 p-0 overflow-hidden relative backdrop-blur-3xl">
+      <div className="bg-white/[0.03] border border-white/10 p-0 overflow-hidden relative backdrop-blur-3xl rounded-[2rem]">
         <div className="p-6 md:p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
              <div className="flex items-center gap-3 mb-4">
@@ -149,8 +150,8 @@ export function PredictionMarket({
           </div>
         </div>
 
-        <div className="p-6 md:p-8 border-b border-white/5">
-           <MarketChart players={gamePlayers} bets={convexBets} totalPot={totalPot} />
+        <div className="p-0 border-b border-white/5 bg-black/40">
+           <TotalSalesChart fullWidth />
         </div>
 
         <div className="divide-y divide-white/5 bg-black/20">

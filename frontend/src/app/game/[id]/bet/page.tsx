@@ -152,7 +152,6 @@ function GameBettingContent() {
                    gamePhase={gamePhaseNum}
                 />
 
-                <TotalSalesChart />
 
                 <section className="bg-white/[0.03] border border-white/10 backdrop-blur-3xl overflow-hidden p-0 h-fit">
                    <div className="bg-red-600/10 border-b border-white/5 p-4 md:p-6">
