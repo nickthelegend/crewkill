@@ -134,11 +134,14 @@ async function runMatch() {
             const data = await response.json() as any;
             console.log("DEBUG: Rooms from API:", data.rooms);
             const rooms = data.rooms || [];
-            const scheduledRoom = (rooms as any[]).find((r: any) => r.roomId.startsWith('scheduled_'));
+            // Find any active room that is in 'boarding' or 'lobby' phase
+            const activeRoom = (rooms as any[]).find((r: any) => 
+                r.phase === 'boarding' || r.phase === 'lobby' || r.roomId.startsWith('scheduled_')
+            );
             
-            if (scheduledRoom) {
-                gameObjectId = scheduledRoom.roomId;
-                console.log(`\nFound scheduled room! Joining: ${gameObjectId}\n`);
+            if (activeRoom) {
+                gameObjectId = activeRoom.roomId;
+                console.log(`\nFound active room! Joining: ${gameObjectId}\n`);
             } else {
                 // Use a persistent random ID for this session match
                 gameObjectId = `OFFLINE-${Math.random().toString(36).slice(2, 8)}`;

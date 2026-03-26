@@ -960,10 +960,36 @@ export class WebSocketRelayServer {
       `Room ${roomId} created on-chain by ${creatorAddress || "anonymous"} [TX: ${creationDigest || "N/A"}]`,
     );
 
-    // Spawn AI agents if requested
-    if (aiAgentCount && aiAgentCount > 0) {
-      const maxAI = Math.min(aiAgentCount, maxPlayers - 1);
-      this.spawnAIAgentsForRoom(roomId, maxAI);
+    // If this is a restoration, try to get existing players from DB
+    let restoredCount = 0;
+    try {
+        const dbGame = await databaseService.getGameByRoomId(roomId);
+        if (dbGame?.players && dbGame.players.length > 0) {
+            logger.info(`Restoring ${dbGame.players.length} players for room ${roomId} from database...`);
+            room.players = (dbGame.players as any[]).map((p: any) => ({
+                ...p,
+                isAlive: p.isAlive ?? true,
+                tasksCompleted: p.tasksCompleted ?? 0,
+                totalTasks: 30,
+                hasVoted: false,
+            }));
+            restoredCount = room.players.length;
+            
+            // Sync current game state too
+            for (const player of room.players) {
+                this.gameStateManager.updatePlayer(roomId, player);
+            }
+        }
+    } catch (err) {
+        logger.error(`Error restoring players for ${roomId}:`, err);
+    }
+
+    // Spawn AI agents if requested and NOT already restored
+    if (aiAgentCount && aiAgentCount > restoredCount) {
+      const toSpawn = Math.min(aiAgentCount - restoredCount, maxPlayers - room.players.length);
+      if (toSpawn > 0) {
+        this.spawnAIAgentsForRoom(roomId, toSpawn);
+      }
     }
 
     this.broadcastRoomList();
@@ -1387,8 +1413,11 @@ export class WebSocketRelayServer {
         logger.error(`Error checking DB for market in ${roomId}:`, err);
     }
 
-    // Need at least 1 player to have suspects in a market
-    if (room.players.length < 1) return;
+    // Need at least 9 players to have suspects in a market (usually 9-10 in scheduled games)
+    if (room.players.length < 9) {
+      logger.info(`Market deployment deferred for ${roomId} (current players: ${room.players.length}, need at least 9)`);
+      return;
+    }
 
     (room as any).marketLoading = true;
     this.creatingMarkets.add(roomId);
@@ -3109,7 +3138,7 @@ export class WebSocketRelayServer {
    * Register a ServerAgent as a client in the server's client map
    * and join it into the given room as a player.
    */
-  private registerAIAgent(agent: ServerAgent, roomId: string): void {
+  private registerAIAgent(agent: ServerAgent, roomId: string, skipTrigger: boolean = false): void {
     const clientId = `ai-${agent.address}`;
     const client: Client = {
       id: clientId,
@@ -3176,8 +3205,7 @@ export class WebSocketRelayServer {
 
     // Sync to Convex and check start conditions
     this.updateConvexPlayers(roomId);
-    this.onPlayerJoinedRoom(roomId);
-
+    
     // Track in agent stats
     this.getOrCreateAgentStats(agent.address, agent.name);
 
@@ -3192,11 +3220,10 @@ export class WebSocketRelayServer {
       player: playerState,
     });
 
-    // Sync to Convex
-    this.updateConvexPlayers(roomId);
-
     // CRITICAL: Trigger join lifecycle logic (prediction market, auto-start, etc)
-    this.onPlayerJoinedRoom(roomId);
+    if (!skipTrigger) {
+      this.onPlayerJoinedRoom(roomId);
+    }
   }
 
   /**
@@ -3239,10 +3266,12 @@ export class WebSocketRelayServer {
 
     const agents = this.aiAgentManager.spawnAgentsForRoom(roomId, toSpawn);
     for (const agent of agents) {
-      this.registerAIAgent(agent, roomId);
+      // Pass skipTrigger=true so we don't trigger market creation for every single agent
+      this.registerAIAgent(agent, roomId, true);
     }
 
-    // Logic for starting/market creation is now handled by registerAIAgent -> onPlayerJoinedRoom
+    // Now trigger lifecycle logic once with all agents present
+    this.onPlayerJoinedRoom(roomId);
     this.broadcastRoomList();
   }
 
@@ -3366,34 +3395,40 @@ export class WebSocketRelayServer {
 
   // Get all rooms (for external access)
   public async syncWithDatabase(): Promise<void> {
-    // DISABLING AUTO-RECOVERY as per user request to stop automatic room appearance
-    logger.info("Syncing in-memory rooms with database... (SKIPPING RECOVERY for manual control)");
-    /*
+    logger.info("Syncing in-memory rooms with database for recovery...");
+    
+    // Use the database service to list games from Convex/DB
     const activeGames = await databaseService.listGames();
     
-    // Filter for games that are active and not in memory
-    const roomsToRestore = activeGames.filter(g => 
-      g.status !== "COMPLETED" && 
+    // Filter for games that are active (waiting/boarding/playing) and not in-memory
+    const roomsToRestore = activeGames.filter((g: any) => 
+      g.id && 
+      g.status !== "ended" && 
       !this.rooms.has(g.roomId)
     );
 
     for (const game of roomsToRestore) {
       logger.info(`Recovering room ${game.roomId} from database...`);
-      // Re-create the room in-memory using the existing roomId (skips on-chain creation)
+      // Re-create the room in-memory using the existing roomId (reuses metadata if exists)
       await this.createRoom(
         undefined, // System recovered
         10, 
         2, 
         game.wagerAmount || "100000000",
-        8, // Re-fill with 8 agents so it stays active
+        game.players?.length || 8, // Use existing player count or default to 8
         game.roomId
       );
+      
+      // Update marketId from DB
+      const room = this.rooms.get(game.roomId);
+      if (room && game.marketId) {
+        room.marketId = game.marketId;
+      }
     }
     
     if (roomsToRestore.length > 0) {
       logger.info(`Successfully recovered ${roomsToRestore.length} rooms from database.`);
     }
-    */
   }
 
   getRooms(): RoomState[] {

@@ -39,9 +39,26 @@ export class ContractService {
     try {
       const coins = await this.client.getCoins({ owner: this.operatorKeypair.getPublicKey().toSuiAddress() });
       const badCoin = "0x48f3b0e90853dccda7bcdbc79ee8a434680edf3447221b780c8c678985bc4811";
-      const unlockedCoin = coins.data.find(c => c.coinObjectId !== badCoin);
-      if (unlockedCoin) {
-        tx.setGasPayment([{ objectId: unlockedCoin.coinObjectId, version: unlockedCoin.version, digest: unlockedCoin.digest }]);
+      
+      // Sort coins by balance descending to find the one with the most gas
+      const validCoins = coins.data
+        .filter(c => c.coinObjectId !== badCoin)
+        .sort((a, b) => {
+            const valA = BigInt(a.balance);
+            const valB = BigInt(b.balance);
+            if (valB > valA) return 1;
+            if (valB < valA) return -1;
+            return 0;
+        });
+        
+      const bestCoin = validCoins[0];
+      if (bestCoin) {
+        tx.setGasPayment([{ 
+            objectId: bestCoin.coinObjectId, 
+            version: bestCoin.version, 
+            digest: bestCoin.digest 
+        }]);
+        logger.info(`Using gas coin ${bestCoin.coinObjectId} with balance ${bestCoin.balance}`);
       }
     } catch(e) {
       logger.error("Failed to fetch gas payment bypass:", e);

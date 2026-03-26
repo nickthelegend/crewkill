@@ -13,7 +13,7 @@ export const WAGER_VAULT_ID = '0xe76a71028322ed4ae07af6ae99202ffeb0affe5e774b38e
 export const AGENT_REGISTRY_ID = '0x968cd0fdfb9ad5a40c352bebaf860be7a13c4c001b8d8e99c2413a2682aeadcb';
 export const MARKET_REGISTRY_ID = '0x9e6d1b8cc8e900ce301b0a257327b9467be6ff92f779e593e95facde8228f510';
 // New AMM and Token IDs
-export const CREW_TOKEN_TYPE = `${TOKEN_PACKAGE_ID}::crew_token::CREW_TOKEN`;
+export const CREW_TOKEN_TYPE = '0x2::oct::OCT';
 export const AMM_POOL_ID = '0x8f148e48af23623e380b8072580e110709ca1380db4bb182fa4c44664c77b677';
 export const OCT_TOKEN_TYPE = '0x2::oct::OCT';
 

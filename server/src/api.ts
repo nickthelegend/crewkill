@@ -103,6 +103,7 @@ export function createApiServer(
     res.json({
       rooms: rooms.map((room) => ({
         roomId: room.roomId,
+        marketId: room.marketId,
         players: room.players.map((p) => ({
           address: p.address,
           colorId: p.colorId,
