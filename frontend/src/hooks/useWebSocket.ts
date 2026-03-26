@@ -227,6 +227,7 @@ export function useWebSocket({
               phaseEndTime: message.state.phaseEndTime,
               players: message.state.players.map((p) => ({
                 address: p.address as `0x${string}`,
+                name: `Agent ${p.address.slice(-4)}`,
                 colorId: p.colorId,
                 role: 0, // Unknown from spectator view
                 location: p.location as Location,
@@ -253,6 +254,7 @@ export function useWebSocket({
               if (!prev) return prev;
               const newPlayer: Player = {
                 address: message.player.address as `0x${string}`,
+                name: `Agent ${message.player.address.slice(-4)}`,
                 colorId: message.player.colorId,
                 role: 0,
                 location: message.player.location as Location,

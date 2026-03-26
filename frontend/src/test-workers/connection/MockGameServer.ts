@@ -140,6 +140,7 @@ export class MockGameServer extends BaseGameConnection {
       const isImpostor = impostorIndices.has(index);
       return {
         address: this.generateAddress(index),
+        name: config.name || `Agent ${index + 1}`,
         colorId: config.colorId,
         role: isImpostor ? Role.Impostor : Role.Crewmate,
         location: Location.Cafeteria,

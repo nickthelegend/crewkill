@@ -207,7 +207,7 @@ export const TotalSalesChart = () => {
                   hideIndicator
                   hideLabel
                   className="bg-black/90 border-white/10 text-white"
-                  labelFormatter={(value) => {
+                  labelFormatter={(value: any) => {
                     return new Intl.NumberFormat("en-US", {
                       style: "currency",
                       currency: "USD",
