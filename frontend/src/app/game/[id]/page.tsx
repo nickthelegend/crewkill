@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { MarketProvider } from "@/components/game/MarketContext";
+import { TotalSalesChart } from "@/components/ui/total-sales-chart";
 
 export default function RoomDetailsPage() {
   return (
@@ -310,28 +311,10 @@ function RoomDetailsPageContent() {
                 </div>
               </div>
 
-              {/* Market Chart Placeholder / Visual */}
-              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white/[0.03] border border-cyan-500/20 rounded-[2rem] p-8 relative overflow-hidden">
-                   <div className="text-xs font-black text-cyan-400 uppercase tracking-widest mb-4">Sentiment Index</div>
-                   <div className="h-32 flex items-end gap-2">
-                      {[...Array(12)].map((_, i) => (
-                        <motion.div 
-                          key={i}
-                          className="flex-1 bg-cyan-500/20 border-t-2 border-cyan-400"
-                          initial={{ height: 0 }}
-                          animate={{ height: `${20 + Math.random() * 80}%` }}
-                          transition={{ delay: i * 0.1, duration: 1 }}
-                        />
-                      ))}
-                   </div>
-                </div>
-                <div className="bg-white/[0.03] border border-white/10 rounded-[2rem] p-8 flex flex-col justify-center">
-                   <div className="text-xs font-black text-white/30 uppercase tracking-widest mb-2">Historical Accuracy</div>
-                   <div className="text-4xl font-black text-white">98.4%</div>
-                   <p className="text-[10px] text-white/20 mt-2 font-bold leading-tight">PREDICTIVE STABILITY ENHANCED VIA SMART CONTRACTS</p>
-                </div>
-              </div>
+                  {/* Volume Chart */}
+                  <div className="mt-8">
+                    <TotalSalesChart />
+                  </div>
             </div>
 
           </div>
