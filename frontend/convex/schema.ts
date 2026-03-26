@@ -92,7 +92,8 @@ export default defineSchema({
     marketId: v.optional(v.string()),
     settlementTxHash: v.optional(v.string()),
   }).index("by_roomId", ["roomId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_scheduledAt", ["scheduledAt"]),
 
   transactions: defineTable({
     type: v.string(), // "DEPOSIT", "WAGER", "WINNINGS", "REFUND", "WITHDRAWAL"

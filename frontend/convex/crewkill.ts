@@ -259,6 +259,16 @@ export const getGameByRoomId = query({
   },
 });
 
+export const getGamesBySlot = query({
+  args: { scheduledAt: v.number() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("games")
+      .withIndex("by_scheduledAt", (q) => q.eq("scheduledAt", args.scheduledAt))
+      .collect();
+  },
+});
+
 export const listGames = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
