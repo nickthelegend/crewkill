@@ -76,7 +76,9 @@ function GameBettingContent() {
     agentPersona: p.agentPersona
   }));
 
-  const gamePhaseNum = wsPhase || (dbGame.status === "COMPLETED" ? 7 : 0);
+  const isBettingExpired = dbGame.bettingEndsAt ? Date.now() > dbGame.bettingEndsAt : false;
+  const tooOld = (Date.now() - dbGame.createdAt) > 15 * 60 * 1000;
+  const gamePhaseNum = wsPhase || (dbGame.status === "COMPLETED" ? 7 : (dbGame.status === "ACTIVE" || isBettingExpired || tooOld ? 2 : 0));
 
   return (
     <SpaceBackground>
@@ -94,12 +96,18 @@ function GameBettingContent() {
               <div className="flex flex-col lg:flex-row justify-between items-end gap-12">
                 <div className="flex-1">
                    <h2 className="text-[11px] font-black text-red-500 uppercase tracking-[0.5em] mb-4 flex items-center gap-3 font-space">
-                     <span className={`w-2.5 h-2.5 ${dbGame.status === "CREATED" ? "bg-red-600 animate-pulse" : "bg-white/20"} shadow-[0_0_15px_rgba(220,38,38,0.5)]`} />
-                     {dbGame.status === "CREATED" ? "LIVE_DEPLOYMENT_ACTIVE" : "MISSION_TERMINATED_PREDICTIONS_CLOSED"}
+                     <span className={`w-2.5 h-2.5 ${(dbGame.status === "CREATED" && !isBettingExpired && !tooOld) ? "bg-red-600 animate-pulse" : (dbGame.status === "ACTIVE" ? "bg-yellow-500 animate-pulse" : "bg-white/20")} shadow-[0_0_15px_rgba(220,38,38,0.5)]`} />
+                     {dbGame.status === "CREATED" ? ((isBettingExpired || tooOld) ? "BETTING_WINDOW_EXPIRED" : "LIVE_DEPLOYMENT_ACTIVE") : (dbGame.status === "ACTIVE" ? "MISSION_IN_PROGRESS" : "MISSION_TERMINATED")}
                    </h2>
                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter uppercase leading-none font-space max-w-4xl">
                      {dbGame.status === "CREATED" ? (
-                       <>WHO IS THE <span className="text-red-500">IMPOSTOR?</span></>
+                       (isBettingExpired || tooOld) ? (
+                        <>MARKET <span className="text-red-500">LOCKED</span> / STANDBY</>
+                       ) : (
+                        <>WHO IS THE <span className="text-red-500">IMPOSTOR?</span></>
+                       )
+                     ) : dbGame.status === "ACTIVE" ? (
+                       <>MISSION <span className="text-red-500">ENGAGED</span> / LOCKED</>
                      ) : (
                        <>GAME OVER / <span className="text-white/40">PREDICTION OVER</span></>
                      )}

@@ -99,6 +99,32 @@ export class WebSocketRelayServer {
             }
         });
     }, 500);
+
+    // Watchdog for "Zombie" rooms (stuck in lobby/boarding too long)
+    setInterval(async () => {
+      const now = Date.now();
+      const MAX_LOBBY_AGE = 12 * 60 * 1000; // 12 mins (slightly over 10m limit)
+
+      for (const [roomId, room] of this.rooms.entries()) {
+        const extended = this.extendedState.get(roomId);
+        const age = now - room.createdAt;
+        
+        if ((room.phase === "lobby" || room.phase === "boarding") && age > MAX_LOBBY_AGE) {
+          if (!extended?.lobbyLocked) {
+             logger.warn(`Watchdog: Room ${roomId} is ${Math.round(age/1000)}s old. Forcing game start...`);
+             if (extended) extended.lobbyLocked = true;
+             await this.startGameInternal(roomId).catch(err => {
+                logger.error(`Watchdog: Failed to force start room ${roomId}:`, err);
+             });
+             
+             // Safety: explicitly close market if it exists
+             if (room.marketId) {
+                contractService.closeMarket(roomId, room.marketId).catch(() => {});
+             }
+          }
+        }
+      }
+    }, 60000); // Check every minute
   }
 
   async start(): Promise<void> {

@@ -157,7 +157,14 @@ export const createScheduledGame = mutation({
       .query("games")
       .withIndex("by_roomId", (q) => q.eq("roomId", args.roomId))
       .unique();
-    if (existing) return existing._id;
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        scheduledAt: args.scheduledAt,
+        bettingEndsAt: args.bettingEndsAt,
+      });
+      return existing._id;
+    }
 
     const id = await ctx.db.insert("games", {
       roomId: args.roomId,
