@@ -39,7 +39,7 @@ export const placeBet = mutation({
     });
 
     // 2. Create bet entry
-    return await ctx.db.insert("bets", {
+    const betId = await ctx.db.insert("bets", {
       userId: userId!,
       address: args.address,
       gameId: args.gameId,
@@ -49,6 +49,15 @@ export const placeBet = mutation({
       txDigest: args.txDigest,
       createdAt: Date.now(),
     });
+
+    // 3. Update total pot in games table
+    const currentPot = BigInt(game.totalPot || "0");
+    const newPot = currentPot + BigInt(args.amountMist);
+    await ctx.db.patch(game._id, {
+      totalPot: newPot.toString(),
+    });
+
+    return betId;
   },
 });
 

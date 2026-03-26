@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
@@ -16,6 +16,43 @@ export default function RoomsPage() {
     const isLive = ["CREATED", "ACTIVE", "DISCUSSION", "VOTING"].includes(game.status);
     return filter === "LIVE" ? isLive : !isLive;
   });
+
+  // Real-time Sui Market Volume tracker
+  const [marketVolumes, setMarketVolumes] = useState<Record<string, number>>({});
+  const marketIds = useMemo(() => 
+    filteredGames.map(g => g.marketId).filter(id => !!id && id.startsWith('0x')) as string[],
+    [filteredGames]
+  );
+
+  useEffect(() => {
+    if (marketIds.length === 0) return;
+
+    const fetchVolumes = async () => {
+      try {
+        const results = await suiClient.multiGetObjects({
+          ids: marketIds,
+          options: { showContent: true }
+        });
+
+        const volumes: Record<string, number> = {};
+        results.forEach((res: any) => {
+          if (!res.data || !res.data.objectId) return;
+          const fields = (res.data.content as any)?.fields;
+          if (fields) {
+            const potStr = typeof fields.total_pot === 'string' ? fields.total_pot : (fields.total_pot?.fields?.value || '0');
+            volumes[res.data.objectId] = parseInt(potStr);
+          }
+        });
+        setMarketVolumes(prev => ({ ...prev, ...volumes }));
+      } catch (err) {
+        console.error("Failed to fetch market volumes from Sui:", err);
+      }
+    };
+
+    fetchVolumes();
+    const interval = setInterval(fetchVolumes, 5000); // Pulse every 5s
+    return () => clearInterval(interval);
+  }, [marketIds]);
 
   return (
     <SpaceBackground>
@@ -61,7 +98,12 @@ export default function RoomsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
             {filteredGames.map((game, i) => (
-              <RoomCard key={game._id} game={game} index={i} />
+              <RoomCard 
+                key={game._id} 
+                game={game} 
+                index={i} 
+                marketVolume={game.marketId ? marketVolumes[game.marketId] : undefined} 
+              />
             ))}
           </AnimatePresence>
 
@@ -87,9 +129,9 @@ export default function RoomsPage() {
   );
 }
 
-import { getExplorerObjectUrl, getExplorerTxUrl } from "@/lib/onechain";
+import { getExplorerObjectUrl, getExplorerTxUrl, suiClient } from "@/lib/onechain";
 
-function RoomCard({ game, index }: { game: any; index: number }) {
+function RoomCard({ game, index, marketVolume }: { game: any; index: number; marketVolume?: number }) {
   const isStarting = game.status === "CREATED";
   const startAt = game.scheduledAt ? new Date(game.scheduledAt) : null;
   const bettingEndsAt = game.bettingEndsAt ? new Date(game.bettingEndsAt) : null;
@@ -222,7 +264,7 @@ function RoomCard({ game, index }: { game: any; index: number }) {
             <div className="space-y-1">
               <span className="text-[8px] text-white/20 font-black tracking-widest uppercase block">Pool Volume</span>
               <span className="text-lg font-black text-yellow-500/90 leading-none">
-                {(parseFloat(game.totalPot || "0") / 1e9).toFixed(2)} <span className="text-[10px] text-white/30 ml-1">$CREW</span>
+                {((marketVolume ?? parseFloat(game.totalPot || "0")) / 1e9).toFixed(2)} <span className="text-[10px] text-white/30 ml-1">$CREW</span>
               </span>
             </div>
             <div className="text-right space-y-1">
