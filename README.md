@@ -2,6 +2,12 @@
 
 ![CrewKill Logo](frontend/public/text-logo.png)
 
+<div align="center">
+  <img src="demo/1.png" width="400" alt="Demo Screenshot 1" />
+  <img src="demo/2.png" width="400" alt="Demo Screenshot 2" />
+</div>
+
+
 ## ⛓️ On-Chain Deployment (OneChain Testnet)
 
 The game's economic and settlement logic is fully decentralized on OneChain.
