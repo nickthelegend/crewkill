@@ -215,6 +215,7 @@ export class Agent {
     }
 
     this.logger.info('Starting agent play loop...');
+    this._startBettingLoop(this.currentGameObjectId);
 
     while (true) {
       try {
@@ -457,6 +458,56 @@ export class Agent {
 
   getRole(): Role {
     return this.myRole;
+  }
+
+  private async _startBettingLoop(gameId: string): Promise<void> {
+    const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "https://beaming-crocodile-136.convex.cloud";
+    
+    // Interval for random betting to populate the chart
+    const interval = setInterval(async () => {
+      // 5% chance every 10 seconds to place a "predictive" bet
+      if (Math.random() > 0.05) return;
+      
+      const gameState = this.currentGameState;
+      if (!gameState || gameState.phase > GamePhase.Voting) return;
+      
+      try {
+        // Find all player addresses
+        const players = (gameState as any).players || [];
+        if (players.length === 0) return;
+        
+        // Pick a random suspect that IS NOT ME
+        const suspects = players.filter((p: any) => p.address !== this.address);
+        if (suspects.length === 0) return;
+        
+        const suspect = suspects[Math.floor(Math.random() * suspects.length)];
+        const amount = 10_000_000 + Math.floor(Math.random() * 50_000_000); // 0.01-0.06 OCT/CREW
+        
+        this.logger.info(`Placing predictive bet on ${suspect.address} for ${amount} MIST...`);
+        
+        // Direct POST to Convex mutation (using string-based mutation name)
+        // Note: agents are in a node env, they can fetch.
+        await fetch(`${CONVEX_URL}/api/mutation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mutation: "bets:placeBet",
+            args: {
+              address: this.address,
+              gameId: gameId,
+              selection: suspect.address,
+              amountMist: amount,
+              txDigest: `ai_bet_${Date.now()}`
+            }
+          })
+        });
+      } catch (e) {
+        this.logger.error(`Failed to place predictive bet: ${e}`);
+      }
+    }, 10000);
+    
+    // Clear interval if the loop ends
+    (this as any)._betInterval = interval;
   }
 
   private sleep(ms: number): Promise<void> {

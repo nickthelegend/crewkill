@@ -40,26 +40,41 @@ export class ServerAgentManager {
    * Spawn N AI agents for a room.
    * Returns the created agents so the caller can register them as clients.
    */
-  spawnAgentsForRoom(roomId: string, count: number): ServerAgent[] {
+  spawnAgentsForRoom(roomId: string, count: number, existingPlayers?: { address: string, name: string }[]): ServerAgent[] {
     const agents: ServerAgent[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const agent = this.createAgent();
-      agent.setRoom(roomId);
-
-      // Track by room
-      let roomList = this.roomAgents.get(roomId);
-      if (!roomList) {
-        roomList = [];
-        this.roomAgents.set(roomId, roomList);
+    
+    if (existingPlayers && existingPlayers.length > 0) {
+      // Re-spawn existing agents with their saved addresses
+      for (const p of existingPlayers) {
+        if (!p.address.startsWith("0xaa")) continue; // Only re-spawn AI agents
+        const agent = this.createAgent(p.address, p.name);
+        agent.setRoom(roomId);
+        this.trackAgent(roomId, agent);
+        agents.push(agent);
+        logger.info(`Re-spawned AI agent "${agent.name}" (${agent.address}) for room ${roomId}`);
       }
-      roomList.push(agent);
-
-      agents.push(agent);
-      logger.info(`Spawned AI agent "${agent.name}" (${agent.address}) for room ${roomId}`);
+    } else {
+      // Spawn fresh agents
+      for (let i = 0; i < count; i++) {
+        const agent = this.createAgent();
+        agent.setRoom(roomId);
+        this.trackAgent(roomId, agent);
+        agents.push(agent);
+        logger.info(`Spawned AI agent "${agent.name}" (${agent.address}) for room ${roomId}`);
+      }
     }
 
     return agents;
+  }
+
+  private trackAgent(roomId: string, agent: ServerAgent) {
+    let roomList = this.roomAgents.get(roomId);
+    if (!roomList) {
+      roomList = [];
+      this.roomAgents.set(roomId, roomList);
+    }
+    roomList.push(agent);
+    this.agentsByAddress.set(agent.address, agent);
   }
 
   /**
@@ -154,9 +169,9 @@ export class ServerAgentManager {
 
   // ============ INTERNAL ============
 
-  private createAgent(): ServerAgent {
-    const name = pickAgentName();
-    const address = generateAgentAddress();
+  private createAgent(existingAddress?: string, existingName?: string): ServerAgent {
+    const name = existingName || pickAgentName();
+    const address = existingAddress || generateAgentAddress();
 
     const config: ServerAgentConfig = {
       name,

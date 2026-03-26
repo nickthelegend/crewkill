@@ -619,6 +619,7 @@ export class WebSocketRelayServer {
     }
     const playerState: PlayerState = {
       address: client.address || client.id,
+      name: client.name || (client.address ? client.address.slice(0, 8) : client.id.slice(0, 8)),
       colorId: colorId ?? activeRoom.players.length,
       location: 0, // Cafeteria
       role: Role.None,
@@ -716,6 +717,7 @@ export class WebSocketRelayServer {
         // Complete the join
         const playerState: PlayerState = {
           address: client.address || client.id,
+          name: client.name || (client.address ? client.address.slice(0, 8) : client.id.slice(0, 8)),
           colorId: colorId ?? room.players.length,
           location: 0, // Cafeteria
           role: Role.None, // Default role
@@ -968,6 +970,7 @@ export class WebSocketRelayServer {
             logger.info(`Restoring ${dbGame.players.length} players for room ${roomId} from database...`);
             room.players = (dbGame.players as any[]).map((p: any) => ({
                 ...p,
+                name: p.name || p.address.slice(0, 8), // Ensure name is restored
                 isAlive: p.isAlive ?? true,
                 tasksCompleted: p.tasksCompleted ?? 0,
                 totalTasks: 30,
@@ -1255,6 +1258,7 @@ export class WebSocketRelayServer {
       const isImp = extended.impostors.has(player.address.toLowerCase());
       this.gameStateManager.updatePlayer(roomId, {
         address: player.address,
+        name: player.name, // Ensure name is passed to GameStateManager
         colorId: player.colorId,
         location: player.location,
         isAlive: true,
@@ -3180,7 +3184,8 @@ export class WebSocketRelayServer {
 
     const playerState: PlayerState = {
       address: agent.address,
-      colorId: room.players.length,
+      name: agent.name,
+      colorId: (room.players.length % 12),
       location: 0, // Cafeteria
       role: Role.None, // Default role
       isAlive: true,
@@ -3264,7 +3269,7 @@ export class WebSocketRelayServer {
 
     if (toSpawn <= 0) return;
 
-    const agents = this.aiAgentManager.spawnAgentsForRoom(roomId, toSpawn);
+    const agents = this.aiAgentManager.spawnAgentsForRoom(roomId, toSpawn, room.players as any);
     for (const agent of agents) {
       // Pass skipTrigger=true so we don't trigger market creation for every single agent
       this.registerAIAgent(agent, roomId, true);
@@ -3418,9 +3423,20 @@ export class WebSocketRelayServer {
         game.players?.length || 8, // Use existing player count or default to 8
         game.roomId
       );
+
+      // Re-spawn AI agents for this room to populate in-memory state with FIXED ADDRESSES
+      const room = this.rooms.get(game.roomId);
+      const aiPlayers = (game.players || []).filter((p: any) => p.address.startsWith("0xaa"));
+      if (room && aiPlayers.length > 0) {
+        logger.info(`Re-spawning ${aiPlayers.length} AI agents for room ${game.roomId} with consistent addresses...`);
+        const agents = this.aiAgentManager.spawnAgentsForRoom(game.roomId, aiPlayers.length, aiPlayers as any);
+        for (const agent of agents) {
+          // Register each agent as a client
+          this.registerAIAgent(agent, game.roomId, true); // skipTrigger=true during recovery
+        }
+      }
       
       // Update marketId from DB
-      const room = this.rooms.get(game.roomId);
       if (room && game.marketId) {
         room.marketId = game.marketId;
       }

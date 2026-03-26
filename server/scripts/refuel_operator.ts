@@ -16,10 +16,10 @@ async function main() {
     // Operator Address (0x4b68...)
     const operatorAddress = "0x4b680774f1c28fcc5f4ae4386b36e878c7ac5fae48382fc253131c1214e40a09";
 
-    console.log(`Transferring 100,000,000 MIST (0.1 OCT) from Agent 1 to Operator...`);
+    console.log(`Transferring 1,000,000,000 MIST (1.0 OCT) from Agent 1 to Operator...`);
     
     const tx = new Transaction();
-    const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(100000000)]);
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(1000000000)]);
     tx.transferObjects([coin], tx.pure.address(operatorAddress));
 
     const result = await client.signAndExecuteTransaction({

@@ -88,6 +88,7 @@ export interface Connection {
 
 export interface PlayerState {
   address: string;
+  name: string;
   colorId: number;
   location: Location;
   role: Role;

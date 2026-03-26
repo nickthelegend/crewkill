@@ -17,9 +17,16 @@ async function main() {
     }
     console.log(`Game created: ${onChainResult.gameId}`);
 
-    // Mock players (ONLY 1 to test gas)
+    // Mock players (8 AI agents for testing)
     const players = [
-        "0xaa1cba9ba129198424795eec3db35f79ae4eaf124389438464ca86b2c80d863d"
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000001",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000002",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000003",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000004",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000005",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000006",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000007",
+      "0xaa13bc492c3000b054a5d03661058512c18989f0dd8a67c2b782a13190000008"
     ];
 
     console.log(`2. Creating market on-chain with ${players.length} players...`);

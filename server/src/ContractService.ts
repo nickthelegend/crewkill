@@ -53,11 +53,11 @@ export class ContractService {
         
       const bestCoin = validCoins[0];
       if (bestCoin) {
-        tx.setGasPayment([{ 
-            objectId: bestCoin.coinObjectId, 
-            version: bestCoin.version, 
-            digest: bestCoin.digest 
-        }]);
+        // tx.setGasPayment([{ 
+        //     objectId: bestCoin.coinObjectId, 
+        //     version: bestCoin.version, 
+        //     digest: bestCoin.digest 
+        // }]);
         logger.info(`Using gas coin ${bestCoin.coinObjectId} with balance ${bestCoin.balance}`);
       }
     } catch(e) {

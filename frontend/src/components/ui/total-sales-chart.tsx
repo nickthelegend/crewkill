@@ -9,16 +9,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-const PLAYER_COLORS = [
-  '#ef4444', // Red
-  '#3b82f6', // Blue
-  '#10b981', // Emerald
-  '#eab308', // Yellow
-  '#a855f7', // Purple
-  '#f97316', // Orange
-  '#22d3ee', // Cyan
-  '#f43f5e', // Rose
-];
+import { PlayerColors } from "@/types/game";
 
 export const TotalSalesChart = ({ 
   fullWidth = false,
@@ -72,10 +63,10 @@ export const TotalSalesChart = ({
   // Create chart config dynamically for lines
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {};
-    players.forEach((p, i) => {
+    players.forEach((p) => {
       config[p.address] = {
         label: p.name,
-        color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+        color: PlayerColors[(p.colorId ?? 0)].hex,
       };
     });
     return config;
@@ -92,14 +83,14 @@ export const TotalSalesChart = ({
               <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-1">Market Sentiment</h4>
               <div className="text-xl font-black text-white uppercase tracking-tighter">Win Probability %</div>
            </div>
-           <div className="flex gap-4">
-              {players.slice(0, 4).map((p, i) => (
-                <div key={p.address} className="flex items-center gap-1">
-                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PLAYER_COLORS[i % PLAYER_COLORS.length] }} />
-                   <span className="text-[8px] font-black text-white/40 uppercase tracking-widest truncate max-w-[60px]">{p.name.split(' ')[0]}</span>
-                </div>
-              ))}
-           </div>
+            <div className="flex flex-wrap gap-2 max-w-[60%] justify-end">
+               {players.map((p) => (
+                 <div key={p.address} className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PlayerColors[(p.colorId ?? 0)].hex }} />
+                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest truncate max-w-[50px]">{p.name.split(' ')[0]}</span>
+                 </div>
+               ))}
+            </div>
         </div>
 
         <ChartContainer
@@ -127,18 +118,20 @@ export const TotalSalesChart = ({
                 />
               }
             />
-            {players.map((player, i) => (
-              <Line
-                key={player.address}
-                type="monotone"
-                dataKey={player.address}
-                stroke={PLAYER_COLORS[i % PLAYER_COLORS.length]}
-                strokeWidth={4}
-                dot={false}
-                animationDuration={0}
-                isAnimationActive={false}
-              />
-            ))}
+            {players.map((player) => {
+              const colorIdx = player.colorId !== undefined ? player.colorId : 0;
+              return (
+                <Line
+                  key={player.address}
+                  type="monotone"
+                  dataKey={player.address}
+                  stroke={PlayerColors[colorIdx].hex}
+                  strokeWidth={4}
+                  dot={true}
+                  animationDuration={300}
+                />
+              );
+            })}
           </LineChart>
         </ChartContainer>
 
@@ -158,7 +151,7 @@ export const TotalSalesChart = ({
                     right: 0
                   }}
                 >
-                   <span className="text-[10px] font-black uppercase tracking-tighter leading-none" style={{ color: PLAYER_COLORS[i % PLAYER_COLORS.length] }}>
+                   <span className="text-[10px] font-black uppercase tracking-tighter leading-none" style={{ color: PlayerColors[(player.colorId ?? 0)].hex }}>
                       {player.name.split(' ')[0]}
                    </span>
                    <span className="text-sm font-black text-white tabular-nums leading-none">

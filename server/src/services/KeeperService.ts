@@ -25,14 +25,31 @@ export class KeeperService {
   }
 
   async start() {
-    console.log('Keeper Bot started. Listening for CrewKill events...');
+    console.log('Keeper Bot started. Listening for CrewKill events (Polling mode)...');
     
-    // Temporarily disabled due to 405 error on custom RPC
-    // this.client.subscribeEvent({
-    //   filter: { Package: CONTRACT_CONFIG.PACKAGE_ID } as any,
-    //   onMessage: (event) => this.handleEvent(event),
-    // });
-    logger.warn('Keeper Bot subscription disabled (RPC 405). Manual automation required.');
+    // Polling loop since subscription is disabled on testnet RPC
+    setInterval(async () => {
+      try {
+        const events = await this.client.queryEvents({
+          query: { MoveModule: { package: CONTRACT_CONFIG.PACKAGE_ID, module: "prediction_market" } }
+        });
+        
+        for (const event of events.data) {
+          await this.handleEvent(event);
+        }
+        
+        // Also poll for settlement events
+        const settlementEvents = await this.client.queryEvents({
+          query: { MoveModule: { package: CONTRACT_CONFIG.PACKAGE_ID, module: "game_settlement" } }
+        });
+        
+        for (const event of settlementEvents.data) {
+          await this.handleEvent(event);
+        }
+      } catch (e) {
+        // Silently handle RPC errors
+      }
+    }, 5000);
   }
 
   async createOnChainGame(roomId: string, wagerAmount: string, maxPlayers: number) {

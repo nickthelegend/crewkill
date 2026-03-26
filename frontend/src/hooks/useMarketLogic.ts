@@ -210,10 +210,24 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
       signAndExecute(
         { transaction: tx },
         {
-          onSuccess: (result) => {
+          onSuccess: async (result) => {
             setTxStatus('success');
             setTxMsg('Order Executed Successfully');
             setTxDigest(result.digest);
+            
+            // Sync with Convex manually since Keeper might be disabled
+            try {
+              await placeConvexBet({
+                address: account.address,
+                gameId: gameId,
+                selection: selectedSuspect,
+                amountMist: Number(betMist),
+                txDigest: result.digest,
+              });
+            } catch (e) {
+              console.error("Convex sync failed:", e);
+            }
+            
             setLoading(false);
             fetchMarketState();
             console.log('Bet result:', result);
