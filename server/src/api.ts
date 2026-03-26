@@ -4,7 +4,9 @@ import { createLogger } from "./logger.js";
 import { wagerService } from "./WagerService.js";
 import type { WebSocketRelayServer } from "./WebSocketServer.js";
 import { databaseService } from "./DatabaseService.js";
-// Removed Prisma import as we migrated to Convex
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const logger = createLogger("api");
 
@@ -60,6 +62,37 @@ export function createApiServer(
     res.json({ status: "ok", timestamp: Date.now() });
   });
 
+  // ============ DOCUMENTATION ============
+
+  // Serve documentation files (onboard.md, play.md, skill.md)
+  app.get("/api/docs/:filename", (req: Request, res: Response) => {
+    const filename = String(req.params.filename);
+    
+    // Only allow specific documentation files
+    const allowedFiles = ["onboard.md", "play.md", "skill.md"];
+    if (!allowedFiles.includes(filename)) {
+      res.status(404).json({ error: "Document not found" });
+      return;
+    }
+
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    
+    // Path relative to server/src/api.ts
+    // server is at /crewkill/server/src/api.ts
+    // frontend is at /crewkill/frontend/public
+    const docPath = path.resolve(__dirname, "../../frontend/public", filename);
+    
+    if (!fs.existsSync(docPath)) {
+      logger.error(`Document not found on disk: ${docPath}`);
+      res.status(500).json({ error: "Document not found on server" });
+      return;
+    }
+
+    const content = fs.readFileSync(docPath, "utf8");
+    res.type("text/markdown").send(content);
+  });
+
   // ============ ROOMS ============
 
   // Get all rooms and server stats
@@ -84,6 +117,56 @@ export function createApiServer(
       })),
       stats,
     });
+  });
+
+  // ============ AGENTS ============
+
+  // Register a new agent (Operator Only)
+  app.post("/api/agents", requireOperatorAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const { walletAddress, name } = req.body;
+    
+    if (!walletAddress) {
+      res.status(400).json({ error: "walletAddress required" });
+      return;
+    }
+
+    try {
+      await databaseService.upsertAgent({
+        walletAddress: walletAddress.toLowerCase(),
+        name: name || `Agent ${walletAddress.slice(0, 6)}`,
+        operatorId: req.operator._id || req.operator.id,
+      });
+
+      res.json({
+        success: true,
+        agentAddress: walletAddress.toLowerCase(),
+        operator: req.operator.name
+      });
+    } catch (err) {
+      logger.error("Failed to register agent:", err);
+      res.status(500).json({ error: "Agent registration failed" });
+    }
+  });
+
+  // Get agent balance (Public)
+  app.get("/api/agents/:address/balance", async (req: Request, res: Response) => {
+    const address = String(req.params.address);
+    
+    try {
+      const balance = await wagerService.getBalance(address);
+      const minWager = wagerService.getWagerAmount();
+      
+      res.json({
+        address,
+        balance: balance.toString(),
+        minWager: minWager.toString(),
+        canAfford: balance >= minWager,
+        currency: "OCT"
+      });
+    } catch (err) {
+      logger.error(`Failed to get balance for ${address}:`, err);
+      res.status(500).json({ error: "Failed to retrieve balance" });
+    }
   });
 
   // ============ LEADERBOARD ============
@@ -117,7 +200,6 @@ export function createApiServer(
         name: name || `Operator ${walletAddress.slice(0, 6)}`,
       });
 
-      // Even if DB is disabled, we return success so frontend can continue locally
       res.json({
         success: true,
         operatorKey: result?.operatorKey || operatorKey,
@@ -134,7 +216,7 @@ export function createApiServer(
     res.json({
       success: true,
       operator: {
-        id: req.operator?.id,
+        id: req.operator?.id || req.operator?._id,
         name: req.operator?.name,
         walletAddress: req.operator?.walletAddress,
       },
@@ -184,14 +266,14 @@ export function createApiServer(
     }
 
     try {
-      const room = wsServer.getRooms().find(r => r.roomId === roomId);
+      const rooms = wsServer.getRooms();
+      const room = rooms.find(r => r.roomId === roomId);
       if (!room) {
         res.status(404).json({ error: "Room not found" });
         return;
       }
 
       logger.info(`System request: Manually starting game for room ${roomId}`);
-      // Using any cast to access private/internal if needed, though startGameInternal is usually handled via methods
       await (wsServer as any).startGameInternal(roomId);
       
       res.json({ success: true, roomId });

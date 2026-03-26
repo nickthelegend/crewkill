@@ -10,6 +10,8 @@
  */
 
 import 'dotenv/config';
+import { WebSocket } from 'ws';
+(global as any).WebSocket = WebSocket;
 import { Agent } from './core/Agent.js';
 import { CONTRACT_CONFIG, GAME_CONFIG } from './config.js';
 import { CrewmateStyle } from './strategies/CrewmateStrategy.js';
@@ -89,7 +91,7 @@ async function runMatch() {
       {
         crewmateStyle: config.crewmateStyle,
         impostorStyle: config.impostorStyle,
-        wsServerUrl: 'ws://localhost:8082',
+        wsServerUrl: process.env.WS_SERVER_URL || 'ws://localhost:8082',
       }
     )
   );
@@ -128,7 +130,7 @@ async function runMatch() {
     } else {
         // Find a scheduled room if one exists
         try {
-            const response = await fetch(`${process.env.WS_SERVER_URL?.replace('ws', 'http') || 'http://localhost:8080'}/api/rooms`);
+            const response = await fetch(`${process.env.SERVER_API_URL || 'http://localhost:8080'}/api/rooms`);
             const data = await response.json() as any;
             console.log("DEBUG: Rooms from API:", data.rooms);
             const rooms = data.rooms || [];

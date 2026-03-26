@@ -12,7 +12,7 @@ async function test() {
   const contract = new ContractService();
   logger.info("Starting test...");
   
-  const players = gameInfo.players.map(p => p.address);
+  const players = (gameInfo.players as any[]).map((p: any) => p.address);
   console.log("Creating market for:", players);
   
   try {

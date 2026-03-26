@@ -16,9 +16,6 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Expose the port the app runs on
-ENV PORT 8080
-EXPOSE 8080
-
 # Start the application
-CMD [ "npm", "start" ]
+# Use npm run run:match to start the game match loop
+CMD [ "npm", "run", "run:match" ]

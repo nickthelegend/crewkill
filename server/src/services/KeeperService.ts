@@ -27,11 +27,12 @@ export class KeeperService {
   async start() {
     console.log('Keeper Bot started. Listening for CrewKill events...');
     
-    // Subscribe to all events from the package
-    this.client.subscribeEvent({
-      filter: { Package: CONTRACT_CONFIG.PACKAGE_ID } as any,
-      onMessage: (event) => this.handleEvent(event),
-    });
+    // Temporarily disabled due to 405 error on custom RPC
+    // this.client.subscribeEvent({
+    //   filter: { Package: CONTRACT_CONFIG.PACKAGE_ID } as any,
+    //   onMessage: (event) => this.handleEvent(event),
+    // });
+    logger.warn('Keeper Bot subscription disabled (RPC 405). Manual automation required.');
   }
 
   async createOnChainGame(roomId: string, wagerAmount: string, maxPlayers: number) {

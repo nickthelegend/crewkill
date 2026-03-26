@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { WebSocket } from "ws";
+(global as any).WebSocket = WebSocket;
 import { WebSocketRelayServer } from "./WebSocketServer.js";
 import { createApiServer } from "./api.js";
 import { logger } from "./logger.js";
