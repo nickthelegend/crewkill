@@ -1,8 +1,6 @@
-import React from "react";
-
+import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -11,125 +9,165 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-const generateSalesData = (period: "1d" | "1w" | "1m" | "3m" | "1y") => {
-  const baseSales = 100;
-  const dataPoints =
-    period === "1d"
-      ? 24
-      : period === "1w"
-        ? 7
-        : period === "1m"
-          ? 30
-          : period === "3m"
-            ? 90
-            : 365;
+const PLAYER_COLORS = [
+  '#ef4444', // Red
+  '#3b82f6', // Blue
+  '#10b981', // Emerald
+  '#eab308', // Yellow
+  '#a855f7', // Purple
+  '#f97316', // Orange
+  '#22d3ee', // Cyan
+  '#f43f5e', // Rose
+];
 
-  return Array.from({ length: dataPoints }, (_, i) => ({
-    time: i,
-    sales: baseSales + (Math.random() - 0.3) * 40 + Math.sin(i * 0.2) * 15,
-    timestamp: new Date(
-      Date.now() - (dataPoints - i) * (period === "1d" ? 3600000 : 86400000),
-    ).toISOString(),
-  }));
-};
+export const TotalSalesChart = ({ 
+  fullWidth = false,
+  bets = [],
+  players = []
+}: { 
+  fullWidth?: boolean,
+  bets?: any[],
+  players?: any[]
+}) => {
+  const chartData = useMemo(() => {
+    if (!players || players.length === 0) return [];
+    
+    // Sort bets by time
+    const sortedBets = [...(bets || [])].sort((a, b) => a.createdAt - b.createdAt);
+    const startTime = sortedBets.length > 0 ? sortedBets[0].createdAt : Date.now() - 3600000;
+    const endTime = Date.now();
+    const duration = Math.max(endTime - startTime, 1000);
+    
+    const dataPoints = 30; // Number of interpolation points
+    const points = [];
+    
+    for (let i = 0; i < dataPoints; i++) {
+      const t = startTime + (duration * (i / (dataPoints - 1)));
+      const betsToT = sortedBets.filter(b => b.createdAt <= t);
+      const totalPotToT = betsToT.reduce((sum, b) => sum + (b.amountMist / 1e9), 0);
+      
+      const point: any = { time: i, timestamp: new Date(t).toISOString() };
+      
+      players.forEach((player) => {
+        const playerPool = betsToT
+          .filter(b => b.selection.toLowerCase() === player.address.toLowerCase())
+          .reduce((sum, b) => sum + (b.amountMist / 1e9), 0);
+        
+        // Probability is % of total pot, fallback to even distribution if no bets
+        const baseProb = totalPotToT > 0 
+          ? (playerPool / totalPotToT) * 100 
+          : 100 / players.length;
+        
+        // Add tiny jitter so they don't overlap perfectly
+        const jitter = Math.sin((i + player.address.charCodeAt(0)) * 0.1) * 0.5;
+        point[player.address] = Math.max(0, Math.min(100, baseProb + jitter));
+      });
+      
+      points.push(point);
+    }
+    
+    return points;
+  }, [bets, players]);
 
-const chartConfig: ChartConfig = {
-  sales: {
-    label: "Volume",
-    color: "#f97316",
-  },
-};
-
-export const TotalSalesChart = ({ fullWidth = false }: { fullWidth?: boolean }) => {
-  const [selectedPeriod, setSelectedPeriod] = React.useState<
-    "1d" | "1w" | "1m" | "3m" | "1y"
-  >("1m");
-
-  const salesData = generateSalesData(selectedPeriod);
-
-  const periods: { label: string; value: "1d" | "1w" | "1m" | "3m" | "1y" }[] =
-    [
-      { label: "1D", value: "1d" },
-      { label: "1W", value: "1w" },
-      { label: "1M", value: "1m" },
-      { label: "3M", value: "3m" },
-      { label: "1Y", value: "1y" },
-    ];
+  // Create chart config dynamically for lines
+  const chartConfig = useMemo(() => {
+    const config: ChartConfig = {};
+    players.forEach((p, i) => {
+      config[p.address] = {
+        label: p.name,
+        color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+      };
+    });
+    return config;
+  }, [players]);
 
   return (
     <Card className={cn(
-      "flex w-full flex-col gap-0 p-8 shadow-none bg-transparent border-none text-white",
-      !fullWidth && "max-w-[400px] bg-black/40 border-white/10 p-5"
+      "flex w-full flex-col gap-0 p-4 md:p-8 shadow-none bg-transparent border-none text-white",
+      !fullWidth && "max-w-4xl bg-black/40 border-white/10"
     )}>
-      <CardContent className="flex flex-col gap-8 p-0">
-        <div className="flex items-center justify-center p-0.5 bg-white/5 border border-white/10 rounded-lg w-fit mx-auto">
-          {periods.map((period) => (
-            <button
-              key={period.value}
-              onClick={() => setSelectedPeriod(period.value)}
-              className={cn(
-                "px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
-                selectedPeriod === period.value
-                  ? "bg-white/10 text-white shadow-lg"
-                  : "text-white/20 hover:text-white/40"
-              )}
-            >
-              {period.label}
-            </button>
-          ))}
+      <CardContent className="p-0 relative">
+        <div className="flex justify-between items-center mb-6">
+           <div>
+              <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-1">Market Sentiment</h4>
+              <div className="text-xl font-black text-white uppercase tracking-tighter">Win Probability %</div>
+           </div>
+           <div className="flex gap-4">
+              {players.slice(0, 4).map((p, i) => (
+                <div key={p.address} className="flex items-center gap-1">
+                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PLAYER_COLORS[i % PLAYER_COLORS.length] }} />
+                   <span className="text-[8px] font-black text-white/40 uppercase tracking-widest truncate max-w-[60px]">{p.name.split(' ')[0]}</span>
+                </div>
+              ))}
+           </div>
         </div>
 
         <ChartContainer
           config={chartConfig}
-          className={cn("aspect-auto w-full", fullWidth ? "h-[350px]" : "h-[180px]")}
+          className={cn("aspect-auto w-full", fullWidth ? "h-[450px]" : "h-[250px]")}
         >
-          <LineChart accessibilityLayer data={salesData} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
-            <defs>
-              <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#06b6d4" />
-                <stop offset="100%" stopColor="#c026d3" />
-              </linearGradient>
-              <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
+          <LineChart data={chartData} margin={{ top: 20, right: 80, left: 10, bottom: 20 }}>
             <CartesianGrid
               vertical={false}
               strokeDasharray="4 4"
               stroke="rgba(255,255,255,0.05)"
             />
             <XAxis dataKey="time" hide />
-            <YAxis hide domain={["dataMin - 10", "dataMax + 10"]} />
+            <YAxis 
+              domain={[0, 100]} 
+              tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10, fontWeight: '900' }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(val) => `${val}%`}
+            />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  hideIndicator
-                  hideLabel
                   className="bg-black/90 border-white/10 text-white"
-                  labelFormatter={(value: any) => {
-                    return `${value.toFixed(2)} CREW`;
-                  }}
                 />
               }
-              cursor={{ stroke: "#f97316", strokeWidth: 1 }}
             />
-            <Line
-              type="monotone"
-              dataKey="sales"
-              stroke="url(#lineGradient)"
-              strokeWidth={fullWidth ? 4 : 3}
-              dot={false}
-              filter="url(#neonGlow)"
-              activeDot={{
-                r: 6,
-                fill: "#ffffff",
-                stroke: "#06b6d4",
-                strokeWidth: 2,
-              }}
-            />
+            {players.map((player, i) => (
+              <Line
+                key={player.address}
+                type="monotone"
+                dataKey={player.address}
+                stroke={PLAYER_COLORS[i % PLAYER_COLORS.length]}
+                strokeWidth={4}
+                dot={false}
+                animationDuration={0}
+                isAnimationActive={false}
+              />
+            ))}
           </LineChart>
         </ChartContainer>
+
+        {/* Floating Labels at current end-points */}
+        <div className="absolute top-0 right-0 h-full w-[80px] flex flex-col justify-center gap-1 pointer-events-none">
+           {players.map((player, i) => {
+              const lastPoint = chartData[chartData.length - 1];
+              const percentage = lastPoint ? lastPoint[player.address] : 0;
+              return (
+                <div 
+                  key={`label-${player.address}`}
+                  className="flex flex-col items-start"
+                  style={{ 
+                    position: 'absolute',
+                    top: `${100 - (percentage || 0)}%`,
+                    transform: 'translateY(-50%)',
+                    right: 0
+                  }}
+                >
+                   <span className="text-[10px] font-black uppercase tracking-tighter leading-none" style={{ color: PLAYER_COLORS[i % PLAYER_COLORS.length] }}>
+                      {player.name.split(' ')[0]}
+                   </span>
+                   <span className="text-sm font-black text-white tabular-nums leading-none">
+                      {Math.round(percentage)}%
+                   </span>
+                </div>
+              );
+           })}
+        </div>
       </CardContent>
     </Card>
   );

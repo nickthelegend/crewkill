@@ -151,7 +151,7 @@ export function PredictionMarket({
         </div>
 
         <div className="p-0 border-b border-white/5 bg-black/40">
-           <TotalSalesChart fullWidth />
+           <TotalSalesChart fullWidth bets={convexBets} players={gamePlayers} />
         </div>
 
         <div className="divide-y divide-white/5 bg-black/20">

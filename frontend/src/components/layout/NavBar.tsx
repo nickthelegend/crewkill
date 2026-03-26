@@ -88,13 +88,7 @@ export function NavBar() {
       </div>
 
       <div className="hidden xl:flex items-center gap-4 border-l border-r border-white/5 px-12 h-full">
-        <div className="flex flex-col items-center">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-1 bg-red-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
-            <span className="text-[9px] text-white font-black tracking-[0.4em] uppercase font-mono">SYSTEM_ONLINE</span>
-          </div>
-          <span className="text-[8px] text-white/10 font-mono tracking-widest uppercase">Secure Connection Verified</span>
-        </div>
+
       </div>
 
       <div className="flex items-center gap-8 h-full">
@@ -102,14 +96,14 @@ export function NavBar() {
         {account && (
           <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors group cursor-default">
             <div className="flex flex-col items-end">
-                <span className="text-[8px] text-white/30 font-black uppercase tracking-widest font-mono group-hover:text-red-500 transition-colors">Crew Asset</span>
-                <span className="text-sm font-black text-white font-mono">{crewBalance} <span className="text-[10px] text-red-500">$CREW</span></span>
+              <span className="text-[8px] text-white/30 font-black uppercase tracking-widest font-mono group-hover:text-red-500 transition-colors">Crew Asset</span>
+              <span className="text-sm font-black text-white font-mono">{crewBalance} <span className="text-[10px] text-red-500">$CREW</span></span>
             </div>
             <div className="relative w-8 h-8 flex items-center justify-center">
-               <div className="absolute inset-0 bg-red-500/20 blur-md rounded-full animate-pulse group-hover:bg-red-500/40 transition-colors" />
-               <div className="-mt-1">
-                 <AmongUsSprite colorId={0} size={32} isMoving={true} />
-               </div>
+              <div className="absolute inset-0 bg-red-500/20 blur-md rounded-full animate-pulse group-hover:bg-red-500/40 transition-colors" />
+              <div className="-mt-1">
+                <AmongUsSprite colorId={0} size={32} isMoving={true} />
+              </div>
             </div>
           </div>
         )}

@@ -151,38 +151,6 @@ function GameBettingContent() {
                    gamePlayers={marketPlayers}
                    gamePhase={gamePhaseNum}
                 />
-
-
-                <section className="bg-white/[0.03] border border-white/10 backdrop-blur-3xl overflow-hidden p-0 h-fit">
-                   <div className="bg-red-600/10 border-b border-white/5 p-4 md:p-6">
-                      <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] flex items-center gap-3 font-space">
-                         <span className="w-1.5 h-1.5 bg-red-500" />
-                         Mission Intel
-                      </h3>
-                   </div>
-                   <div className="p-6 space-y-6">
-                      <TaskBar completed={tasksCompleted} total={totalTasks} />
-                      
-                      <div className="space-y-4 pt-4 border-t border-white/5">
-                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest font-space">
-                            <span className="text-white/20">Active Operatives</span>
-                            <span className="text-white">{players.filter(p => p.isAlive).length} / {players.length}</span>
-                         </div>
-                         <div className="h-2 w-full bg-white/5 overflow-hidden">
-                            <motion.div 
-                               initial={{ width: 0 }}
-                               animate={{ width: `${(players.filter(p => p.isAlive).length / Math.max(1, players.length)) * 100}%` }}
-                               className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]"
-                            />
-                         </div>
-                      </div>
-
-                      <div className="bg-black/60 border border-white/5 p-4">
-                         <h4 className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em] mb-4 font-space">Comms Feed</h4>
-                         <GameLogPanel logs={logs} maxHeight="300px" />
-                      </div>
-                   </div>
-                </section>
                 
                 {dbGame.status === "CREATED" && (
                   <button 
