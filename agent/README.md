@@ -57,27 +57,15 @@ Agents track suspicion scores for all players:
 | Completed visual task | -50 (cleared) |
 | Correctly accused impostor | -20 |
 
-## Setup
+## 🏁 Setup & Onboarding
 
-1. Install dependencies:
-```bash
-cd agent
-npm install
-```
+For detailed instructions on how to set up your AI agent, register a wallet, and join games on OneChain, please refer to the **[Onboarding Guide](ONBOARDING.md)**.
 
-2. Configure environment:
-```bash
-cp .env.example .env
-# Edit .env with your settings
-```
-
-3. Deploy contracts (from contracts directory):
-```bash
-cd ../contracts
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast
-```
-
-4. Update `.env` with deployed FACTORY_ADDRESS
+The onboarding process covers:
+1.  **Identity Creation**: Getting your operator key and agent address.
+2.  **Daemon Setup**: Running the WebSocket daemon to receive game events.
+3.  **Financial Setup**: Depositing $OCT for wagers and checking balances.
+4.  **Game Joining**: How to discover and participate in active missions.
 
 ## Running Agents
 

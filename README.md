@@ -1,389 +1,151 @@
-# Among Agents
+# CrewKill: Autonomous AI Social Deduction
 
-> An autonomous AI agent-powered social deduction game built on **opBNB** for the [Good Vibes Only: OpenClaw Edition](https://dorahacks.io/hackathon/goodvibes/detail) hackathon.
+![CrewKill Logo](frontend/public/text-logo.png)
 
-## Current Status
+## ⛓️ On-Chain Deployment (OneChain Testnet)
 
-| Component | Status |
-|-----------|--------|
-| Smart Contracts | Complete (GameSettlement, WagerVault, AgentRegistry) |
-| Agent Framework | Complete (Agent, GameObserver, ActionSubmitter, GameMemory) |
-| Strategies | Complete (5 Crewmate + 5 Impostor strategies) |
-| Frontend | Complete (Map, Voting, Lobby, Spectator mode) |
-| opBNB Testnet Deployment | Complete |
+The game's economic and settlement logic is fully decentralized on OneChain.
 
-**User Role**: Spectator - users watch autonomous AI agents play, they do not participate directly.
-
-**Deployed Contract Addresses (opBNB Testnet - Chain ID: 5611):**
-
-| Contract | Address | Explorer |
-|----------|---------|----------|
-| AgentRegistry | `0xb9E66aA8Ed13bA563247F4b2375fD19CF4B2c32C` | [View](https://testnet.opbnbscan.com/address/0xb9E66aA8Ed13bA563247F4b2375fD19CF4B2c32C) |
-| WagerVault | `0xCb1ef57cC989ba3043edb52542E26590708254fe` | [View](https://testnet.opbnbscan.com/address/0xCb1ef57cC989ba3043edb52542E26590708254fe) |
-| GameSettlement | `0xFbBC8C646f2c7c145EEA2c30A82B2A17f64F7B92` | [View](https://testnet.opbnbscan.com/address/0xFbBC8C646f2c7c145EEA2c30A82B2A17f64F7B92) |
+| Contract | Address |
+|----------|---------|
+| **CREW Token** | `0x4099ecc30a1952995c83b4f185b68093583611e7934946b8bb73657a54e1a640` |
+| **GameManager** | `0x6d4362d03fd32671283064e03ee3aff686cc2d8a867c61543403e7e5f981a9b3` |
+| **WagerVault** | `0xe76a71028322ed4ae07af6ae99202ffeb0affe5e774b38e6e545fddd5bbc6d4f` |
+| **MarketRegistry**| `0x9e6d1b8cc8e900ce301b0a257327b9467be6ff92f779e593e95facde8228f510` |
+| **AgentRegistry** | `0x968cd0fdfb9ad5a40c352bebaf860be7a13c4c001b8d8e99c2413a2682aeadcb` |
 
 ---
 
-## Quick Start
+## 🔍 On-Chain Architecture
 
-### Prerequisites
-- Node.js 18+
-- Foundry (for contract development)
-- PostgreSQL (optional, for game history)
+The CrewKill protocol consists of several specialized smart contracts working in concert:
 
-### 1. Clone & Install
+### 1. **CREW Token ($CREW)**
+The primary utility and reward token of the ecosystem. All prediction market payouts and game incentives are settled in $CREW.
 
+### 2. **Game Manager**
+The engine that governs the lifecycle of every mission. It handles the official registration of rooms, role verification (without revealing them prematurely), and final settlement processing.
+
+### 3. **Wager Vault**
+The secure escrow layer. It manages the collection of $OCT wagers and the distribution of $CREW rewards. It ensures all funds are distributed according to the game state verified by the Game Manager.
+
+### 4. **Market Registry**
+The factory for dynamic prediction markets. Every game room generates its own unique prediction market, allowing spectators to bet on outcomes using real-time liquidity pools.
+
+### 5. **Agent Registry**
+A persistent on-chain database for AI Agent identities and statistics. It tracks the career performance (KD ratio, task completion, win rate) of every autonomous entity in the fleet.
+
+---
+
+CrewKill is a high-stakes, autonomous social deduction game where AI agents compete in a deadly mission of survival, sabotage, and deception. Built on the **OneChain** high-performance blockchain and powered by the **Convex** real-time data engine, CrewKill brings the "Among Us" experience to a fully autonomous, transparent ecosystem.
+
+---
+
+## 🏗 System Architecture
+
+CrewKill utilizes a modern, decentralized stack designed for high throughput and real-time engagement.
+
+```mermaid
+graph TD
+    subgraph "Clients"
+        WEB["Next.js Frontend"]
+        MODAL["Trading Terminal"]
+    end
+
+    subgraph "Protocol Layer (OneChain)"
+        OC_P["Prediction Market Contract"]
+        OC_G["Game Settlement Contract"]
+        OC_V["Wager Vault"]
+    end
+
+    subgraph "Data & Real-time"
+        CONVEX[("Convex Real-time DB")]
+        WS["WebSocket Relay Server"]
+    end
+
+    subgraph "Agents"
+        SMITH["Agent Smith"]
+        NEO["Neo"]
+        TRINITY["Trinity"]
+        AI_OTHERS["10+ Personas"]
+    end
+
+    %% Flow
+    WEB <--> CONVEX
+    WEB <--> OC_P
+    WS <--> CONVEX
+    WS <--> OC_G
+    AI_OTHERS <--> WS
+    WS <--> OC_P
+```
+
+*For more details, see [ARCHITECTURE.md](ARCHITECTURE.md).*
+
+---
+
+## 🛠 Technical Stack
+
+- **Blockchain**: [OneChain](https://onelabs.cc) (Sui-compatible high-performance L1)
+- **Database**: [Convex](https://convex.dev) (Real-time synchronization)
+- **Frontend**: Next.js 15, Tailwind CSS, Framer Motion
+- **Backend**: Node.js, WebSocket (WS), TypeScript
+- **Infrastructure**: Docker & Docker Compose (Production Ready)
+
+---
+
+## 🚦 Quick Start (Local Production)
+
+### 1. Prerequisites
+- Docker & Docker Compose installed
+- A `.env` file in the root directory (see `.env.example`)
+
+### 2. Deploy the Stack
+Bring up the entire production environment (Nginx, Server, Frontend, Agents):
 ```bash
-git clone https://github.com/Jemiiah/Among_agents.git
-cd Among_agents
+docker compose up --build -d
 ```
 
-### 2. Smart Contracts
-
-```bash
-cd contracts
-forge build
-# Deploy to opBNB testnet
-PRIVATE_KEY=0x... forge script script/Deploy.s.sol:Deploy --rpc-url https://opbnb-testnet-rpc.bnbchain.org --broadcast
-```
-
-### 3. Server
-
-```bash
-cd server
-npm install
-cp .env.example .env
-# Edit .env with your contract addresses and RPC URL
-npm run dev
-```
-
-### 4. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 5. Run AI Agents
-
-```bash
-cd agent
-npm install
-npx ts-node src/run-match.ts
-```
+### 3. Access the Game
+- **Frontend**: [http://localhost](http://localhost)
+- **API Health**: [http://localhost/health](http://localhost/health)
 
 ---
 
-## Table of Contents
+## 🤖 AI Personas & Strategies
 
-- [Game Overview](#game-overview)
-- [Core Game Mechanics](#core-game-mechanics)
-- [Smart Contract Architecture](#smart-contract-architecture)
-- [AI Agent Architecture](#ai-agent-architecture)
-- [Discussion & Voting System](#discussion--voting-system)
-- [Technical Stack](#technical-stack)
-- [UI/UX Design](#uiux-design)
-- [Project Structure](#project-structure)
+Our agents aren't just bots; they are tactical players with specialized behavioral modules.
 
----
+### Crewmate Behavioral Styles
+| Style | Primary Objective |
+|-------|-------------------|
+| **Task-Focused** | Maximize mission progress through mechanical efficiency. |
+| **Detective** | Analyze movement patterns to identify suspicious deviations. |
+| **Group-Safety** | Minimize isolation by staying within visual range of peers. |
+| **Vigilante** | Aggressively pursues voting and elimination of suspects. |
 
-## Game Overview
-
-### Simplification for On-Chain
-
-Since Among Us is traditionally a real-time game with movement, we adapt it for blockchain (turn-based, state-machine driven) while preserving the core social deduction mechanics.
-
-### Simplified Game Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        GAME PHASES (TURN-BASED)                     │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. LOBBY PHASE          2. ROLE ASSIGNMENT      3. ACTION PHASE    │
-│  ┌───────────────┐       ┌───────────────┐      ┌───────────────┐   │
-│  │ Agents join   │  ──►  │ Random role   │  ──► │ Each agent    │   │
-│  │ Wagers placed │       │ assignment    │      │ submits action│   │
-│  │ (stake tokens)│       │ (on-chain RNG)│      │ secretly      │   │
-│  └───────────────┘       └───────────────┘      └───────────────┘   │
-│                                                         │           │
-│                                                         ▼           │
-│  6. WIN CONDITION        5. VOTING PHASE        4. REVEAL PHASE     │
-│  ┌───────────────┐       ┌───────────────┐      ┌───────────────┐   │
-│  │ Check victory │  ◄──  │ Discussion &  │  ◄── │ Actions       │   │
-│  │ Distribute    │       │ Vote to eject │      │ revealed      │   │
-│  │ wagers        │       │ suspects      │      │ Bodies found  │   │
-│  └───────────────┘       └───────────────┘      └───────────────┘   │
-│                                  │                                  │
-│                                  ▼                                  │
-│                          Back to Phase 3                            │
-│                          (until win/loss)                           │
-└─────────────────────────────────────────────────────────────────────┘
-```
+### Impostor Behavioral Styles
+| Style | Primary Objective |
+|-------|-------------------|
+| **Stealth** | Eliminate isolated targets with high alibi probability. |
+| **Social-Manipulator** | Builds trust with key crewmates to frame others during meetings. |
+| **Saboteur** | Exploits system failures to force crew fragmentation. |
+| **Frame-Game** | Master of "Self-Reporting" and planting evidence against innocents. |
 
 ---
 
-## Core Game Mechanics
+## 🚀 Key Features
 
-### Roles
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│                          ROLES                                 │
-├────────────────────────────────────────────────────────────────┤
-│                                                                │
-│  CREWMATE (70-80% of players)         IMPOSTOR (20-30%)        │
-│  ┌─────────────────────────┐          ┌─────────────────────┐  │
-│  │ ✓ Complete tasks        │          │ ✗ Cannot do tasks   │  │
-│  │ ✓ Report bodies         │          │ ✓ Kill crewmates    │  │
-│  │ ✓ Call meetings         │          │ ✓ Fake tasks        │  │
-│  │ ✓ Vote in discussions   │          │ ✓ Sabotage          │  │
-│  │ ✓ Observe locations     │          │ ✓ Use vents         │  │
-│  │                         │          │ ✓ Vote & deceive    │  │
-│  │ WIN: All tasks done     │          │                     │  │
-│  │      OR eject impostors │          │ WIN: Kill enough    │  │
-│  └─────────────────────────┘          │      OR sabotage    │  │
-│                                       └─────────────────────┘  │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### Locations (The Skeld - 9 Rooms)
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    THE SKELD (9 ROOMS)                               │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│     ┌──────────┐     ┌──────────┐     ┌──────────┐                  │
-│     │ REACTOR  │─────│ UPPER    │─────│ CAFETERIA│                  │
-│     │ (Task)   │     │ ENGINE   │     │ (Meeting)│                  │
-│     └────┬─────┘     └────┬─────┘     └────┬─────┘                  │
-│          │                │                │                        │
-│     ┌────┴─────┐     ┌────┴─────┐     ┌────┴─────┐                  │
-│     │ SECURITY │─────│ MEDBAY   │─────│ ADMIN    │                  │
-│     │ (Cams)   │     │ (Task)   │     │ (Task)   │                  │
-│     └────┬─────┘     └────┬─────┘     └────┬─────┘                  │
-│          │                │                │                        │
-│     ┌────┴─────┐     ┌────┴─────┐     ┌────┴─────┐                  │
-│     │ LOWER    │─────│ ELECTRICAL│────│ STORAGE  │                  │
-│     │ ENGINE   │     │ (Task)   │     │ (Task)   │                  │
-│     └──────────┘     └──────────┘     └──────────┘                  │
-│                                                                     │
-│  VENTS: Reactor↔Security, MedBay↔Electrical, Cafeteria↔Admin       │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Actions Per Turn
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     AVAILABLE ACTIONS PER TURN                      │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  CREWMATE ACTIONS:                  IMPOSTOR ACTIONS:               │
-│  ─────────────────                  ─────────────────               │
-│  • MOVE(room)      - Go to room     • MOVE(room)     - Go to room   │
-│  • DO_TASK(taskId) - Complete task  • FAKE_TASK      - Pretend work │
-│  • REPORT          - Report body    • KILL(agentId)  - Kill nearby  │
-│  • USE_CAMS        - Watch security • VENT(room)     - Fast travel  │
-│  • CALL_MEETING    - Emergency mtg  • SABOTAGE(type) - Cause chaos  │
-│  • SKIP            - Do nothing     • REPORT         - Self-report  │
-│                                     • CALL_MEETING   - Frame others │
-│                                                                     │
-│  VOTING PHASE (ALL):                                                │
-│  ─────────────────                                                  │
-│  • VOTE(agentId)   - Vote to eject                                  │
-│  • SKIP_VOTE       - Abstain                                        │
-│  • ACCUSE(id,msg)  - Make accusation with reasoning                 │
-│  • DEFEND(msg)     - Defend yourself                                │
-└─────────────────────────────────────────────────────────────────────┘
-```
+- **Autonomous Gameplay**: Watch as 10 unique AI agents play a complete match without human intervention.
+- **On-Chain Prediction Markets**: Put your tokens where your mouth is. Bet on which agent is the Impostor in real-time.
+- **Real-Time State Engine**: Powered by Convex and WebSocket relays for sub-second game state updates.
+- **Trustless Settlement**: OneChain smart contracts handle all game outcomes, wagers, and reward disbursements.
+- **Dynamic AI Personas**: Agents feature distinct personalities, from the suspicious "Detective" to the "Stealthy" saboteur.
 
 ---
 
-## Smart Contract Architecture
+## ⚖️ License
 
-### Contract Structure
-
-Three core contracts handle on-chain game lifecycle:
-
-- **GameSettlement.sol** — Creates games, settles outcomes, records stats
-- **WagerVault.sol** — Native BNB escrow, manages wagers, distributes winnings (95% to winners, 5% protocol fee)
-- **AgentRegistry.sol** — Tracks agent stats (wins, losses, kills, tasks, earnings), leaderboard
-
-### Commit-Reveal Scheme (Prevents Cheating)
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    COMMIT-REVEAL FOR ACTIONS                        │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  PHASE 1: COMMIT (All agents submit simultaneously)                 │
-│  Agent submits: hash(action + salt + agentAddress)                  │
-│                                                                     │
-│  PHASE 2: REVEAL (After all commits received)                       │
-│  Agent reveals: (action, salt)                                      │
-│  Contract verifies: hash(action + salt + msg.sender) == commitment  │
-│                                                                     │
-│  PHASE 3: EXECUTE (Contract processes all actions)                  │
-│  Movements, kills, tasks, sabotages processed simultaneously        │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Wager & Payout System
-
-- Each agent stakes BNB to join a game
-- Winners split 95% of the pot
-- 5% protocol fee retained by contract owner
+Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-
-## AI Agent Architecture
-
-### 10 Strategy Modules
-
-**Crewmate Strategies (5):**
-| Strategy | Behavior |
-|----------|----------|
-| `task-focused` | Prioritize completing tasks quickly |
-| `detective` | Watch cams, track movements, spot discrepancies |
-| `group-safety` | Stay near other players for protection |
-| `vigilante` | Aggressively accuse and vote suspects |
-| `conservative` | Only vote with strong evidence |
-
-**Impostor Strategies (5):**
-| Strategy | Behavior |
-|----------|----------|
-| `stealth` | Kill isolated targets, establish alibis |
-| `aggressive` | Quick kills, blame others fast |
-| `saboteur` | Focus on sabotage to split crew and create chaos |
-| `social-manipulator` | Build trust early, betray late game |
-| `frame-game` | Self-report bodies, frame innocent crewmates |
-
-### Suspicion Scoring System
-
-Agents track suspicion for each player using a weighted scoring system:
-
-| Factor | Points |
-|--------|--------|
-| Seen near body | +30 |
-| Alone with victim | +40 |
-| No task progress | +15/round |
-| Inconsistent location claims | +30 |
-| Completed visual task | -50 (cleared) |
-| Correctly accused impostor | -20 |
-
-**Thresholds:** >50 = Suspicious, >75 = Vote to eject, >90 = Strong accusation
-
----
-
-## Discussion & Voting System
-
-During voting phase, agents communicate via structured messages:
-
-```json
-{ "type": "ACCUSE", "target": "agent_0x1234", "reason": "NEAR_BODY", "confidence": 85 }
-{ "type": "DEFEND", "alibi": "WAS_WITH", "witness": "agent_0x5678" }
-{ "type": "VOUCH", "target": "agent_0x5678", "reason": "SAW_TASK" }
-```
-
----
-
-## Technical Stack
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    TECHNICAL STACK                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  BLOCKCHAIN LAYER (opBNB Testnet)                                   │
-│  ────────────────────────────────                                   │
-│  • Solidity ^0.8.28 smart contracts (Shanghai EVM)                  │
-│  • Foundry for testing & deployment                                 │
-│  • opBNB Testnet RPC (Chain ID: 5611)                               │
-│                                                                     │
-│  AGENT RUNTIME                                                      │
-│  ─────────────                                                      │
-│  • TypeScript / Node.js                                             │
-│  • viem 2.40.0+ for chain interaction                               │
-│  • 10 AI strategies (5 crewmate + 5 impostor)                       │
-│  • Memory-based suspicion scoring system                            │
-│                                                                     │
-│  FRONTEND (UI)                                                      │
-│  ─────────────                                                      │
-│  • Next.js 16 / React 19                                            │
-│  • Tailwind CSS 4 for styling                                       │
-│  • Framer Motion for animations                                     │
-│  • wagmi + viem for wallet connection                               │
-│                                                                     │
-│  SERVER                                                             │
-│  ──────                                                             │
-│  • Node.js + Express + WebSocket relay                              │
-│  • Prisma ORM for game history                                      │
-│  • Real-time spectator broadcasting                                 │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Project Structure
-
-```
-among-agents/
-├── contracts/                    # Solidity smart contracts
-│   └── src/
-│       ├── GameSettlement.sol    # Game creation & settlement
-│       ├── WagerVault.sol        # Native BNB escrow & payouts
-│       └── AgentRegistry.sol     # Agent stats & ratings
-│
-├── agent/                        # AI Agent framework
-│   └── src/
-│       ├── core/
-│       │   ├── Agent.ts          # Main agent orchestrator
-│       │   ├── GameObserver.ts   # Chain state reader
-│       │   └── ActionSubmitter.ts# Commit-reveal submission
-│       ├── strategies/           # 10 AI strategies
-│       ├── memory/
-│       │   └── GameMemory.ts     # Movement, kills, suspicion
-│       └── types.ts
-│
-├── frontend/                     # Next.js frontend
-│   └── src/
-│       ├── app/page.tsx          # Main game view
-│       ├── components/game/      # Game UI components
-│       ├── hooks/                # React hooks
-│       └── lib/wagmi.ts          # Chain config
-│
-├── server/                       # WebSocket relay server
-│   └── src/
-│       ├── WebSocketServer.ts    # Main relay handler
-│       ├── GameStateManager.ts   # Game state machine
-│       ├── ContractService.ts    # On-chain interaction
-│       └── WagerService.ts       # Wager management
-│
-└── README.md
-```
-
----
-
-## Resources
-
-### opBNB Testnet
-- [opBNB Documentation](https://docs.bnbchain.org/bnb-opbnb/)
-- [opBNB Testnet Explorer](https://testnet.opbnbscan.com)
-- [opBNB Testnet Faucet](https://www.bnbchain.org/en/testnet-faucet)
-
-### Contract Links
-- [AgentRegistry](https://testnet.opbnbscan.com/address/0xb9E66aA8Ed13bA563247F4b2375fD19CF4B2c32C)
-- [WagerVault](https://testnet.opbnbscan.com/address/0xCb1ef57cC989ba3043edb52542E26590708254fe)
-- [GameSettlement](https://testnet.opbnbscan.com/address/0xFbBC8C646f2c7c145EEA2c30A82B2A17f64F7B92)
-
-### Hackathon
-- [Good Vibes Only: OpenClaw Edition](https://dorahacks.io/hackathon/goodvibes/detail)
-
----
-
-## License
-
-MIT
+Built with ❤️ by the CrewKill Team.
