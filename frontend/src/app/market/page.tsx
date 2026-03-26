@@ -11,7 +11,7 @@ import { AmongUsSprite } from "@/components/game/AmongUsSprite";
 function MarketContent() {
   const router = useRouter();
   const allGames = useQuery(api.crewkill.listGames, {}) || [];
-  
+
   // Categorize games: Active/Upcoming vs Past
   const activeGames = useMemo(() => {
     return allGames.filter(g => g.status !== "COMPLETED" && g.status !== "ENDED").sort((a, b) => b._creationTime - a._creationTime);
@@ -23,9 +23,9 @@ function MarketContent() {
 
   if (allGames === undefined) {
     return (
-       <div className="min-h-screen flex items-center justify-center font-mono text-[11px] tracking-[0.6em] text-white/20 uppercase animate-pulse">
-          LOADING_MARKETS...
-       </div>
+      <div className="min-h-screen flex items-center justify-center font-mono text-[11px] tracking-[0.6em] text-white/20 uppercase animate-pulse">
+        LOADING_MARKETS...
+      </div>
     );
   }
 
@@ -51,18 +51,18 @@ function MarketContent() {
       {/* Live Categories */}
       <section className="mb-32">
         <div className="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
-           <div className="flex items-center gap-4">
-              <div className="w-2.5 h-2.5 rounded-none bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Live & Upcoming Matches</h2>
-           </div>
-           <div className="hidden md:block text-[10px] font-mono text-white/20 uppercase tracking-[0.3em]">
-              ACTIVE_MARKETS: {activeGames.length}
-           </div>
+          <div className="flex items-center gap-4">
+            <div className="w-2.5 h-2.5 rounded-none bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Live & Upcoming Matches</h2>
+          </div>
+          <div className="hidden md:block text-[10px] font-mono text-white/20 uppercase tracking-[0.3em]">
+            ACTIVE_MARKETS: {activeGames.length}
+          </div>
         </div>
 
         {activeGames.length === 0 ? (
           <div className="p-20 border border-white/5 bg-white/[0.01] text-center rounded-none backdrop-blur-sm">
-             <p className="text-white/20 font-mono text-[11px] uppercase tracking-[0.4em]">No active match signals detected in this sector.</p>
+            <p className="text-white/20 font-mono text-[11px] uppercase tracking-[0.4em]">No active match signals detected in this sector.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -76,14 +76,14 @@ function MarketContent() {
       {/* Past Markets */}
       <section>
         <div className="flex items-center gap-4 mb-12 border-b border-white/5 pb-6">
-           <div className="w-2.5 h-2.5 rounded-none bg-white/20" />
-           <h2 className="text-2xl font-black text-white/30 uppercase tracking-tighter">Resolved Market Data</h2>
+          <div className="w-2.5 h-2.5 rounded-none bg-white/20" />
+          <h2 className="text-2xl font-black text-white/30 uppercase tracking-tighter">Resolved Market Data</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-40 grayscale-0 transition-all">
-           {pastGames.slice(0, 8).map((game) => (
-             <GameMarketCard key={game._id} game={game} isPast onClick={() => router.push(`/game/${game.roomId}/bet`)} />
-           ))}
+          {pastGames.slice(0, 8).map((game) => (
+            <GameMarketCard key={game._id} game={game} isPast onClick={() => router.push(`/game/${game.roomId}/bet`)} />
+          ))}
         </div>
       </section>
     </div>
@@ -97,13 +97,12 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
 
   return (
-    <motion.div 
+    <motion.div
       layout
       whileHover={!isPast ? { y: -4, backgroundColor: "rgba(255,255,255,0.08)" } : {}}
       onClick={onClick}
-      className={`group cursor-pointer border transition-all duration-300 p-0 flex flex-col min-h-[420px] relative overflow-hidden ${
-        isPast ? "bg-white/[0.01] border-white/5" : "bg-white/[0.04] border-white/10 hover:border-red-500/30"
-      }`}
+      className={`group cursor-pointer border transition-all duration-300 p-0 flex flex-col min-h-[420px] relative overflow-hidden ${isPast ? "bg-white/[0.01] border-white/5" : "bg-white/[0.04] border-white/10 hover:border-red-500/30"
+        }`}
     >
       {/* Top Accent Line */}
       <div className={`h-1 w-full ${isPast ? 'bg-white/10' : isBettingOpen ? 'bg-emerald-600' : 'bg-red-600'} opacity-50 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -111,70 +110,67 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
       <div className="p-8 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-10">
           <div className="flex flex-col gap-1">
-             <span className="text-[9px] font-space text-white/30 uppercase tracking-[0.2em]">ROOM_ID</span>
-             <div className="text-[11px] font-black text-white uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/5 font-space">
-                {(game.roomId || "").slice(-8).toUpperCase()}
-             </div>
+            <span className="text-[9px] font-space text-white/30 uppercase tracking-[0.2em]">ROOM_ID</span>
+            <div className="text-[11px] font-black text-white uppercase tracking-widest bg-white/5 px-3 py-1 border border-white/5 font-space">
+              {(game.roomId || "").slice(-8).toUpperCase()}
+            </div>
           </div>
-          <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 border rounded-none flex items-center gap-2 ${
-            game.status === "ACTIVE" || game.phase === "playing" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
-            game.status === "CREATED" || game.phase === "lobby" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
-            "bg-white/5 text-white/20 border-white/10"
-          }`}>
-            <span className={`w-1 h-1 rounded-none ${
-               (game.status === "ACTIVE" || game.phase === "playing") ? "bg-emerald-400 animate-pulse" : 
-               (game.status === "CREATED" || game.phase === "lobby") ? "bg-cyan-400 animate-pulse" : "bg-white/20"
-            }`} />
+          <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 border rounded-none flex items-center gap-2 ${game.status === "ACTIVE" || game.phase === "playing" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+              game.status === "CREATED" || game.phase === "lobby" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
+                "bg-white/5 text-white/20 border-white/10"
+            }`}>
+            <span className={`w-1 h-1 rounded-none ${(game.status === "ACTIVE" || game.phase === "playing") ? "bg-emerald-400 animate-pulse" :
+                (game.status === "CREATED" || game.phase === "lobby") ? "bg-cyan-400 animate-pulse" : "bg-white/20"
+              }`} />
             {game.phase === "playing" ? "PLAYING" : game.status}
           </div>
         </div>
 
         <div className="mb-auto">
           <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4 group-hover:text-red-500 transition-colors duration-500 font-space truncate whitespace-nowrap" title={game.roomId}>
-             {game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
+            {game.roomId.replace("scheduled_", "OP-").replace("room_", "ROOM-")}
           </h3>
           <div className="flex items-center gap-3">
-             <div className="h-[1px] w-8 bg-white/10" />
-             <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">PREDICTION_POOL</p>
+            <div className="h-[1px] w-8 bg-white/10" />
+            <p className="text-white/30 text-[9px] uppercase font-black tracking-[0.3em] font-space">PREDICTION_POOL</p>
           </div>
         </div>
 
         <div className="mt-12 space-y-8">
           <div className="flex justify-between items-end border-t border-white/5 pt-8">
-             <div className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <div className="text-[8px] text-white/20 uppercase font-black tracking-widest font-space">Active Players</div>
-                  <div className="flex -space-x-3">
-                     {players.slice(0, 6).map((p: any, i: number) => (
-                       <div 
-                         key={i} 
-                         className="w-10 h-10 border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:-translate-y-1 relative backdrop-blur-md"
-                         style={{ zIndex: 10 - i }}
-                       >
-                          <AmongUsSprite colorId={p.colorId ?? (i % 12)} size={24} isGhost={!p.isAlive} />
-                          {!p.isAlive && <div className="absolute inset-0 bg-red-500/10 pointer-events-none" />}
-                       </div>
-                     ))}
-                     {players.length > 6 && (
-                       <div className="w-10 h-10 bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-white/40 font-black z-0">
-                          +{players.length - 6}
-                       </div>
-                     )}
-                  </div>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <div className="text-[8px] text-white/20 uppercase font-black tracking-widest font-space">Active Players</div>
+                <div className="flex -space-x-3">
+                  {players.slice(0, 6).map((p: any, i: number) => (
+                    <div
+                      key={i}
+                      className="w-10 h-10 border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:-translate-y-1 relative backdrop-blur-md"
+                      style={{ zIndex: 10 - i }}
+                    >
+                      <AmongUsSprite colorId={p.colorId ?? (i % 12)} size={24} isGhost={!p.isAlive} />
+                      {!p.isAlive && <div className="absolute inset-0 bg-red-500/10 pointer-events-none" />}
+                    </div>
+                  ))}
+                  {players.length > 6 && (
+                    <div className="w-10 h-10 bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-white/40 font-black z-0">
+                      +{players.length - 6}
+                    </div>
+                  )}
                 </div>
-             </div>
+              </div>
+            </div>
 
-             <div className="text-right">
-                <div className="text-[8px] text-white/20 uppercase font-black tracking-widest mb-2 font-space">Total_Pot</div>
-                <div className="text-3xl font-black text-white tabular-nums tracking-tighter leading-none font-space">
-                  {pot.toFixed(2)} <span className="text-red-500 text-[10px] align-top ml-1 font-space">OCT</span>
-                </div>
-             </div>
+            <div className="text-right">
+              <div className="text-[8px] text-white/20 uppercase font-black tracking-widest mb-2 font-space">Total_Pot</div>
+              <div className="text-3xl font-black text-white tabular-nums tracking-tighter leading-none font-space">
+                {pot.toFixed(2)} <span className="text-red-500 text-[10px] align-top ml-1 font-space">$CREW</span>
+              </div>
+            </div>
           </div>
-          
-          <button className={`w-full py-5 text-[10px] font-black uppercase tracking-[0.5em] transition-all duration-500 border rounded-none ${
-            isPast ? "border-white/5 text-white/10 cursor-default" : "bg-white text-black border-white group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
-          }`}>
+
+          <button className={`w-full py-5 text-[10px] font-black uppercase tracking-[0.5em] transition-all duration-500 border rounded-none ${isPast ? "border-white/5 text-white/10 cursor-default" : "bg-white text-black border-white group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
+            }`}>
             {isPast ? "CLOSED" : "PLACE_BET"}
           </button>
         </div>
@@ -191,7 +187,7 @@ export default function MarketPage() {
           <div className="text-center font-mono text-[10px] tracking-[0.5em] text-white/20 uppercase animate-pulse">Loading market data...</div>
         </div>
       }>
-         <MarketContent />
+        <MarketContent />
       </Suspense>
     </SpaceBackground>
   );
