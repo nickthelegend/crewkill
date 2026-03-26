@@ -11,8 +11,7 @@ import { useGameServer } from "@/hooks/useGameServer";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { MarketProvider } from "@/components/game/MarketContext";
-import { TotalSalesChart } from "@/components/ui/total-sales-chart";
+import { MarketProvider, useMarket } from "@/components/game/MarketContext";
 
 export default function RoomDetailsPage() {
   return (
@@ -26,6 +25,7 @@ function RoomDetailsPageContent() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.id as string;
+  const { totalPot } = useMarket();
 
   // Real-time WebSocket connection
   const {
@@ -38,15 +38,16 @@ function RoomDetailsPageContent() {
 
   // Database persistent state
   const games = useQuery(convexApi.crewkill.listGames, {}) || [];
-  const dbGame = games.find((g) => g.roomId === roomId);
+  const dbGame = games.find((g) => g.roomId === roomId || g.marketId === roomId);
+  const actualRoomId = dbGame?.roomId || roomId;
 
   // Auto-join room via WebSocket when entering this page
   useEffect(() => {
-    if (isConnected && (!currentRoom || currentRoom.roomId !== roomId)) {
-      joinRoom(roomId, true);
+    if (isConnected && (!currentRoom || currentRoom.roomId !== actualRoomId)) {
+      joinRoom(actualRoomId, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, roomId]);
+  }, [isConnected, actualRoomId, currentRoom, joinRoom]);
 
   // Deterministic hash for non-hex IDs (matches server logic)
   const displayId = useMemo(() => {
@@ -147,7 +148,7 @@ function RoomDetailsPageContent() {
 
               <div className="text-right">
                 <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Current Pool</div>
-                <div className="text-4xl font-black text-white">{(parseFloat(dbGame.totalPot || "0") / 1e9).toFixed(2)} <span className="text-cyan-400">$CREW</span></div>
+                <div className="text-4xl font-black text-white">{(totalPot / 1e9).toFixed(2)} <span className="text-cyan-400">$CREW</span></div>
               </div>
             </motion.div>
           </div>
@@ -284,17 +285,18 @@ function RoomDetailsPageContent() {
                   </div>
 
                   <PredictionMarket
-                    gameId={dbGame._id}
+                    gameId={dbGame.roomId}
                     marketObjectId={dbGame.marketId || dbGame.roomId}
                     gamePlayers={(currentRoom?.players?.length ? currentRoom.players : (dbGame.players || [])).map((p: any) => ({
                       address: p.address,
                       name: p.isAIAgent ? (p.agentPersona?.title || `Agent ${p.address.slice(-4)}`) : (p.name || `Human ${p.address.slice(-4)}`),
                       isAlive: p.isAlive ?? true,
-                      colorId: p.colorId
+                      colorId: p.colorId,
+                      agentPersona: p.agentPersona
                     }))}
                     isResolved={dbGame.status === "COMPLETED"}
                     actualImpostors={[]} // Hidden during lobby
-                    gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 2 : 0)}
+                    gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 7 : (dbGame.status === "ACTIVE" ? 2 : 0))}
                     creationDigest={currentRoom?.creationDigest}
                   />
 

@@ -12,7 +12,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { GameLogPanel, TaskBar } from "@/components/game";
 import { MarketProvider } from "@/components/game/MarketContext";
-import { TotalSalesChart } from "@/components/ui/total-sales-chart";
 
 export default function GameBettingPage() {
   return (
