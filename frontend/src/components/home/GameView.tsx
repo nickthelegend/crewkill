@@ -186,10 +186,7 @@ export function GameView({
     let targetTime = activeRoom.startedAt + 180000; // 3 mins default for boarding
     
     if (isVoting || isDiscussion) {
-      // For meetings, try to get time from logs or state if possible
-      // But for a reliable timer we need the server to send phaseEndTime
-      // As a fallback 30s from now
-      targetTime = Date.now() + 30000; 
+      targetTime = activeRoom.startedAt + 30000; // 30s for meetings
     }
     
     const updateTimer = () => {

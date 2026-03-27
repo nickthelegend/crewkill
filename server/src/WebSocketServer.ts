@@ -2761,6 +2761,7 @@ export class WebSocketRelayServer {
     const previousPhase = extended.currentPhase;
     extended.currentPhase = 4; // Discussion
     room.phase = "discussion";
+    room.startedAt = Date.now();
 
     const phaseEndTime = Date.now() + DISCUSSION_DURATION;
 
@@ -2802,6 +2803,7 @@ export class WebSocketRelayServer {
     const previousPhase = extended.currentPhase;
     extended.currentPhase = 5; // Voting
     room.phase = "voting";
+    room.startedAt = Date.now();
 
     // Initialize voting
     extended.votes.clear();
