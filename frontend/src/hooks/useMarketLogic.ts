@@ -200,6 +200,7 @@ export function useMarketLogic(gameId: string, marketObjectId: string, gamePlaye
       
       tx.moveCall({
         target: `${PACKAGE_ID}::prediction_market::place_bet`,
+        typeArguments: [CREW_TOKEN_TYPE],
         arguments: [
           tx.object(marketObjectId), 
           tx.pure.address(selectedSuspect), 
