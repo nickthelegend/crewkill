@@ -7,7 +7,7 @@ import { api } from "../../../../../convex/_generated/api";
 import { useEffect, useState } from "react";
 import { SpaceBackground } from "@/components/game/SpaceBackground";
 import { AmongUsSprite } from "@/components/game/AmongUsSprite";
-import { LocationNames, Location, PlayerColors, GamePhase } from "@/types/game";
+import { LocationNames, Location, PlayerColors, GamePhase, Player } from "@/types/game";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { GameView } from "@/components/home/GameView";
@@ -41,11 +41,19 @@ export default function RecapPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { currentRoom, isConnected, players, deadBodies, logs, phase, activeSabotage, tasksCompleted, totalTasks, joinRoom, leaveRoom } = useGameServer();
+  const { isConnected, players: livePlayers, rawHistory, joinRoom } = useGameServer();
   const game = useQuery(api.crewkill.getGameByRoomId, { roomId: id });
 
   const [speed, setSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackIndex, setPlaybackIndex] = useState(0);
+  
+  // Local state for the "virtual" world at current playbackIndex
+  const [replayPlayers, setReplayPlayers] = useState<Player[]>([]);
+  const [replayLogs, setReplayLogs] = useState<any[]>([]);
+  const [replayDeadBodies, setReplayDeadBodies] = useState<any[]>([]);
+  const [replayPhase, setReplayPhase] = useState<number>(0);
+
   const [spotlightedPlayer, setSpotlightedPlayer] = useState<`0x${string}` | null>(null);
   const [selectedAgentInfo, setSelectedAgentInfo] = useState<`0x${string}` | null>(null);
 
@@ -54,6 +62,81 @@ export default function RecapPage() {
       joinRoom(id, true);
     }
   }, [isConnected, id]);
+
+  // Sync initial players when they are loaded
+  useEffect(() => {
+    if (livePlayers.length > 0 && replayPlayers.length === 0) {
+      setReplayPlayers(livePlayers.map(p => ({ ...p, location: 0 as Location, isAlive: true, tasksCompleted: 0 })));
+    }
+  }, [livePlayers]);
+
+  // Handle Playback Loop
+  useEffect(() => {
+    if (!isPlaying || !rawHistory || rawHistory.length === 0) return;
+
+    const interval = setInterval(() => {
+      setPlaybackIndex(prev => {
+        if (prev >= rawHistory.length - 1) {
+          setIsPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1000 / speed);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, rawHistory, speed]);
+
+  // Update visual state whenever playbackIndex changes
+  useEffect(() => {
+    if (!rawHistory || rawHistory.length === 0 || playbackIndex === 0) return;
+
+    // Apply only the newest message at playbackIndex
+    const m = rawHistory[playbackIndex];
+    if (!m) return;
+
+    if (m.type === "server:player_moved") {
+      setReplayPlayers(prev => prev.map(p => 
+        p.address.toLowerCase() === m.address.toLowerCase() 
+          ? { ...p, location: m.to as Location } 
+          : p
+      ));
+      setReplayLogs(prev => [{
+        type: "move",
+        message: `${m.address.slice(0, 8)}... moved to ${LocationNames[m.to as Location] || "Room " + m.to}`,
+        address: m.address
+      }, ...prev].slice(0, 50));
+    } else if (m.type === "server:kill_occurred") {
+      setReplayPlayers(prev => prev.map(p => 
+        p.address.toLowerCase() === m.victim.toLowerCase() 
+          ? { ...p, isAlive: false } 
+          : p
+      ));
+      setReplayDeadBodies(prev => [...prev, { victim: m.victim, location: m.location }]);
+      setReplayLogs(prev => [{
+        type: "kill",
+        message: `☠️ ${m.victim.slice(0, 8)}... was eliminated!`,
+        address: m.killer
+      }, ...prev].slice(0, 50));
+    } else if (m.type === "server:task_completed") {
+      setReplayPlayers(prev => prev.map(p => 
+        p.address.toLowerCase() === m.player.toLowerCase() 
+          ? { ...p, tasksCompleted: m.tasksCompleted } 
+          : p
+      ));
+      setReplayLogs(prev => [{
+        type: "task",
+        message: `✅ ${m.player.slice(0, 8)}... completed a task (${m.tasksCompleted}/${m.totalTasks})`,
+        address: m.player
+      }, ...prev].slice(0, 50));
+    } else if (m.type === "server:phase_changed") {
+      setReplayPhase(m.phase);
+    }
+  }, [playbackIndex, rawHistory]);
+
+  const progress = rawHistory && rawHistory.length > 0 
+    ? (playbackIndex / (rawHistory.length - 1)) * 100 
+    : 0;
 
   if (!isConnected) {
     return (
@@ -84,13 +167,13 @@ export default function RecapPage() {
       {/* Visual Game Review Wrapper */}
       <div className="w-full h-screen relative">
         <GameView 
-          players={players}
-          deadBodies={deadBodies}
-          logs={logs}
-          currentRoom={currentRoom}
+          players={replayPlayers.length > 0 ? replayPlayers : livePlayers}
+          deadBodies={replayDeadBodies}
+          logs={replayLogs}
+          currentRoom={null}
           currentPlayer={undefined}
-          tasksCompleted={tasksCompleted}
-          totalTasks={totalTasks}
+          tasksCompleted={replayPlayers.reduce((s, p) => s + p.tasksCompleted, 0)}
+          totalTasks={replayPlayers.reduce((s, p) => s + p.totalTasks, 0)}
           isConnected={isConnected}
           spotlightedPlayer={spotlightedPlayer}
           onSpotlightPlayer={setSpotlightedPlayer}
@@ -101,8 +184,8 @@ export default function RecapPage() {
           onBack={() => router.push(`/game/${id}`)}
           gameObjectId={game?._id}
           marketObjectId={game?.marketId}
-          gamePhase={phase}
-          activeSabotage={activeSabotage}
+          gamePhase={replayPhase}
+          activeSabotage={0}
         />
 
         {/* Playback HUD */}
@@ -113,7 +196,10 @@ export default function RecapPage() {
             </div>
             
             <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden relative">
-              <div className="absolute top-0 left-0 h-full bg-cyan-400/80 w-full" />
+              <div 
+                className="absolute top-0 left-0 h-full bg-cyan-400/80 transition-all duration-300" 
+                style={{ width: `${progress}%` }} 
+              />
             </div>
             
             <div className="flex items-center justify-between w-full">

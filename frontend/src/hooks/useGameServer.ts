@@ -120,6 +120,7 @@ export interface UseGameServerReturn {
   players: Player[];
   deadBodies: DeadBody[];
   logs: GameLog[];
+  rawHistory: any[];
   phase: GamePhase;
   activeSabotage: number; // Added active sabotage
   tasksCompleted: number;
@@ -152,6 +153,7 @@ export function useGameServer(): UseGameServerReturn {
   const [leaderboard, setLeaderboard] = useState<AgentStats[]>([]);
   const [deadBodies, setDeadBodies] = useState<DeadBody[]>([]);
   const [logs, setLogs] = useState<GameLog[]>([]);
+  const [rawHistory, setRawHistory] = useState<any[]>([]);
   const [votingResults, setVotingResults] = useState<Map<string, string[]>>(new Map());
 
   // Track current room ID for filtering logs
@@ -295,6 +297,7 @@ export function useGameServer(): UseGameServerReturn {
 
           case "server:event_history":
             if (message.history && Array.isArray(message.history)) {
+              setRawHistory(message.history);
               const historicalLogs: any[] = [];
               const latestPlayers = new Map<string, any>();
               const historicalDeadBodies: any[] = [];
@@ -710,6 +713,7 @@ export function useGameServer(): UseGameServerReturn {
     players,
     deadBodies,
     logs,
+    rawHistory,
     phase,
     activeSabotage,
     tasksCompleted,

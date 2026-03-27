@@ -162,7 +162,7 @@ export function GameView({
     new Map(stablePlayers.map(p => [p.address, p])).values()
   );
   const activeRoom = stableRoom;
-  const currentPhaseValue = activeRoom?.detailedPhase ?? (activeRoom?.phase === 'boarding' ? 1 : activeRoom?.phase === 'playing' ? 2 : activeRoom?.phase === 'ended' ? 7 : 0);
+  const currentPhaseValue = gamePhase || activeRoom?.detailedPhase || (activeRoom?.phase === 'boarding' ? 1 : activeRoom?.phase === 'playing' ? 2 : activeRoom?.phase === 'ended' ? 7 : 0);
   
   const aliveCount = activePlayers.filter(p => p.isAlive).length;
   const deadCount = activePlayers.length - aliveCount;
@@ -257,15 +257,15 @@ export function GameView({
           </motion.div>
         )}
 
-        {/* Voting Phase Overlay */}
-        {(isVoting || isDiscussion) && (
+        {/* Voting & Discussion Phase Overlay */}
+        {(isVoting || isDiscussion || isEjection) && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none"
           >
-            <div className="absolute inset-0 bg-red-950/40 backdrop-blur-md" />
+            <div className="absolute inset-0 bg-red-950/60 backdrop-blur-md" />
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -275,7 +275,7 @@ export function GameView({
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
                   <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
-                    {isDiscussion ? "Meeting: Discussion" : "Meeting: Voting"}
+                    {isDiscussion ? "Meeting: Discussion" : isVoting ? "Meeting: Voting" : "Meeting: Ejection"}
                   </h2>
                 </div>
                 <div className="text-3xl font-black text-red-500 font-mono tabular-nums">
@@ -316,7 +316,9 @@ export function GameView({
               </div>
 
               <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
-                {isDiscussion ? "Gathering intelligence. Prepare to vote soon." : "Cast your votes now. Majority decides the fate."}
+                {isDiscussion ? "Gathering intelligence. Prepare to vote soon." : 
+                 isVoting ? "Cast your votes now. Majority decides the fate." :
+                 "The results are in. Someone is going into space."}
               </p>
             </motion.div>
           </motion.div>
