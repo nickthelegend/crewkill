@@ -22,6 +22,8 @@ export default function PayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [successTx, setSuccessTx] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -58,14 +60,15 @@ export default function PayoutsPage() {
       const data = await res.json();
       if (data.success) {
         setSuccessTx(data.digest);
+        setShowSuccessModal(true);
         setPayouts((prev) =>
           prev.map((p) => (p.id === payout.id ? { ...p, status: "claimed" } : p))
         );
       } else {
-        alert("Claim failed: " + (data.error || "Unknown error"));
+        setErrorMsg(data.error || "Unknown error");
       }
     } catch (e) {
-      alert("Failed to connect to payout service.");
+      setErrorMsg("Failed to connect to payout service.");
     } finally {
       setClaimingId(null);
     }
@@ -165,38 +168,126 @@ export default function PayoutsPage() {
             </div>
           )}
 
-          {/* Success Overlay */}
+          {/* Success Modal */}
           <AnimatePresence>
-            {successTx && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="fixed bottom-12 right-12 z-[200] w-96 bg-emerald-500 text-black p-6 shadow-2xl flex items-center gap-6"
-              >
-                <div className="w-12 h-12 bg-black flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <div className="font-black uppercase tracking-widest text-xs mb-1">Success! Rewards Sent</div>
-                  <a 
-                    href={getExplorerTxUrl(successTx)} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="font-mono text-[9px] block truncate hover:underline"
-                  >
-                    TX_{successTx}
-                  </a>
-                </div>
-                <button 
-                  onClick={() => setSuccessTx(null)}
-                  className="absolute top-2 right-2 opacity-50 hover:opacity-100"
+            {showSuccessModal && (
+              <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowSuccessModal(false)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                />
+                
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="relative w-full max-w-lg bg-[#050510] border border-emerald-500/30 p-12 overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.1)]"
                 >
-                  &times;
-                </button>
-              </motion.div>
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
+                  
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-24 h-24 bg-emerald-500/10 border border-emerald-500 rounded-full flex items-center justify-center mb-8 relative">
+                      <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full" />
+                      <svg className="w-12 h-12 text-emerald-500 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+
+                    <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">
+                      Claim <span className="text-emerald-500">Confirmed</span>
+                    </h2>
+                    
+                    <p className="text-white/40 font-mono text-sm mb-10 leading-relaxed max-w-xs mx-auto">
+                      Your rewards have been processed successfully. Your balance will update in a few moments.
+                    </p>
+
+                    <div className="w-full bg-white/5 border border-white/10 p-6 mb-10 text-left">
+                      <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-2 font-mono">
+                        Transaction Proof
+                      </div>
+                      <a 
+                        href={getExplorerTxUrl(successTx || "")} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-emerald-400 block truncate hover:underline hover:text-emerald-300 transition-colors"
+                      >
+                        {successTx}
+                      </a>
+                    </div>
+
+                    <div className="flex flex-col w-full gap-4">
+                      <a 
+                        href={getExplorerTxUrl(successTx || "")} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest transition-all text-sm flex items-center justify-center gap-3"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        View On Explorer
+                      </a>
+                      
+                      <button 
+                        onClick={() => setShowSuccessModal(false)}
+                        className="w-full py-4 border border-white/10 hover:bg-white/5 text-white/60 font-black uppercase tracking-widest transition-all text-sm"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Error Modal */}
+          <AnimatePresence>
+            {errorMsg && (
+              <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setErrorMsg(null)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                />
+                
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="relative w-full max-w-md bg-[#050510] border border-red-500/30 p-10 overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.1)]"
+                >
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+                  
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-red-500/10 border border-red-500/50 rounded-full flex items-center justify-center mb-6">
+                      <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">
+                       Claim <span className="text-red-500">Failed</span>
+                    </h2>
+                    
+                    <p className="text-white/50 font-mono text-xs mb-8 p-4 bg-red-500/5 border border-red-500/10 w-full">
+                      {errorMsg}
+                    </p>
+
+                    <button 
+                      onClick={() => setErrorMsg(null)}
+                      className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-widest transition-all text-sm"
+                    >
+                      Understood
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </div>

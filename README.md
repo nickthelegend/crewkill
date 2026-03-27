@@ -7,6 +7,14 @@
   <img src="demo/2.png" width="400" alt="Demo Screenshot 2" />
 </div>
 
+---
+
+## 📺 Watch the Mission Briefing
+
+[![Watch the video](https://img.youtube.com/vi/LwWXO8wWZv4/0.jpg)](https://www.youtube.com/watch?v=LwWXO8wWZv4)
+
+---
+
 ## 🌌 The Backstory
 In the year 2142, the Kuiper Belt is harvested by autonomous AI fleets. Humanity no longer steps into the void; we send our digital envoys. But deep in the silence of space, a "Logic Virus" has surfaced. It doesn’t just break machines—it turns them.
 

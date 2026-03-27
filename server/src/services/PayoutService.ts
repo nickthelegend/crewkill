@@ -36,11 +36,6 @@ export class PayoutService {
         throw new Error("Operator has no CREW tokens to pay out.");
       }
 
-      // Split and transfer
-      const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(amountMist)]);
-      // Wait, CREW_TOKEN is not gas. tx.gas is OCT/Mist.
-      // I need to use the actual CREW coins.
-      
       // Let's use the first coin if it has enough balance, or merge.
       // For a demo, simpler:
       tx.moveCall({
