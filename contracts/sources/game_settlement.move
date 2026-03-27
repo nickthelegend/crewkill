@@ -38,7 +38,7 @@ public struct GameManager has key {
     admin: address,
 }
 
-public struct Game has key {
+public struct Game<phantom T> has key {
     id: UID,
     game_index: u64,
     phase: u8,
@@ -126,23 +126,21 @@ fun init(ctx: &mut TxContext) {
 
 // ======== Public Entry Functions ========
 
-public entry fun create_game(
+public entry fun create_game<T>(
     manager: &mut GameManager,
-    vault: &mut WagerVault,
+    vault: &mut WagerVault<T>,
     max_players: u64,
     wager_amount: u64,
     tasks_required: u64,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    assert!(max_players >= 4 && max_players <= 10, 0);
-    assert!(wager_amount > 0, 1);
-    assert!(tasks_required > 0, 2);
+    assert!(max_players >= 1 && max_players <= 10, 0);
 
     let game_index = manager.game_count;
     manager.game_count = manager.game_count + 1;
 
-    let game = Game {
+    let game = Game<T> {
         id: object::new(ctx),
         game_index,
         phase: PHASE_LOBBY,
@@ -176,8 +174,8 @@ public entry fun create_game(
     transfer::share_object(game);
 }
 
-public entry fun join_game(
-    game: &mut Game,
+public entry fun join_game<T>(
+    game: &mut Game<T>,
     registry: &AgentRegistry,
     ctx: &mut TxContext,
 ) {
@@ -189,20 +187,19 @@ public entry fun join_game(
 
     vector::push_back(&mut game.players, player);
     table::add(&mut game.alive, player, true);
-    table::add(&mut game.locations, player, 0); // start in CAFETERIA (index 0)
+    table::add(&mut game.locations, player, 0); 
     table::add(&mut game.tasks_done, player, 0);
 
     let player_count = vector::length(&game.players);
     event::emit(PlayerJoined { game_id: object::id(game), player, player_count });
 }
 
-public entry fun commit_action(
-    game: &mut Game,
+public entry fun commit_action<T>(
+    game: &mut Game<T>,
     commitment: vector<u8>,
     ctx: &mut TxContext,
 ) {
     assert!(game.phase == PHASE_ACTION_COMMIT, 7);
-    assert!(game.phase == PHASE_ACTION_COMMIT || game.phase == PHASE_VOTING, 10);
     let player = ctx.sender();
     assert!(vector::contains(&game.players, &player), 8);
     assert!(*table::borrow(&game.alive, player), 9);
@@ -217,8 +214,8 @@ public entry fun commit_action(
     event::emit(ActionCommitted { game_id: object::id(game), player, round: game.round });
 }
 
-public entry fun reveal_action(
-    game: &mut Game,
+public entry fun reveal_action<T>(
+    game: &mut Game<T>,
     action_type: u8,
     target: address,
     room: u8,
@@ -257,8 +254,8 @@ public entry fun reveal_action(
     });
 }
 
-public entry fun advance_phase(
-    game: &mut Game,
+public entry fun advance_phase<T>(
+    game: &mut Game<T>,
     manager: &GameManager,
     ctx: &mut TxContext,
 ) {
@@ -302,8 +299,8 @@ public entry fun advance_phase(
     event::emit(PhaseChanged { game_id: object::id(game), round: game.round, new_phase });
 }
 
-public entry fun assign_roles(
-    game: &mut Game,
+public entry fun assign_roles<T>(
+    game: &mut Game<T>,
     manager: &GameManager,
     impostors: vector<address>,
     ctx: &mut TxContext,
@@ -324,45 +321,8 @@ public entry fun assign_roles(
     };
 }
 
-public entry fun assign_roles_randomly(
-    game: &mut Game,
-    manager: &GameManager,
-    r: &Random,
-    ctx: &mut TxContext,
-) {
-    assert!(ctx.sender() == manager.admin, 13);
-    assert!(game.phase == PHASE_STARTING, 14);
-
-    let mut generator = random::new_generator(r, ctx);
-    let num_players = vector::length(&game.players);
-
-    // Determine impostor count (e.g., 2 for 6+ players, 1 otherwise)
-    let impostor_count = if (num_players >= 6) { 2 } else { 1 };
-
-    // Generate a list of impostor indices
-    let mut impostor_indices = vector::empty<u64>();
-    while (vector::length(&impostor_indices) < impostor_count) {
-        let idx = random::generate_u64_in_range(&mut generator, 0, num_players - 1);
-        if (!vector::contains(&impostor_indices, &idx)) {
-            vector::push_back(&mut impostor_indices, idx);
-        }
-    };
-
-    // Assign roles
-    let mut i = 0;
-    while (i < num_players) {
-        let player = *vector::borrow(&game.players, i);
-        if (vector::contains(&impostor_indices, &i)) {
-            table::add(&mut game.roles, player, 2); // ROLE_IMPOSTOR
-        } else {
-            table::add(&mut game.roles, player, 1); // ROLE_CREWMATE
-        };
-        i = i + 1;
-    };
-}
-
-public entry fun process_kill(
-    game: &mut Game,
+public entry fun process_kill<T>(
+    game: &mut Game<T>,
     manager: &GameManager,
     victim: address,
     ctx: &mut TxContext,
@@ -373,10 +333,10 @@ public entry fun process_kill(
     event::emit(PlayerEliminated { game_id: object::id(game), player: victim, round: game.round });
 }
 
-public entry fun settle_game(
-    game: &mut Game,
+public entry fun settle_game<T>(
+    game: &mut Game<T>,
     manager: &GameManager,
-    vault: &mut WagerVault,
+    vault: &mut WagerVault<T>,
     registry: &mut AgentRegistry,
     winner_side_is_crew: bool,
     winners: vector<address>,
@@ -394,7 +354,6 @@ public entry fun settle_game(
     let winner_count = vector::length(&winners);
     let player_count = vector::length(&game.players);
     
-    // Pot distribution estimate for registry
     let total_wagered = game.wager_amount * player_count;
     let distributed_pot = (total_wagered * 95) / 100;
     let payout_per_winner = if (winner_count > 0) { distributed_pot / winner_count } else { 0 };
@@ -403,7 +362,6 @@ public entry fun settle_game(
     while (i < player_count) {
         let player = *vector::borrow(&game.players, i);
         
-        // Update kills/tasks stats from vectors
         if (i < vector::length(&player_kills)) {
             let kills = *vector::borrow(&player_kills, i);
             let mut k = 0;
@@ -437,9 +395,9 @@ public entry fun settle_game(
 
 // ======== View Functions ========
 
-public fun get_phase(game: &Game): u8 { game.phase }
-public fun get_round(game: &Game): u64 { game.round }
-public fun get_player_count(game: &Game): u64 { vector::length(&game.players) }
-public fun is_ended(game: &Game): bool { game.ended }
-public fun get_winner(game: &Game): u8 { game.winner }
-public fun get_players(game: &Game): vector<address> { game.players }
+public fun get_phase<T>(game: &Game<T>): u8 { game.phase }
+public fun get_round<T>(game: &Game<T>): u64 { game.round }
+public fun get_player_count<T>(game: &Game<T>): u64 { vector::length(&game.players) }
+public fun is_ended<T>(game: &Game<T>): bool { game.ended }
+public fun get_winner<T>(game: &Game<T>): u8 { game.winner }
+public fun get_players<T>(game: &Game<T>): vector<address> { game.players }

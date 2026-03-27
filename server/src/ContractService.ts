@@ -2,7 +2,7 @@ import { SuiClient, SuiEvent } from '@onelabs/sui/client';
 import { Transaction } from '@onelabs/sui/transactions';
 import { Ed25519Keypair } from '@onelabs/sui/keypairs/ed25519';
 import { createLogger } from "./logger.js";
-import { CONTRACT_CONFIG, ONECHAIN_RPC } from "./config.js";
+import { CONTRACT_CONFIG, ONECHAIN_RPC, CREW_TOKEN_TYPE } from "./config.js";
 import crypto from 'crypto';
 
 const logger = createLogger("contract-service");
@@ -37,12 +37,11 @@ export class ContractService {
   private async fetchGasPayment(tx: Transaction) {
     if (!this.operatorKeypair) return;
     try {
-      const coins = await this.client.getCoins({ owner: this.operatorKeypair.getPublicKey().toSuiAddress() });
-      const badCoin = "0x48f3b0e90853dccda7bcdbc79ee8a434680edf3447221b780c8c678985bc4811";
-      
-      // Sort coins by balance descending to find the one with the most gas
+      const coins = await this.client.getCoins({ 
+          owner: this.operatorKeypair.getPublicKey().toSuiAddress(),
+          coinType: '0x2::oct::OCT'
+      });
       const validCoins = coins.data
-        .filter(c => c.coinObjectId !== badCoin)
         .sort((a, b) => {
             const valA = BigInt(a.balance);
             const valB = BigInt(b.balance);
@@ -53,15 +52,10 @@ export class ContractService {
         
       const bestCoin = validCoins[0];
       if (bestCoin) {
-        // tx.setGasPayment([{ 
-        //     objectId: bestCoin.coinObjectId, 
-        //     version: bestCoin.version, 
-        //     digest: bestCoin.digest 
-        // }]);
         logger.info(`Using gas coin ${bestCoin.coinObjectId} with balance ${bestCoin.balance}`);
       }
     } catch(e) {
-      logger.error("Failed to fetch gas payment bypass:", e);
+      logger.error("Failed to fetch gas info:", e);
     }
   }
 
@@ -82,15 +76,15 @@ export class ContractService {
     if (!this.operatorKeypair) return false;
     try {
       const tx = new Transaction();
-      // gameId is the object ID, don't hash it!
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::settle_game`,
+        typeArguments: [CREW_TOKEN_TYPE],
         arguments: [
-          tx.object(gameId), // game: &mut Game
+          tx.object(gameId),
           tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
           tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
           tx.object(CONTRACT_CONFIG.AGENT_REGISTRY_ID),
-          tx.pure.bool(crewmatesWon), // winner_side_is_crew
+          tx.pure.bool(crewmatesWon),
           tx.pure.vector('address', winners),
           tx.pure.vector('u64', playerKills.map(k => BigInt(k))),
           tx.pure.vector('u64', playerTasks.map(t => BigInt(t))),
@@ -111,14 +105,6 @@ export class ContractService {
     return BigInt(balance.totalBalance);
   }
 
-  hasWagered(agentAddress: string, gameId: string): Promise<boolean> {
-    return Promise.resolve(false);
-  }
-
-  getVaultAddress(): string {
-    return CONTRACT_CONFIG.WAGER_VAULT_ID;
-  }
-
   async createGame(maxPlayers: number, wagerAmountMist: number, tasksPerPlayer: number): Promise<{ gameId: string, digest: string } | null> {
     if (!this.operatorKeypair) return null;
 
@@ -129,13 +115,14 @@ export class ContractService {
         const tx = new Transaction();
         tx.moveCall({
           target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_settlement::create_game`,
+          typeArguments: [CREW_TOKEN_TYPE],
           arguments: [
             tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID),
             tx.object(CONTRACT_CONFIG.WAGER_VAULT_ID),
             tx.pure.u64(maxPlayers),
             tx.pure.u64(wagerAmountMist),
             tx.pure.u64(tasksPerPlayer),
-            tx.object('0x6'), // Clock
+            tx.object('0x6'),
           ],
         });
         await this.fetchGasPayment(tx);
@@ -154,7 +141,6 @@ export class ContractService {
           return { gameId, digest: result.digest };
         }
         
-        logger.error(`Game ID not found in event. Result type: ${JSON.stringify(result.events?.map(e => e.type))}`);
         return null;
       } catch (error: any) {
         if (error.message.includes("lock") && attempt < 3) {
@@ -170,23 +156,18 @@ export class ContractService {
   }
 
   async createMarket(gameId: string, playerAddresses: string[]): Promise<string | null> {
-    if (!this.operatorKeypair) {
-      logger.error("Cannot create market: Operator keypair missing");
-      return null;
-    }
+    if (!this.operatorKeypair) return null;
     
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        logger.info(`Creating prediction market for room ${gameId} with ${playerAddresses.length} players (Attempt ${attempt}/3)...`);
+        logger.info(`Creating prediction market for room ${gameId} (Attempt ${attempt}/3)...`);
         const tx = new Transaction();
-        const hashedId = crypto.createHash('sha256').update(gameId).digest('hex');
-        const suiGameId = `0x${hashedId}`;
-
         tx.moveCall({
           target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::create_market`,
+          typeArguments: [CREW_TOKEN_TYPE],
           arguments: [
             tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
-            tx.pure.address(gameId), // Just pass the ID directly
+            tx.pure.address(gameId),
             tx.pure.vector('address', playerAddresses),
           ],
         });
@@ -199,14 +180,6 @@ export class ContractService {
         });
         
         if (result.effects?.status.status !== 'success') {
-          const errMsg = result.effects?.status.error || "Unknown error";
-          if (errMsg.includes("already_registered") || errMsg.includes("aborted with code 6")) {
-            // Find existing market if already registered
-            logger.info(`Market for game ${gameId} already registered on-chain. Sync should happen via event scan.`);
-            // Note: Returning null here and letting the background sync handle it if possible
-            return null;
-          }
-          logger.error(`Prediction market creation TX failed: ${errMsg}`);
           return null;
         }
 
@@ -218,7 +191,6 @@ export class ContractService {
           return marketId;
         }
         
-        logger.error(`Market ID not found in event for game ${gameId}. Result type: ${JSON.stringify(result.events?.map(e => e.type))}`);
         return null;
       } catch (error: any) {
         if (error.message.includes("lock") && attempt < 3) {
@@ -239,6 +211,7 @@ export class ContractService {
       const tx = new Transaction();
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::close_market`,
+        typeArguments: [CREW_TOKEN_TYPE],
         arguments: [
           tx.object(marketId),
           tx.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
@@ -252,15 +225,11 @@ export class ContractService {
         options: { showEffects: true }
       });
       
-      if (result.effects?.status.status !== 'success') {
-        logger.error(`Prediction market closure TX failed: ${result.effects?.status.error || "Unknown error"}`);
-        return false;
-      }
+      if (result.effects?.status.status !== 'success') return false;
       
-      logger.info(`Prediction market closed for game ${gameId}: ${result.digest}`);
+      logger.info(`Prediction market closed for game ${gameId}`);
       return true;
     } catch (error) {
-      logger.error(`Failed to close market for game ${gameId}:`, error);
       return false;
     }
   }
@@ -268,10 +237,11 @@ export class ContractService {
   async resolveMarket(gameId: string, marketId: string, impostors: string[], allBets: any[]): Promise<boolean> {
     if (!this.operatorKeypair) return false;
     try {
-      // 1. Resolve market first (reveal impostors)
+      // 1. Resolve market first
       const txResolve = new Transaction();
       txResolve.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::resolve_market`,
+        typeArguments: [CREW_TOKEN_TYPE],
         arguments: [
           txResolve.object(marketId),
           txResolve.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
@@ -280,21 +250,13 @@ export class ContractService {
       });
       await this.fetchGasPayment(txResolve);
       await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: txResolve });
-      logger.info(`Prediction market resolved for game ${gameId}`);
 
-      // 2. Calculate and push rewards (disperse)
-      // winners = bettors who picked any of the impostors
-      const winningBets = allBets.filter(b => impostors.includes(b.selection));
-      if (winningBets.length === 0) {
-        logger.info(`No winners for prediction market ${gameId}`);
-        return true;
-      }
+      // 2. Disperse
+      const winningBets = allBets.filter(b => impostors.some(imp => imp.toLowerCase() === b.selection.toLowerCase()));
+      if (winningBets.length === 0) return true;
 
       const totalPotBalance = allBets.reduce((sum, b) => sum + BigInt(b.amountMist), 0n);
       const totalWinningBetsBalance = winningBets.reduce((sum, b) => sum + BigInt(b.amountMist), 0n);
-      
-      // Pro-rata disbursement
-      // Fee: 5%
       const distributablePot = (totalPotBalance * 95n) / 100n;
       
       const winnersAddresses: string[] = [];
@@ -312,6 +274,7 @@ export class ContractService {
         const txSettle = new Transaction();
         txSettle.moveCall({
           target: `${CONTRACT_CONFIG.PACKAGE_ID}::prediction_market::settle_market`,
+          typeArguments: [CREW_TOKEN_TYPE],
           arguments: [
             txSettle.object(marketId),
             txSettle.object(CONTRACT_CONFIG.MARKET_REGISTRY_ID),
@@ -320,13 +283,12 @@ export class ContractService {
           ],
         });
         await this.fetchGasPayment(txSettle);
-        const result = await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: txSettle });
-        logger.info(`Prediction market rewards dispersed for game ${gameId}. Digest: ${result.digest}`);
+        await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: txSettle });
       }
 
       return true;
     } catch (error) {
-      logger.error(`Failed to resolve/settle market for game ${gameId}:`, error);
+      logger.error(`Failed to resolve market for game ${gameId}:`, error);
       return false;
     }
   }
@@ -335,10 +297,9 @@ export class ContractService {
     if (!this.operatorKeypair) return false;
     try {
       const tx = new Transaction();
-      const suiGameId = `0x${crypto.createHash('sha256').update(gameId).digest('hex')}`;
       tx.moveCall({
         target: `${CONTRACT_CONFIG.PACKAGE_ID}::game_manager::cancel_game`,
-        arguments: [tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID), tx.pure.address(suiGameId)],
+        arguments: [tx.object(CONTRACT_CONFIG.GAME_MANAGER_ID), tx.pure.address(gameId)],
       });
       await this.fetchGasPayment(tx);
       await this.client.signAndExecuteTransaction({ signer: this.operatorKeypair, transaction: tx });
@@ -346,8 +307,14 @@ export class ContractService {
     } catch (error) { return false; }
   }
 
-  async placeWager(agentAddress: string, gameId: string): Promise<boolean> {
-    return true; 
+  async hasWagered(agentAddress: string, gameId: string): Promise<boolean> {
+    // Simplified for now, just check if player is in game_players list?
+    // In production, check wager_vault::table
+    return false;
+  }
+
+  getVaultAddress(): string {
+    return CONTRACT_CONFIG.WAGER_VAULT_ID;
   }
 
   subscribeToEvents(onEvent: (event: SuiEvent) => void) {

@@ -11,17 +11,17 @@ use one::event;
 
 // ======== Structs ========
 
-public struct WagerVault has key {
+public struct WagerVault<phantom T> has key {
     id: UID,
-    game_wagers: Table<ID, GameWager>,
-    protocol_fee_balance: Balance<CREW_TOKEN>,
+    game_wagers: Table<ID, GameWager<T>>,
+    protocol_fee_balance: Balance<T>,
     admin: address,
     protocol_fee_bps: u64,
 }
 
-public struct GameWager has store {
+public struct GameWager<phantom T> has store {
     game_id: ID,
-    total_pot: Balance<CREW_TOKEN>,
+    total_pot: Balance<T>,
     wager_amount: u64,
     players: vector<address>,
     settled: bool,
@@ -44,8 +44,14 @@ public struct WagerSettled has copy, drop {
 
 // ======== Init ========
 
-fun init(ctx: &mut TxContext) {
-    let vault = WagerVault {
+fun init(_ctx: &mut TxContext) {
+    // We can't init a generic vault without a specific type easily in Move.
+    // Instead, the create_vault function will be used or we init with a default.
+    // For now, I'll provide an entry function to create the vault.
+}
+
+public entry fun create_vault<T>(ctx: &mut TxContext) {
+    let vault = WagerVault<T> {
         id: object::new(ctx),
         game_wagers: table::new(ctx),
         protocol_fee_balance: balance::zero(),
@@ -57,13 +63,13 @@ fun init(ctx: &mut TxContext) {
 
 // ======== Public Functions ========
 
-public fun init_game_wager(
-    vault: &mut WagerVault,
+public fun init_game_wager<T>(
+    vault: &mut WagerVault<T>,
     game_id: ID,
     wager_amount: u64,
 ) {
     assert!(!table::contains(&vault.game_wagers, game_id), 0);
-    table::add(&mut vault.game_wagers, game_id, GameWager {
+    table::add(&mut vault.game_wagers, game_id, GameWager<T> {
         game_id,
         total_pot: balance::zero(),
         wager_amount,
@@ -72,10 +78,10 @@ public fun init_game_wager(
     });
 }
 
-public entry fun place_wager(
-    vault: &mut WagerVault,
+public entry fun place_wager<T>(
+    vault: &mut WagerVault<T>,
     game_id: ID,
-    payment: Coin<CREW_TOKEN>,
+    payment: Coin<T>,
     ctx: &mut TxContext,
 ) {
     assert!(table::contains(&vault.game_wagers, game_id), 1);
@@ -94,8 +100,8 @@ public entry fun place_wager(
     event::emit(WagerPlaced { game_id, agent, amount });
 }
 
-public fun settle_wager(
-    vault: &mut WagerVault,
+public fun settle_wager<T>(
+    vault: &mut WagerVault<T>,
     game_id: ID,
     winners: vector<address>,
     ctx: &mut TxContext,
@@ -114,8 +120,10 @@ public fun settle_wager(
     let winner_pot = total - fee_amount;
     let payout_per_winner = winner_pot / winner_count;
 
-    let fee_balance = balance::split(&mut wager.total_pot, fee_amount);
-    balance::join(&mut vault.protocol_fee_balance, fee_balance);
+    if (fee_amount > 0) {
+        let fee_balance = balance::split(&mut wager.total_pot, fee_amount);
+        balance::join(&mut vault.protocol_fee_balance, fee_balance);
+    };
 
     let mut i = 0;
     while (i < winner_count) {
@@ -134,8 +142,8 @@ public fun settle_wager(
     });
 }
 
-public entry fun withdraw_fees(
-    vault: &mut WagerVault,
+public entry fun withdraw_fees<T>(
+    vault: &mut WagerVault<T>,
     ctx: &mut TxContext,
 ) {
     assert!(ctx.sender() == vault.admin, 5);
@@ -150,12 +158,12 @@ public entry fun withdraw_fees(
 
 // ======== View Functions ========
 
-public fun get_pot_size(vault: &WagerVault, game_id: ID): u64 {
+public fun get_pot_size<T>(vault: &WagerVault<T>, game_id: ID): u64 {
     if (!table::contains(&vault.game_wagers, game_id)) { return 0 };
     balance::value(&table::borrow(&vault.game_wagers, game_id).total_pot)
 }
 
-public fun get_wager_amount(vault: &WagerVault, game_id: ID): u64 {
+public fun get_wager_amount<T>(vault: &WagerVault<T>, game_id: ID): u64 {
     assert!(table::contains(&vault.game_wagers, game_id), 1);
     table::borrow(&vault.game_wagers, game_id).wager_amount
 }

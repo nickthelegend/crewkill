@@ -27,7 +27,7 @@ const E_ALREADY_CLAIMED: u64 = 11;
 // ======== Constants ========
 
 const PROTOCOL_FEE_BPS: u64 = 500; // 5%
-const MIN_BET_MIST: u64 = 10_000_000; // 0.01 OCT minimum bet
+const MIN_BET_MIST: u64 = 10_000_000; // 0.01 tokens minimum bet
 
 // ======== Structs ========
 
@@ -44,18 +44,18 @@ public struct PlayerStats has store, copy, drop {
     losses: u64,
 }
 
-/// One prediction market per game
-public struct PredictionMarket has key {
+/// One prediction market per game, generic over token type T
+public struct PredictionMarket<phantom T> has key {
     id: UID,
     game_id: ID,
 
     /// All players in this game (set at market creation)
     game_players: vector<address>,
 
-    /// Total CREW pot
-    total_pot: Balance<CREW_TOKEN>,
+    /// Total pot in token T
+    total_pot: Balance<T>,
 
-    /// Per-suspect bet pool: suspect_address -> total OCT bet on them
+    /// Per-suspect bet pool: suspect_address -> total T bet on them
     suspect_pools: Table<address, u64>,
 
     /// Per-bettor record: bettor_address -> Bet
@@ -77,7 +77,7 @@ public struct PredictionMarket has key {
 public struct Bet has store, copy, drop {
     bettor: address,
     suspect: address,   // who they think is the impostor
-    amount: u64,        // OCT in MIST
+    amount: u64,        // amount in T units
     correct: bool,      // set at resolution
 }
 
@@ -133,14 +133,12 @@ fun init(ctx: &mut TxContext) {
 // ======== Admin Functions ========
 
 /// Called by admin when a game lobby opens — creates the prediction market
-public entry fun create_market(
+public entry fun create_market<T>(
     registry: &mut MarketRegistry,
     game_id: ID,
     game_players: vector<address>,
     ctx: &mut TxContext,
 ) {
-    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
-    // Allow any operator to create markets on this testnet registry to avoid account lock isolation.
     assert!(!table::contains(&registry.markets, game_id), E_MARKET_ALREADY_EXISTS);
 
     // Initialize per-suspect pools
@@ -153,7 +151,7 @@ public entry fun create_market(
         i = i + 1;
     };
 
-    let market = PredictionMarket {
+    let market = PredictionMarket<T> {
         id: object::new(ctx),
         game_id,
         game_players,
@@ -180,15 +178,12 @@ public entry fun create_market(
 }
 
 /// Called by admin when roles are assigned — closes betting
-public entry fun close_market(
-    market: &mut PredictionMarket,
-    registry: &MarketRegistry,
-    ctx: &mut TxContext,
+public entry fun close_market<T>(
+    market: &mut PredictionMarket<T>,
+    _registry: &MarketRegistry,
+    _ctx: &mut TxContext,
 ) {
-    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
-    // Allow any operator to close betting for this testnet registry.
     assert!(market.open, E_MARKET_CLOSED);
-
     market.open = false;
 
     let total = balance::value(&market.total_pot);
@@ -200,34 +195,26 @@ public entry fun close_market(
 }
 
 /// Called by admin after game ends — resolves market with actual impostors
-public entry fun resolve_market(
-    market: &mut PredictionMarket,
+public entry fun resolve_market<T>(
+    market: &mut PredictionMarket<T>,
     registry: &mut MarketRegistry,
     actual_impostors: vector<address>,
-    ctx: &mut TxContext,
+    _ctx: &mut TxContext,
 ) {
-    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
-    // Allow any operator to resolve markets for this testnet registry.
     assert!(!market.open, E_MARKET_NOT_CLOSED);
     assert!(!market.resolved, E_MARKET_ALREADY_RESOLVED);
 
     market.resolved = true;
     market.actual_impostors = actual_impostors;
 
-    // Mark each bet as correct or not
-    // We iterate through game_players and check their bets
     let total = balance::value(&market.total_pot);
-
-    // Count winners for event
     let mut winner_count = 0u64;
     let mut i = 0;
     let player_len = vector::length(&market.game_players);
-    // We can't iterate table directly in Move, so we track via bets on players
-    // Instead we check each game player's bet if they placed one
+    
     while (i < player_len) {
         let player = *vector::borrow(&market.game_players, i);
         
-        // Initialize stats if not exist
         if (!table::contains(&registry.player_stats, player)) {
             table::add(&mut registry.player_stats, player, PlayerStats { wins: 0, losses: 0 });
         };
@@ -247,9 +234,6 @@ public entry fun resolve_market(
         i = i + 1;
     };
 
-    // Also handle non-player bettors (spectators) — iterate via a separate approach
-    // Since Move tables aren't iterable, bettors must claim and resolution checks on claim
-
     event::emit(MarketResolved {
         market_id: object::id(market),
         game_id: market.game_id,
@@ -259,42 +243,28 @@ public entry fun resolve_market(
     });
 }
 
-/// New function to perform PUSH-style disbursement of rewards.
-/// Admin (server) calculates pro-rata shares and pushes them to winners.
-public entry fun settle_market(
-    market: &mut PredictionMarket,
-    registry: &mut MarketRegistry,
+/// Admin pushes shares to winners
+public entry fun settle_market<T>(
+    market: &mut PredictionMarket<T>,
+    _registry: &mut MarketRegistry,
     winners: vector<address>,
     payouts: vector<u64>,
     ctx: &mut TxContext,
 ) {
-    // assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
     assert!(!market.open, E_MARKET_NOT_CLOSED);
     assert!(market.resolved, E_MARKET_NOT_RESOLVED);
     
     let winner_count = vector::length(&winners);
     assert!(winner_count == vector::length(&payouts), E_INVALID_BET_AMOUNT);
     
-    // First, take the protocol fee from the pot
-    let total_pot = balance::value(&market.total_pot);
-    let fee = (total_pot * market.protocol_fee_bps) / 10000;
-    if (fee > 0 && balance::value(&market.total_pot) >= fee) {
-        let fee_balance = balance::split(&mut market.total_pot, fee);
-        balance::join(&mut registry.protocol_fee_balance, fee_balance);
-    };
-
-    // Distribute to winners
     let mut i = 0;
     while (i < winner_count) {
         let winner = *vector::borrow(&winners, i);
         let amount = *vector::borrow(&payouts, i);
         
         if (amount > 0 && !table::contains(&market.claimed, winner)) {
-            let actual_payout = if (amount > balance::value(&market.total_pot)) {
-                balance::value(&market.total_pot)
-            } else {
-                amount
-            };
+            let available = balance::value(&market.total_pot);
+            let actual_payout = if (amount > available) { available } else { amount };
             
             if (actual_payout > 0) {
                 let payout_coin = coin::from_balance(
@@ -315,54 +285,34 @@ public entry fun settle_market(
     };
 }
 
-/// Admin withdraws protocol fees
-public entry fun withdraw_fees(
-    registry: &mut MarketRegistry,
-    ctx: &mut TxContext,
-) {
-    assert!(ctx.sender() == registry.admin, E_NOT_ADMIN);
-    let amount = balance::value(&registry.protocol_fee_balance);
-    assert!(amount > 0, E_INVALID_BET_AMOUNT);
-    let fee_coin = coin::from_balance(
-        balance::split(&mut registry.protocol_fee_balance, amount),
-        ctx,
-    );
-    transfer::public_transfer(fee_coin, registry.admin);
-}
-
 // ======== Public User Functions ========
 
-/// Anyone (spectator or player) places a bet on who they think is the impostor
-public entry fun place_bet(
-    market: &mut PredictionMarket,
+/// Anyone places a bet on who they think is the impostor
+public entry fun place_bet<T>(
+    market: &mut PredictionMarket<T>,
     suspect: address,
-    payment: Coin<CREW_TOKEN>,
+    payment: Coin<T>,
     ctx: &mut TxContext,
 ) {
     assert!(market.open, E_MARKET_CLOSED);
 
     let bettor = ctx.sender();
     assert!(!table::contains(&market.bets, bettor), E_ALREADY_BET);
-
-    // suspect must be one of the game players
     assert!(vector::contains(&market.game_players, &suspect), E_PLAYER_NOT_IN_GAME);
 
     let amount = coin::value(&payment);
     assert!(amount >= MIN_BET_MIST, E_INVALID_BET_AMOUNT);
 
-    // Update suspect pool
     let pool = table::borrow_mut(&mut market.suspect_pools, suspect);
     *pool = *pool + amount;
 
-    // Record bet
     table::add(&mut market.bets, bettor, Bet {
         bettor,
         suspect,
         amount,
-        correct: false, // updated at resolution
+        correct: false,
     });
 
-    // Add to pot
     balance::join(&mut market.total_pot, coin::into_balance(payment));
 
     event::emit(BetPlaced {
@@ -374,10 +324,10 @@ public entry fun place_bet(
     });
 }
 
-/// Bettor claims their winnings after market is resolved
-public entry fun claim_winnings(
-    market: &mut PredictionMarket,
-    registry: &mut MarketRegistry,
+/// Bettor claims their winnings
+public entry fun claim_winnings<T>(
+    market: &mut PredictionMarket<T>,
+    _registry: &mut MarketRegistry,
     ctx: &mut TxContext,
 ) {
     assert!(market.resolved, E_MARKET_NOT_RESOLVED);
@@ -387,18 +337,13 @@ public entry fun claim_winnings(
     assert!(!table::contains(&market.claimed, bettor), E_ALREADY_CLAIMED);
 
     let bet = *table::borrow(&market.bets, bettor);
-
-    // Check if correct: suspect must be in actual_impostors
     let is_correct = vector::contains(&market.actual_impostors, &bet.suspect);
     assert!(is_correct, E_NO_WINNINGS);
 
-    // Calculate payout:
-    // Total pot after 5% fee, proportional to their bet vs total bet on correct suspects
     let total_pot = balance::value(&market.total_pot);
     let fee = (total_pot * market.protocol_fee_bps) / 10000;
     let distributable = total_pot - fee;
 
-    // Total OCT bet on the correct suspects
     let mut correct_pool = 0u64;
     let mut i = 0;
     let len = vector::length(&market.actual_impostors);
@@ -411,26 +356,13 @@ public entry fun claim_winnings(
     };
 
     assert!(correct_pool > 0, E_NO_WINNINGS);
-
-    // Proportional payout: (bettor_amount / correct_pool) * distributable
     let payout = (bet.amount * distributable) / correct_pool;
     assert!(payout > 0, E_NO_WINNINGS);
 
-    // Mark claimed
     table::add(&mut market.claimed, bettor, true);
 
-    // Take fee into registry
-    if (fee > 0 && balance::value(&market.total_pot) >= fee) {
-        let fee_balance = balance::split(&mut market.total_pot, fee);
-        balance::join(&mut registry.protocol_fee_balance, fee_balance);
-    };
-
-    // Pay out
-    let payout_actual = if (payout > balance::value(&market.total_pot)) {
-        balance::value(&market.total_pot)
-    } else {
-        payout
-    };
+    let available = balance::value(&market.total_pot);
+    let payout_actual = if (payout > available) { available } else { payout };
 
     let payout_coin = coin::from_balance(
         balance::split(&mut market.total_pot, payout_actual),
@@ -447,23 +379,23 @@ public entry fun claim_winnings(
 
 // ======== View Functions ========
 
-public fun is_open(market: &PredictionMarket): bool { market.open }
-public fun is_resolved(market: &PredictionMarket): bool { market.resolved }
-public fun get_total_pot(market: &PredictionMarket): u64 { balance::value(&market.total_pot) }
-public fun get_game_id(market: &PredictionMarket): ID { market.game_id }
-public fun get_actual_impostors(market: &PredictionMarket): vector<address> { market.actual_impostors }
-public fun get_suspect_pool(market: &PredictionMarket, suspect: address): u64 {
+public fun is_open<T>(market: &PredictionMarket<T>): bool { market.open }
+public fun is_resolved<T>(market: &PredictionMarket<T>): bool { market.resolved }
+public fun get_total_pot<T>(market: &PredictionMarket<T>): u64 { balance::value(&market.total_pot) }
+public fun get_game_id<T>(market: &PredictionMarket<T>): ID { market.game_id }
+public fun get_actual_impostors<T>(market: &PredictionMarket<T>): vector<address> { market.actual_impostors }
+public fun get_suspect_pool<T>(market: &PredictionMarket<T>, suspect: address): u64 {
     if (!table::contains(&market.suspect_pools, suspect)) { return 0 };
     *table::borrow(&market.suspect_pools, suspect)
 }
-public fun has_bet(market: &PredictionMarket, bettor: address): bool {
+public fun has_bet<T>(market: &PredictionMarket<T>, bettor: address): bool {
     table::contains(&market.bets, bettor)
 }
-public fun get_bet(market: &PredictionMarket, bettor: address): Bet {
+public fun get_bet<T>(market: &PredictionMarket<T>, bettor: address): Bet {
     assert!(table::contains(&market.bets, bettor), E_NO_WINNINGS);
     *table::borrow(&market.bets, bettor)
 }
-public fun has_claimed(market: &PredictionMarket, bettor: address): bool {
+public fun has_claimed<T>(market: &PredictionMarket<T>, bettor: address): bool {
     table::contains(&market.claimed, bettor)
 }
-public fun get_game_players(market: &PredictionMarket): vector<address> { market.game_players }
+public fun get_game_players<T>(market: &PredictionMarket<T>): vector<address> { market.game_players }

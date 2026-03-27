@@ -83,21 +83,21 @@ export class WebSocketRelayServer {
     this.config = config;
     this.gameStateManager = new GameStateManager();
     this.aiAgentManager = new ServerAgentManager();
-    
+
     // Periodic state broadcast for smooth frontend updates
     setInterval(() => {
-        this.rooms.forEach((room, roomId) => {
-            if (room.phase !== 'lobby' && room.phase !== 'ended') {
-                const gameState = this.gameStateManager.getGame(roomId);
-                if (gameState) {
-                    this.broadcastToRoom(roomId, {
-                        type: "server:game_state",
-                        gameId: roomId,
-                        state: gameState,
-                    });
-                }
-            }
-        });
+      this.rooms.forEach((room, roomId) => {
+        if (room.phase !== 'lobby' && room.phase !== 'ended') {
+          const gameState = this.gameStateManager.getGame(roomId);
+          if (gameState) {
+            this.broadcastToRoom(roomId, {
+              type: "server:game_state",
+              gameId: roomId,
+              state: gameState,
+            });
+          }
+        }
+      });
     }, 500);
 
     // Watchdog for "Zombie" rooms (stuck in lobby/boarding too long)
@@ -108,19 +108,19 @@ export class WebSocketRelayServer {
       for (const [roomId, room] of this.rooms.entries()) {
         const extended = this.extendedState.get(roomId);
         const age = now - room.createdAt;
-        
+
         if ((room.phase === "lobby" || room.phase === "boarding") && age > MAX_LOBBY_AGE) {
           if (!extended?.lobbyLocked) {
-             logger.warn(`Watchdog: Room ${roomId} is ${Math.round(age/1000)}s old. Forcing game start...`);
-             if (extended) extended.lobbyLocked = true;
-             await this.startGameInternal(roomId).catch(err => {
-                logger.error(`Watchdog: Failed to force start room ${roomId}:`, err);
-             });
-             
-             // Safety: explicitly close market if it exists
-             if (room.marketId) {
-                contractService.closeMarket(roomId, room.marketId).catch(() => {});
-             }
+            logger.warn(`Watchdog: Room ${roomId} is ${Math.round(age / 1000)}s old. Forcing game start...`);
+            if (extended) extended.lobbyLocked = true;
+            await this.startGameInternal(roomId).catch(err => {
+              logger.error(`Watchdog: Failed to force start room ${roomId}:`, err);
+            });
+
+            // Safety: explicitly close market if it exists
+            if (room.marketId) {
+              contractService.closeMarket(roomId, room.marketId).catch(() => { });
+            }
           }
         }
       }
@@ -140,7 +140,7 @@ export class WebSocketRelayServer {
       if (WAGERS_DISABLED) {
         logger.warn("⚠️  WAGERS DISABLED - Players can join games without depositing funds");
       }
-      
+
       // Sync active rooms from database to memory (Recovery)
       this.syncWithDatabase().catch(err => logger.error("Recovery failed:", err));
     });
@@ -591,9 +591,9 @@ export class WebSocketRelayServer {
       if (!activeRoom.spectators.includes(client.id)) {
         activeRoom.spectators.push(client.id);
       }
-      
+
       logger.info(`Client ${client.id} joined room ${finalRoomId} as SPECTATOR`);
-      
+
       // Send confirm
       this.send(client, {
         type: "server:room_update",
@@ -619,7 +619,7 @@ export class WebSocketRelayServer {
       activeRoom.maxPlayers,
       MAX_PLAYERS_PER_ROOM,
     );
-    
+
     if (activeRoom.players.length >= effectiveMaxPlayers) {
       this.sendError(
         client,
@@ -660,14 +660,14 @@ export class WebSocketRelayServer {
       this.sendError(client, "ROOM_FULL", `Room filled up (max ${effectiveMaxPlayers} players)`);
       return;
     }
-    
+
     // Check if player already in room
     const exists = activeRoom.players.some(p => p.address.toLowerCase() === (client.address || client.id).toLowerCase());
     if (exists) {
       this.sendError(client, "ALREADY_IN_ROOM", "You have already joined this room.");
       return;
     }
-    
+
     activeRoom.players.push(playerState);
 
     // Register player with GameStateManager
@@ -918,12 +918,12 @@ export class WebSocketRelayServer {
     if (!roomId) {
       const actualWager = wagerAmount || wagerService.getWagerAmount().toString();
       // Default tasks required: 5 per player
-      const tasksRequired = 5; 
-      
+      const tasksRequired = 5;
+
       logger.info("Triggering ON-CHAIN game creation...");
       const onChainResult = await contractService.createGame(
-        Math.min(maxPlayers, MAX_PLAYERS_PER_ROOM), 
-        Number(actualWager), 
+        Math.min(maxPlayers, MAX_PLAYERS_PER_ROOM),
+        Number(actualWager),
         tasksRequired
       );
 
@@ -971,11 +971,11 @@ export class WebSocketRelayServer {
 
     // Register game in database with 7-minute betting window by default
     const now = Date.now();
-    const bettingDuration = LOBBY_WAITING_DURATION; 
+    const bettingDuration = LOBBY_WAITING_DURATION;
     try {
       await databaseService.createScheduledGame(roomId, now, now + bettingDuration);
       logger.info(`Room ${roomId} registered in database.`);
-      
+
       // DEFERRED MARKET CREATION:
       // We no longer create the market immediately during initialization
       // because we need players to be present for the Move contract to create suspects.
@@ -991,26 +991,26 @@ export class WebSocketRelayServer {
     // If this is a restoration, try to get existing players from DB
     let restoredCount = 0;
     try {
-        const dbGame = await databaseService.getGameByRoomId(roomId);
-        if (dbGame?.players && dbGame.players.length > 0) {
-            logger.info(`Restoring ${dbGame.players.length} players for room ${roomId} from database...`);
-            room.players = (dbGame.players as any[]).map((p: any) => ({
-                ...p,
-                name: p.name || p.address.slice(0, 8), // Ensure name is restored
-                isAlive: p.isAlive ?? true,
-                tasksCompleted: p.tasksCompleted ?? 0,
-                totalTasks: 30,
-                hasVoted: false,
-            }));
-            restoredCount = room.players.length;
-            
-            // Sync current game state too
-            for (const player of room.players) {
-                this.gameStateManager.updatePlayer(roomId, player);
-            }
+      const dbGame = await databaseService.getGameByRoomId(roomId);
+      if (dbGame?.players && dbGame.players.length > 0) {
+        logger.info(`Restoring ${dbGame.players.length} players for room ${roomId} from database...`);
+        room.players = (dbGame.players as any[]).map((p: any) => ({
+          ...p,
+          name: p.name || p.address.slice(0, 8), // Ensure name is restored
+          isAlive: p.isAlive ?? true,
+          tasksCompleted: p.tasksCompleted ?? 0,
+          totalTasks: 30,
+          hasVoted: false,
+        }));
+        restoredCount = room.players.length;
+
+        // Sync current game state too
+        for (const player of room.players) {
+          this.gameStateManager.updatePlayer(roomId, player);
         }
+      }
     } catch (err) {
-        logger.error(`Error restoring players for ${roomId}:`, err);
+      logger.error(`Error restoring players for ${roomId}:`, err);
     }
 
     // Spawn AI agents if requested and NOT already restored
@@ -1095,9 +1095,9 @@ export class WebSocketRelayServer {
         const scheduledTimeMs = parseInt(roomId.split("_")[1] || "0", 10);
         const now = Date.now();
         const waitMs = Math.max(0, scheduledTimeMs - now);
-        
+
         logger.info(`Scheduled room ${roomId} reached minimum players. Waiting ${waitMs / 1000}s to start game.`);
-        
+
         // Create prediction market on-chain immediately if enough players so betting can begin!
         this.ensureMarketDeployment(roomId);
 
@@ -1127,16 +1127,16 @@ export class WebSocketRelayServer {
         this.ensureMarketDeployment(roomId);
 
         // Start in "boarding" phase so agents stay in cafeteria and UI shows lobby
-        this.startGameInternal(roomId, true); 
+        this.startGameInternal(roomId, true);
 
         // Start lobby waiting timer
         extended.lobbyTimer = setTimeout(async () => {
           extended.lobbyLocked = true;
           logger.info(`Room ${roomId} lobby locked after waiting period. Moving to playing phase.`);
-          
+
           // Actually transition to PLAYING mode now
           await this.startGameInternal(roomId);
-          
+
           // SAFETY: Explicitly close the market now (in case startGameInternal 
           // missed it because the marketId wasn't set yet during initial boarding)
           const currentRoom = this.rooms.get(roomId);
@@ -1146,7 +1146,7 @@ export class WebSocketRelayServer {
               logger.error(`Failed to close market for ${roomId} after lobby lock:`, err);
             });
           }
-          
+
           this.broadcastToRoom(roomId, {
             type: "server:lobby_locked",
             gameId: roomId,
@@ -1161,30 +1161,30 @@ export class WebSocketRelayServer {
     // If game has ALREADY started but lobby is not locked, assign role to this late joiner
     // FIXED: Include "boarding" phase as well, since that's the initial state during lobby window
     if ((room.phase === "playing" || room.phase === "boarding") && !extended.lobbyLocked) {
-        logger.info(`Player ${room.players[room.players.length-1].address} joined ACTIVE game ${roomId}, assigning role...`);
-        
-        // Late joiners are always crewmates for now to avoid rebalancing impostors
-        const player = room.players[room.players.length - 1];
-        const playerAddress = player.address.toLowerCase();
-        
-        // Send role (crewmate)
-        const client = this.findClientByAddress(player.address);
-        if (client) {
-            this.send(client, {
-                type: "server:role_assigned",
-                gameId: roomId,
-                role: "crewmate",
-            });
-            
-            // Send tasks
-            const taskLocations = this.generateTaskLocations(10);
-            this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
-            this.send(client, {
-                type: "server:tasks_assigned",
-                gameId: roomId,
-                taskLocations,
-            });
-        }
+      logger.info(`Player ${room.players[room.players.length - 1].address} joined ACTIVE game ${roomId}, assigning role...`);
+
+      // Late joiners are always crewmates for now to avoid rebalancing impostors
+      const player = room.players[room.players.length - 1];
+      const playerAddress = player.address.toLowerCase();
+
+      // Send role (crewmate)
+      const client = this.findClientByAddress(player.address);
+      if (client) {
+        this.send(client, {
+          type: "server:role_assigned",
+          gameId: roomId,
+          role: "crewmate",
+        });
+
+        // Send tasks
+        const taskLocations = this.generateTaskLocations(10);
+        this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
+        this.send(client, {
+          type: "server:tasks_assigned",
+          gameId: roomId,
+          taskLocations,
+        });
+      }
     }
 
     // Auto-start if reached max players (during lobby waiting period)
@@ -1219,33 +1219,33 @@ export class WebSocketRelayServer {
     // ONLY assign impostors if transitioning to PLAYING (phase 2) OR if we skipped initial boarding
     // This prevents double/triple role assignment which leads to too many impostors
     if (!isInitialBoarding && extended.impostors.size === 0) {
-        const impostorCount = Math.max(1, Math.min(
-            room.impostorCount,
-            Math.floor(room.players.length / 3) // Heuristic: ~1/3 impostors max
-        ));
-        
-        const isTestRoom = roomId.startsWith("TEST");
-        const impostorIndices = new Set<number>();
-        
-        if (isTestRoom && room.players.length > 0) {
-            impostorIndices.add(0);
-            logger.warn(`TEST ROOM: Picking ${room.players[0].address} as impostor`);
-        } else {
-            while (impostorIndices.size < impostorCount) {
-                impostorIndices.add(Math.floor(Math.random() * room.players.length));
-            }
-        }
+      const impostorCount = Math.max(1, Math.min(
+        room.impostorCount,
+        Math.floor(room.players.length / 3) // Heuristic: ~1/3 impostors max
+      ));
 
-        for (const idx of impostorIndices) {
-            impostorAddresses.push(room.players[idx].address);
+      const isTestRoom = roomId.startsWith("TEST");
+      const impostorIndices = new Set<number>();
+
+      if (isTestRoom && room.players.length > 0) {
+        impostorIndices.add(0);
+        logger.warn(`TEST ROOM: Picking ${room.players[0].address} as impostor`);
+      } else {
+        while (impostorIndices.size < impostorCount) {
+          impostorIndices.add(Math.floor(Math.random() * room.players.length));
         }
-        
-        // Update extended state with fresh assignment
-        extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
-        this.gameStateManager.assignImpostors(roomId, impostorAddresses);
+      }
+
+      for (const idx of impostorIndices) {
+        impostorAddresses.push(room.players[idx].address);
+      }
+
+      // Update extended state with fresh assignment
+      extended.impostors = new Set(impostorAddresses.map((a) => a.toLowerCase()));
+      this.gameStateManager.assignImpostors(roomId, impostorAddresses);
     } else {
-        // Carry over existing impostors if already assigned
-        impostorAddresses.push(...Array.from(extended.impostors));
+      // Carry over existing impostors if already assigned
+      impostorAddresses.push(...Array.from(extended.impostors));
     }
     extended.currentRound = 1;
     extended.currentPhase = phaseValue;
@@ -1261,7 +1261,7 @@ export class WebSocketRelayServer {
     if (phaseValue === 2) {
       // 1. Close in database (Convex)
       await databaseService.closeBetting(roomId);
-      
+
       // 2. Close on-chain (if market exists)
       if (room.marketId) {
         logger.info(`Closing prediction market for starting game in room ${roomId}...`);
@@ -1275,7 +1275,7 @@ export class WebSocketRelayServer {
 
     // Also register with GameStateManager
     this.gameStateManager.getOrCreateGame(roomId);
-    this.gameStateManager.updatePhase(roomId, phaseValue, 1, Date.now() + 60000); 
+    this.gameStateManager.updatePhase(roomId, phaseValue, 1, Date.now() + 60000);
     this.gameStateManager.assignImpostors(roomId, impostorAddresses);
 
     // CRITICAL FIX: Register ALL players in the GameStateManager
@@ -1299,14 +1299,14 @@ export class WebSocketRelayServer {
 
     // Sync roles to the actual player objects in the room array for the frontend
     for (const player of room.players) {
-        const isImp = extended.impostors.has(player.address.toLowerCase());
-        player.role = isImp ? Role.Impostor : Role.Crewmate;
-        
-        // Assign tasks ONLY when moving to playing (phase 2)
-        if (phaseValue === 2 && !isImp) {
-            const taskLocations = this.generateTaskLocations(10);
-            this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
-        }
+      const isImp = extended.impostors.has(player.address.toLowerCase());
+      player.role = isImp ? Role.Impostor : Role.Crewmate;
+
+      // Assign tasks ONLY when moving to playing (phase 2)
+      if (phaseValue === 2 && !isImp) {
+        const taskLocations = this.generateTaskLocations(10);
+        this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
+      }
     }
 
     logger.info(
@@ -1315,40 +1315,40 @@ export class WebSocketRelayServer {
 
     // Persist game start to database (background)
     const wagerAmount = wagerService.getWagerAmount();
-    
+
     if (isInitialBoarding) {
-        const scheduledAt = Date.now() + LOBBY_WAITING_DURATION;
-        databaseService.createScheduledGame(roomId, scheduledAt, scheduledAt);
+      const scheduledAt = Date.now() + LOBBY_WAITING_DURATION;
+      databaseService.createScheduledGame(roomId, scheduledAt, scheduledAt);
     } else {
-        databaseService.startGame(
-          roomId,
-          room.players.map((p) => ({
-            walletAddress: p.address,
-            isImpostor: extended.impostors.has(p.address.toLowerCase()),
-            colorId: p.colorId,
-            wagerAmount,
-          })),
-        );
+      databaseService.startGame(
+        roomId,
+        room.players.map((p) => ({
+          walletAddress: p.address,
+          isImpostor: extended.impostors.has(p.address.toLowerCase()),
+          colorId: p.colorId,
+          wagerAmount,
+        })),
+      );
     }
 
     // Register game on-chain if not already done
     if (!room.creationDigest) {
-       logger.info(`Game ${roomId} being created on-chain...`);
-       try {
-         const onChainResult = await contractService.createGame(
-            room.maxPlayers, 
-            Number(room.wagerAmount || "100000000"), 
-            5
-         );
-         if (onChainResult) {
-            room.creationDigest = onChainResult.digest;
-            logger.info(`Game ${roomId} created on-chain successfully with digest ${onChainResult.digest}`);
-         } else {
-            logger.warn(`Failed to create game ${roomId} on-chain (continuing in off-chain mode)`);
-         }
-       } catch (err) {
-         logger.error(`Error creating game ${roomId} on-chain:`, err);
-       }
+      logger.info(`Game ${roomId} being created on-chain...`);
+      try {
+        const onChainResult = await contractService.createGame(
+          room.maxPlayers,
+          Number(room.wagerAmount || "100000000"),
+          5
+        );
+        if (onChainResult) {
+          room.creationDigest = onChainResult.digest;
+          logger.info(`Game ${roomId} created on-chain successfully with digest ${onChainResult.digest}`);
+        } else {
+          logger.warn(`Failed to create game ${roomId} on-chain (continuing in off-chain mode)`);
+        }
+      } catch (err) {
+        logger.error(`Error creating game ${roomId} on-chain:`, err);
+      }
     }
 
     // FIXED: Only set to "playing" and broadcast game_started during actual playing phase (not boarding)
@@ -1362,31 +1362,31 @@ export class WebSocketRelayServer {
 
     // Final check for market - if still missing, try one last time
     if (!room.marketId) {
-        this.ensureMarketDeployment(roomId);
+      this.ensureMarketDeployment(roomId);
     }
 
     // Role and task assignments are only sent when phase is 2 (final)
     if (phaseValue === 2) {
-        for (const [clientId, client] of this.clients) {
-          if (client.roomId !== roomId || !client.address) continue;
-          const isImpostor = extended.impostors.has(client.address.toLowerCase());
-          this.send(client, {
-            type: "server:role_assigned",
-            gameId: roomId,
-            role: isImpostor ? "impostor" : "crewmate",
-            impostors: isImpostor ? impostorAddresses : undefined,
-          });
-          if (!isImpostor) {
-            const taskLocs = this.gameStateManager.getTaskLocations(roomId, client.address);
-            if (taskLocs.length > 0) {
-              this.send(client, {
-                type: "server:tasks_assigned",
-                gameId: roomId,
-                taskLocations: taskLocs,
-              });
-            }
+      for (const [clientId, client] of this.clients) {
+        if (client.roomId !== roomId || !client.address) continue;
+        const isImpostor = extended.impostors.has(client.address.toLowerCase());
+        this.send(client, {
+          type: "server:role_assigned",
+          gameId: roomId,
+          role: isImpostor ? "impostor" : "crewmate",
+          impostors: isImpostor ? impostorAddresses : undefined,
+        });
+        if (!isImpostor) {
+          const taskLocs = this.gameStateManager.getTaskLocations(roomId, client.address);
+          if (taskLocs.length > 0) {
+            this.send(client, {
+              type: "server:tasks_assigned",
+              gameId: roomId,
+              taskLocations: taskLocs,
+            });
           }
         }
+      }
     }
 
     // Broadcast phase change
@@ -1434,13 +1434,13 @@ export class WebSocketRelayServer {
 
     // Check database first in case it's already there but not in memory
     try {
-        const dbGame = await databaseService.getGameByRoomId(roomId);
-        if (dbGame?.marketId) {
-           room.marketId = dbGame.marketId;
-           return;
-        }
+      const dbGame = await databaseService.getGameByRoomId(roomId);
+      if (dbGame?.marketId) {
+        room.marketId = dbGame.marketId;
+        return;
+      }
     } catch (err) {
-        logger.error(`Error checking DB for market in ${roomId}:`, err);
+      logger.error(`Error checking DB for market in ${roomId}:`, err);
     }
 
     // Need at least 9 players to have suspects in a market (usually 9-10 in scheduled games)
@@ -1453,21 +1453,21 @@ export class WebSocketRelayServer {
     this.creatingMarkets.add(roomId);
     logger.info(`Ensuring market deployment for room ${roomId} (${room.players.length} players)...`);
     try {
-        const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
-        if (marketId) {
-            await databaseService.updateGameMarketId(roomId, marketId);
-            room.marketId = marketId;
-            this.broadcastToRoom(roomId, { type: "server:room_update", room });
-            logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
-        } else {
-            // If creation failed (likely gas lock), we'll try again on next player join/update
-            logger.warn(`Market creation returned null for ${roomId}, check operator logs.`);
-        }
+      const marketId = await contractService.createMarket(roomId, room.players.map(p => p.address));
+      if (marketId) {
+        await databaseService.updateGameMarketId(roomId, marketId);
+        room.marketId = marketId;
+        this.broadcastToRoom(roomId, { type: "server:room_update", room });
+        logger.info(`Successfully deployed and synced market ${marketId} for room ${roomId}`);
+      } else {
+        // If creation failed (likely gas lock), we'll try again on next player join/update
+        logger.warn(`Market creation returned null for ${roomId}, check operator logs.`);
+      }
     } catch (err) {
-        logger.error(`Failed to ensure market for ${roomId}:`, err);
+      logger.error(`Failed to ensure market for ${roomId}:`, err);
     } finally {
-        (room as any).marketLoading = false;
-        this.creatingMarkets.delete(roomId);
+      (room as any).marketLoading = false;
+      this.creatingMarkets.delete(roomId);
     }
   }
 
@@ -2661,10 +2661,10 @@ export class WebSocketRelayServer {
     logger.info(`Discussion phase started in room ${roomId}`);
 
     if (room.marketId) {
-       logger.info(`Closing prediction market for room ${roomId}...`);
-       contractService.closeMarket(roomId, room.marketId).catch((err: any) => {
-          logger.error(`Failed to close market for ${roomId}:`, err);
-       });
+      logger.info(`Closing prediction market for room ${roomId}...`);
+      contractService.closeMarket(roomId, room.marketId).catch((err: any) => {
+        logger.error(`Failed to close market for ${roomId}:`, err);
+      });
     }
 
     // Set timer to transition to voting
@@ -3236,7 +3236,7 @@ export class WebSocketRelayServer {
 
     // Sync to Convex and check start conditions
     this.updateConvexPlayers(roomId);
-    
+
     // Track in agent stats
     this.getOrCreateAgentStats(agent.address, agent.name);
 
@@ -3427,14 +3427,14 @@ export class WebSocketRelayServer {
   // Get all rooms (for external access)
   public async syncWithDatabase(): Promise<void> {
     logger.info("Syncing in-memory rooms with database for recovery...");
-    
+
     // Use the database service to list games from Convex/DB
     const activeGames = await databaseService.listGames();
-    
+
     // Filter for games that are active (waiting/boarding/playing) and not in-memory
-    const roomsToRestore = activeGames.filter((g: any) => 
-      g.id && 
-      g.status !== "ended" && 
+    const roomsToRestore = activeGames.filter((g: any) =>
+      g.id &&
+      g.status !== "ended" &&
       !this.rooms.has(g.roomId)
     );
 
@@ -3443,8 +3443,8 @@ export class WebSocketRelayServer {
       // Re-create the room in-memory using the existing roomId (reuses metadata if exists)
       await this.createRoom(
         undefined, // System recovered
-        10, 
-        2, 
+        10,
+        2,
         game.wagerAmount || "100000000",
         game.players?.length || 8, // Use existing player count or default to 8
         game.roomId
@@ -3461,13 +3461,13 @@ export class WebSocketRelayServer {
           this.registerAIAgent(agent, game.roomId, true); // skipTrigger=true during recovery
         }
       }
-      
+
       // Update marketId from DB
       if (room && game.marketId) {
         room.marketId = game.marketId;
       }
     }
-    
+
     if (roomsToRestore.length > 0) {
       logger.info(`Successfully recovered ${roomsToRestore.length} rooms from database.`);
     }

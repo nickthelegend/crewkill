@@ -42,7 +42,7 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
 
   const totalProfit = agents.reduce((sum, agent) => {
     if (!agent.balance) return sum;
-    return sum + Number(BigInt(agent.balance.totalWon) - BigInt(agent.balance.totalLost)) / 1e18;
+    return sum + Number(BigInt(agent.balance.totalWon) - BigInt(agent.balance.totalLost)) / 1e9;
   }, 0);
 
   const handleWithdraw = async (agentAddress: string, amount: string = "max") => {
@@ -224,9 +224,9 @@ export function UserDashboard({ onClose, onJoinGame, allRooms }: UserDashboardPr
                             : balance && (BigInt(balance.totalLost) > 0) ? "text-red-400" : "text-white"
                         }`}>
                           {balance 
-                            ? ((Number(BigInt(balance.totalWon) - BigInt(balance.totalLost)) / 1e18).toFixed(4))
+                            ? ((Number(BigInt(balance.totalWon) - BigInt(balance.totalLost)) / 1e9).toFixed(4))
                             : "0.0000"
-                          } <span className="text-[10px] opacity-70">ETH</span>
+                          } <span className="text-[10px] opacity-70">CREW</span>
                         </div>
                       </div>
                     </div>
