@@ -66,6 +66,7 @@ interface ExtendedRoomState extends RoomState {
   actionRoundTimer: NodeJS.Timeout | null; // Timer for auto-meeting after action phase
   lobbyLocked: boolean; // True after lobby waiting period expires
   lobbyTimer: NodeJS.Timeout | null; // Timer for lobby waiting period
+  eventHistory: ServerMessage[]; // HISTORY FOR RECAPS
 }
 
 export class WebSocketRelayServer {
@@ -611,6 +612,15 @@ export class WebSocketRelayServer {
           });
         }
       }
+
+      // Send event history for recaps/live logs
+      if (extended?.eventHistory && extended.eventHistory.length > 0) {
+        this.send(client, {
+          type: "server:event_history",
+          gameId: finalRoomId,
+          history: extended.eventHistory,
+        });
+      }
       return;
     }
 
@@ -959,6 +969,7 @@ export class WebSocketRelayServer {
       actionRoundTimer: null, // Will be set when action phase begins
       lobbyLocked: false, // Lobby open for joins
       lobbyTimer: null, // Will be set when first player joins
+      eventHistory: [],
     };
 
     this.rooms.set(roomId, room);
@@ -1853,6 +1864,16 @@ export class WebSocketRelayServer {
   private broadcastToRoom(roomId: string, message: ServerMessage): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
+
+    // Record game-relevant events to history for recaps/late-joining spectators
+    const extended = this.extendedState.get(roomId);
+    if (extended && message.type !== 'server:room_update' && message.type !== 'server:room_list') {
+      extended.eventHistory.push(message);
+      // Keep history manageable if game lasts too long
+      if (extended.eventHistory.length > 500) {
+        extended.eventHistory.shift();
+      }
+    }
 
     // Send to all players
     for (const player of room.players) {
@@ -3433,8 +3454,8 @@ export class WebSocketRelayServer {
 
     // Filter for games that are active (waiting/boarding/playing) and not in-memory
     const roomsToRestore = activeGames.filter((g: any) =>
-      g.id &&
-      g.status !== "ended" &&
+      g.roomId &&
+      (g.status === "CREATED" || g.status === "ACTIVE") &&
       !this.rooms.has(g.roomId)
     );
 

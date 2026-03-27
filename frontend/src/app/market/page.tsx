@@ -92,7 +92,7 @@ function MarketContent() {
 
 function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick: () => void, isPast?: boolean }) {
   const players = game.players || [];
-  const pot = parseFloat(game.totalPot || "0") / 1e9;
+
   const bettingEndsAt = game.bettingEndsAt ? new Date(game.bettingEndsAt) : null;
   const isBettingOpen = bettingEndsAt ? Date.now() < bettingEndsAt.getTime() : false;
 
@@ -158,13 +158,6 @@ function GameMarketCard({ game, onClick, isPast = false }: { game: any, onClick:
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <div className="text-[8px] text-white/20 uppercase font-black tracking-widest mb-2 font-space">Total_Pot</div>
-              <div className="text-3xl font-black text-white tabular-nums tracking-tighter leading-none font-space">
-                {pot.toFixed(2)} <span className="text-red-500 text-[10px] align-top ml-1 font-space">$CREW</span>
               </div>
             </div>
           </div>

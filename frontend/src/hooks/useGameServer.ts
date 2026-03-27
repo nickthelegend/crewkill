@@ -9,6 +9,7 @@ import {
   Role,
   GameLog,
   GamePhase,
+  PhaseNames,
 } from "@/types/game";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8082";
@@ -280,6 +281,65 @@ export function useGameServer(): UseGameServerReturn {
                 setDeadBodies(message.state.deadBodies);
               }
 
+            }
+            break;
+
+          case "server:event_history":
+            if (message.history && Array.isArray(message.history)) {
+              const historicalLogs: any[] = [];
+              message.history.forEach((m: any) => {
+                let logType: "kill" | "report" | "meeting" | "vote" | "eject" | "task" | "sabotage" | "join" | "start" | "move" | "chat" | null = null;
+                let logMsg = "";
+                let logAddr = m.address;
+                let logTarget = m.targetAddress;
+
+                switch (m.type) {
+                  case "server:player_moved":
+                    logType = "move";
+                    logMsg = `${m.address.slice(0, 8)}... moved to ${LocationNames[m.to as Location] || "Room " + m.to}`;
+                    break;
+                  case "server:kill_occurred":
+                    logType = "kill";
+                    logMsg = `☠️ ${m.victim.slice(0, 8)}... was eliminated at ${LocationNames[m.location as Location] || "unknown location"}!`;
+                    logTarget = m.victim;
+                    break;
+                  case "server:phase_changed":
+                    logType = "start";
+                    logMsg = `Phase changed to ${PhaseNames[m.phase as GamePhase] || m.phase}`;
+                    break;
+                  case "server:task_completed":
+                    logType = "task";
+                    logMsg = `✅ ${m.player.slice(0, 8)}... completed a task (${m.tasksCompleted}/${m.totalTasks})`;
+                    logAddr = m.player;
+                    break;
+                  case "server:body_reported":
+                    logType = "report";
+                    logMsg = `🚨 BODY REPORTED! ${m.reporter.slice(0, 8)}... found ${m.victim.slice(0, 8)}...`;
+                    logAddr = m.reporter;
+                    logTarget = m.victim;
+                    break;
+                  case "server:player_ejected":
+                    logType = "eject";
+                    logMsg = `🚀 ${m.ejected.slice(0, 8)}... was ejected!`;
+                    logAddr = m.ejected;
+                    break;
+                  case "server:game_ended":
+                    logType = "start";
+                    logMsg = m.crewmatesWon ? "🎉 CREWMATES WIN!" : "💀 IMPOSTORS WIN!";
+                    break;
+                }
+
+                if (logType) {
+                  historicalLogs.push({
+                    type: logType,
+                    message: logMsg,
+                    timestamp: m.timestamp || Date.now(),
+                    address: logAddr,
+                    targetAddress: logTarget,
+                  });
+                }
+              });
+              setLogs((prev) => [...historicalLogs.slice(-100), ...prev].slice(-200));
             }
             break;
 

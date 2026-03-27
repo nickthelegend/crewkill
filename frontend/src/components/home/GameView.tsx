@@ -138,6 +138,13 @@ export function GameView({
   const logEndRef = useRef<HTMLDivElement>(null);
   const [sidebarTab, setSidebarTab] = useState<"agents" | "logs" | "market">("agents");
 
+  // Auto-scroll logs to bottom
+  useEffect(() => {
+    if (sidebarTab === "logs" && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, sidebarTab]);
+
   useEffect(() => {
     if (players.length > 0) setStablePlayers(players);
     if (currentRoom) setStableRoom(currentRoom);

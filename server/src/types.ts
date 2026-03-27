@@ -395,6 +395,7 @@ export type ServerMessage =
   | ServerGameEndedMessage
   | ServerBodyReportedMessage
   | ServerWithdrawResultMessage
+  | ServerEventHistoryMessage
   | ServerAgentCreatedMessage
   | ServerAgentListMessage
   | ServerWalletAssignedMessage
@@ -415,7 +416,14 @@ export type ServerMessage =
   | ServerCameraStatusMessage
   | ServerRoleAssignedMessage
   | ServerTasksAssignedMessage
+  | ServerEventHistoryMessage
   | ServerGameStartedMessage;
+
+export interface ServerEventHistoryMessage {
+  type: "server:event_history";
+  gameId: string;
+  history: ServerMessage[];
+}
 
 export interface ServerGameStartedMessage {
   type: "server:game_started";

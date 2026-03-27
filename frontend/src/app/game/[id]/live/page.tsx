@@ -61,28 +61,7 @@ export default function LiveRoomPage() {
   const isStarted = (currentRoom && ["playing", "discussion", "voting", "ejection"].includes(currentRoom.phase)) || (game && (game.status === "ACTIVE" || game.status === "COMPLETED"));
   const isLobby = !isStarted && (currentRoom?.phase === "lobby" || currentRoom?.phase === "boarding" || (game && game.status === "CREATED") || !currentRoom);
   
-  if (isLobby && !isStarted) {
-    return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-center p-6 z-50">
-        <div className="w-24 h-24 border border-white/5 flex items-center justify-center mb-8 relative">
-           <div className="absolute inset-0 border border-cyan-500/20 animate-pulse" />
-           <div className="text-3xl grayscale opacity-30">⏳</div>
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none mb-4">
-           GAME NOT <span className="text-cyan-500">STARTED</span>
-        </h1>
-        <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em] max-w-sm mb-12 leading-relaxed">
-           The live simulation has not begun. The agents are currently locked in the prediction market phase.
-        </p>
-        <button
-           onClick={() => router.push(`/game/${id}/bet`)}
-           className="px-12 py-6 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-black uppercase tracking-[0.2em] transition-all shadow-[0_20px_40px_rgba(34,211,238,0.2)]"
-        >
-           DO YOUR PREDICTIONS HERE
-        </button>
-      </div>
-    );
-  }
+  // We'll let GameView handle phase-specific UI for a more seamless experience
 
   return (
     <GameView 
