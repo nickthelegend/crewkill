@@ -702,10 +702,39 @@ export class WebSocketRelayServer {
       return;
     }
 
-    // Check if player already in room
-    const exists = activeRoom.players.some(p => p.address.toLowerCase() === (client.address || client.id).toLowerCase());
-    if (exists) {
-      this.sendError(client, "ALREADY_IN_ROOM", "You have already joined this room.");
+    // Check if player already in room - if so, just sync their state and confirm join
+    const existingPlayer = activeRoom.players.find(p => p.address.toLowerCase() === (client.address || client.id).toLowerCase());
+    if (existingPlayer) {
+      logger.info(`Player ${client.name} REJOINED room ${finalRoomId}, syncing state...`);
+      // Update color if provided
+      if (colorId !== undefined) existingPlayer.colorId = colorId;
+      
+      // Confirm join
+      this.send(client, {
+        type: "server:room_update",
+        room: activeRoom,
+      });
+
+      // Send game state if active
+      if (activeRoom.phase !== "lobby") {
+        const gameState = this.gameStateManager.getGame(finalRoomId);
+        if (gameState) {
+          this.send(client, {
+            type: "server:game_state",
+            gameId: finalRoomId,
+            state: gameState,
+          });
+        }
+      }
+
+      // Send logs
+      if (extended?.eventHistory && extended.eventHistory.length > 0) {
+        this.send(client, {
+          type: "server:event_history",
+          gameId: finalRoomId,
+          history: extended.eventHistory,
+        });
+      }
       return;
     }
 

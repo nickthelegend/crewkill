@@ -349,6 +349,11 @@ export function useGameServer(): UseGameServerReturn {
                     logAddr = m.ejected;
                     latestPlayers.set(m.ejected, { isAlive: false });
                     break;
+                  case "server:player_joined":
+                    logType = "join";
+                    logMsg = `Player joined (color ${m.player.colorId})`;
+                    logAddr = m.player.address;
+                    break;
                   case "server:game_ended":
                     logType = "start";
                     logMsg = m.crewmatesWon ? "🎉 CREWMATES WIN!" : "💀 IMPOSTORS WIN!";
@@ -389,7 +394,9 @@ export function useGameServer(): UseGameServerReturn {
                 setDeadBodies(historicalDeadBodies);
               }
 
-              setLogs((prev) => [...historicalLogs.slice(-100), ...prev].slice(-200));
+              if (historicalLogs.length > 0) {
+                setLogs(historicalLogs.slice(-200));
+              }
             }
             break;
 

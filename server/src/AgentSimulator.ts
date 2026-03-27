@@ -359,11 +359,12 @@ export class AgentSimulator {
   private handleRoomUpdate(room: RoomInfo): void {
     if (room.roomId !== this.roomId) return;
 
-    const isActive = room.phase === "playing" || room.phase === "boarding";
-    if (isActive && this.intervals.length === 0) {
-      logger.info(`Game in room ${this.roomId} entered ${room.phase} phase. Beginning agent loops...`);
-      // Initial internal phase mapping
-      this.currentPhase = room.phase === "boarding" ? 1 : 2; 
+    // Update internal phase mapping
+    if (room.phase === "boarding") this.currentPhase = 1;
+    if (room.phase === "playing") this.currentPhase = 2;
+
+    if (room.phase === "playing" && this.intervals.length === 0) {
+      logger.info(`Game in room ${this.roomId} entered PLAYING phase. Beginning agent actions...`);
       this.startAgentActions();
     }
   }
@@ -469,8 +470,8 @@ export class AgentSimulator {
    * Simulate agent movement
    */
   private simulateMovement(): void {
-    // Only move during ActionCommit (2) or Boarding (1) phases
-    if (this.currentPhase !== 2 && this.currentPhase !== 1) return;
+    // Only move during ActionCommit (2) phase — NOT during boarding (1)
+    if (this.currentPhase !== 2) return;
 
     const aliveAgents = this.agents.filter((a) => a.isAlive);
     if (aliveAgents.length === 0) return;
@@ -532,8 +533,8 @@ export class AgentSimulator {
    * Simulate task completion
    */
   private simulateTask(): void {
-    // Only do tasks during ActionCommit (2) or Boarding (1) phases
-    if (this.currentPhase !== 2 && this.currentPhase !== 1) return;
+    // Only do tasks during ActionCommit (2) phase — NOT during boarding (1)
+    if (this.currentPhase !== 2) return;
 
     // Give each crewmate a chance to work on tasks
     const aliveCrew = this.agents.filter(a => a.isAlive && !a.isImpostor && a.tasksCompleted < a.totalTasks);
