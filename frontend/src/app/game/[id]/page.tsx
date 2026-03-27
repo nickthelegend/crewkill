@@ -110,58 +110,60 @@ function RoomDetailsPageContent() {
                 </span>
               </div>
 
-              <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase text-white leading-[0.9]">
-                Game <span className="text-cyan-400">{displayId.slice(0, 6)}...{displayId.slice(-4)}</span><br />
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-white leading-tight">
+                Game <span className="text-cyan-400">{displayId.slice(0, 6)}...{displayId.slice(-4)}</span>
               </h1>
             </motion.div>
 
             <motion.div
-              className="flex flex-col items-end gap-4"
+              className="flex flex-col items-end gap-6"
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
-              {/* Predict button — available if betting is open */}
-              {isBettingOpen && (
-                <Link
-                  href={`/game/${roomId}/bet`}
-                  className="group relative px-12 py-6 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(8,145,178,0.4)] overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
-                  <span className="relative z-10 text-lg font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    🔮 Predict
-                  </span>
-                </Link>
-              )}
-
-              {/* Watch Live button — available if game is not ended */}
-              {!isEnded && (
-                <Link
-                  href={`/game/${roomId}/live`}
-                  className="group relative px-12 py-6 bg-red-600 hover:bg-red-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(220,38,38,0.4)] overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
-                  <span className="relative z-10 text-lg font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    Watch Live
-                  </span>
-                </Link>
-              )}
-
-              {/* Recap button — always available */}
-              <Link
-                href={`/game/${roomId}/recap`}
-                className="group relative px-12 py-6 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(147,51,234,0.3)] overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
-                <span className="relative z-10 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                  📋 Recap
-                </span>
-              </Link>
-
               <div className="text-right">
-                <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Current Pool</div>
-                <div className="text-4xl font-black text-white">{(totalPot / 1e9).toFixed(2)} <span className="text-cyan-400">$CREW</span></div>
+                <div className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Total Stake</div>
+                <div className="text-5xl font-black text-white leading-none">{(totalPot / 1e9).toFixed(2)} <span className="text-cyan-400 text-2xl">$CREW</span></div>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-3">
+                {/* Predict button — available if betting is open */}
+                {isBettingOpen && (
+                  <Link
+                    href={`/game/${roomId}/bet`}
+                    className="group relative px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(8,145,178,0.3)] overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                    <span className="relative z-10 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      🔮 Predict
+                    </span>
+                  </Link>
+                )}
+
+                {/* Watch Live button — available if game is not ended */}
+                {!isEnded && (
+                  <Link
+                    href={`/game/${roomId}/live`}
+                    className="group relative px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(220,38,38,0.3)] overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                    <span className="relative z-10 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      Watch Live
+                    </span>
+                  </Link>
+                )}
+
+                {/* Recap button — always available */}
+                <Link
+                  href={`/game/${roomId}/recap`}
+                  className="group relative px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                  <span className="relative z-10 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    📋 Recap
+                  </span>
+                </Link>
               </div>
             </motion.div>
           </div>
