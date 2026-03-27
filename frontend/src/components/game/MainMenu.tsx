@@ -16,6 +16,7 @@ const ONBOARDING_SKILL_URL = process.env.NEXT_PUBLIC_SKILL_URL || "https://crewk
 
 interface MainMenuProps {
    onPlay: () => void;
+   onCreateFullRoom?: () => void;
    onOpenDashboard?: () => void;
    isConnected?: boolean;
    error?: string | null;
@@ -24,7 +25,16 @@ interface MainMenuProps {
    leaderboard?: AgentStats[];
 }
 
-export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = [], stats, leaderboard = [] }: MainMenuProps) {
+export function MainMenu({ 
+   onPlay, 
+   onCreateFullRoom, 
+   onOpenDashboard, 
+   isConnected, 
+   error, 
+   rooms = [], 
+   stats, 
+   leaderboard = [] 
+}: MainMenuProps) {
    const [copied, setCopied] = useState(false);
    const currentAccount = useCurrentAccount();
 
@@ -123,22 +133,34 @@ export function MainMenu({ onPlay, onOpenDashboard, isConnected, error, rooms = 
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5 }}
                >
-                  <div className="flex flex-col sm:flex-row items-center gap-6">
-                     <button
-                        onClick={onPlay}
-                        className="group relative px-12 py-6 rounded-[2rem] bg-white text-black text-xl md:text-2xl font-black uppercase tracking-tighter transition-all hover:scale-110 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-cyan-400/40"
-                     >
-                        Watch Games
-                        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-40 transition-opacity" />
-                     </button>
+                  <div className="flex flex-col items-center gap-6">
+                     <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <button
+                           onClick={onPlay}
+                           className="group relative px-12 py-6 rounded-[2rem] bg-white text-black text-xl md:text-2xl font-black uppercase tracking-tighter transition-all hover:scale-110 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-cyan-400/40"
+                        >
+                           Watch Games
+                           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-40 transition-opacity" />
+                        </button>
 
-                     <Link
-                        href="/market"
-                        className="group relative px-12 py-6 rounded-[2rem] bg-transparent border-2 border-red-500 text-red-500 text-xl md:text-2xl font-black uppercase tracking-tighter transition-all hover:scale-110 active:scale-95 hover:bg-red-500 hover:text-white"
-                     >
-                        Prediction Market
-                        <div className="absolute -inset-1 bg-red-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-30 transition-opacity" />
-                     </Link>
+                        <Link
+                           href="/market"
+                           className="group relative px-12 py-6 rounded-[2rem] bg-transparent border-2 border-red-500 text-red-500 text-xl md:text-2xl font-black uppercase tracking-tighter transition-all hover:scale-110 active:scale-95 hover:bg-red-500 hover:text-white"
+                        >
+                           Prediction Market
+                           <div className="absolute -inset-1 bg-red-500 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-30 transition-opacity" />
+                        </Link>
+                     </div>
+
+                     {onCreateFullRoom && (
+                        <button
+                           onClick={onCreateFullRoom}
+                           className="group relative px-12 py-6 rounded-[2rem] bg-cyan-600/20 border-2 border-cyan-400 text-cyan-400 text-xl md:text-2xl font-black uppercase tracking-tighter transition-all hover:scale-110 active:scale-95 hover:bg-cyan-400 hover:text-black shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                        >
+                           Create Game and Hire Agents
+                           <div className="absolute -inset-1 bg-cyan-400 rounded-[2.1rem] blur-xl opacity-0 group-hover:opacity-30 transition-opacity" />
+                        </button>
+                     )}
                   </div>
                </motion.div>
 

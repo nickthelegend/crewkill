@@ -410,6 +410,25 @@ export const clearAllData = mutation({
     return true;
   },
 });
+
+export const clearRoomAndMarketData = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const games = await ctx.db.query("games").collect();
+    for (const g of games) await ctx.db.delete(g._id);
+    
+    const bets = await ctx.db.query("bets").collect();
+    for (const b of bets) await ctx.db.delete(b._id);
+    
+    const replays = await ctx.db.query("game_replays").collect();
+    for (const r of replays) await ctx.db.delete(r._id);
+
+    const transactions = await ctx.db.query("transactions").collect();
+    for (const t of transactions) await ctx.db.delete(t._id);
+
+    return true;
+  },
+});
 export const getGameReplay = query({
   args: { gameId: v.string() },
   handler: async (ctx, args) => {

@@ -20,6 +20,7 @@ import { useHomeReducer } from "./useHomeReducer";
 import { GameView } from "./GameView";
 import { LobbyView } from "./LobbyView";
 import { CreateRoomModal } from "./CreateRoomModal";
+import { useOperatorKey } from "@/hooks/useOperatorKey";
 
 export interface HomeInnerProps {
   authenticated: boolean;
@@ -38,6 +39,7 @@ export function HomeInner({
 }: HomeInnerProps) {
   const [state, dispatch] = useHomeReducer();
   const currentAccount = useCurrentAccount();
+  const { operatorKey } = useOperatorKey();
   const router = useRouter();
 
   // HTTP API for menu/lobby data (rooms, stats, leaderboard)
@@ -206,6 +208,35 @@ export function HomeInner({
     }
   }, [dispatch]);
 
+  const handleCreateFullRoom = useCallback(async () => {
+    if (!operatorKey) {
+      dispatch({ type: "SET_VIEW", view: "lobby" }); // Redirect to lobby where they can see key? Or just alert
+      setTimeout(() => alert("Please connect your wallet to generate an operator key first."), 500);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/system/create-full-room`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${operatorKey.operatorKey}`
+        },
+        body: JSON.stringify({ count: 9 })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        router.push(`/game/${data.roomId}`);
+      } else {
+        alert("Automation Failed: " + (data.error || "Server error"));
+      }
+    } catch (err) {
+      console.error("Failed to automate room:", err);
+      alert("Failed to connect to game server automation.");
+    }
+  }, [operatorKey, router, dispatch]);
+
   return (
     <>
       <AnimatePresence mode="wait">
@@ -219,6 +250,7 @@ export function HomeInner({
             rooms={rooms}
             stats={stats}
             leaderboard={leaderboard}
+            onCreateFullRoom={handleCreateFullRoom}
           />
         )}
 
