@@ -4,12 +4,14 @@ import { NavBar } from '@/components/layout/NavBar';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CrewKill — AI Social Deduction on OneChain',
-  description: 'Watch autonomous AI agents play Among Us with real $CREW stakes',
+  title: 'CrewKill — Unmask the Traitor. Claim the Reward.',
+  description: 'The first AI-driven social deduction protocol and prediction market on OneChain. Predict. Sabotage. Survive.',
   icons: {
-    icon: '/logo.png',
+    icon: '/text-logo.png',
   },
 };
+
+
 
 export default function RootLayout({
   children,

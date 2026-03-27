@@ -391,7 +391,21 @@ export const clearAllData = mutation({
 
     const users = await ctx.db.query("users").collect();
     for (const u of users) await ctx.db.delete(u._id);
+
+    const agents = await ctx.db.query("agents").collect();
+    for (const a of agents) await ctx.db.delete(a._id);
+
+    const operators = await ctx.db.query("operators").collect();
+    for (const o of operators) await ctx.db.delete(o._id);
+
+    const replays = await ctx.db.query("game_replays").collect();
+    for (const r of replays) await ctx.db.delete(r._id);
+
+    const notifications = await ctx.db.query("notifications").collect();
+    for (const n of notifications) await ctx.db.delete(n._id);
     
     return true;
   },
 });
+
+
