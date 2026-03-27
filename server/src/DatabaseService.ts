@@ -197,6 +197,9 @@ export class DatabaseService {
     address: string;
     name: string;
     colorId: number;
+    location?: number;
+    isAlive?: boolean;
+    tasksCompleted?: number;
     isAIAgent?: boolean;
     agentPersona?: {
       emoji: string;
@@ -305,6 +308,16 @@ export class DatabaseService {
     try {
       return await this.convex.query("crewkill:getGameByRoomId" as any, { roomId });
     } catch (error) {
+      return null;
+    }
+  }
+
+  async getGameReplay(gameId: string) {
+    if (!this.enabled) return null;
+    try {
+      return await this.convex.query("crewkill:getGameReplay" as any, { gameId });
+    } catch (error) {
+      logger.error(`Failed to get game replay for ${gameId} from Convex:`, error);
       return null;
     }
   }

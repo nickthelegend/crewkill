@@ -293,6 +293,9 @@ export const updateGamePlayers = mutation({
       address: v.string(),
       name: v.string(),
       colorId: v.number(),
+      location: v.optional(v.number()),
+      isAlive: v.optional(v.boolean()),
+      tasksCompleted: v.optional(v.number()),
       isAIAgent: v.optional(v.boolean()),
       agentPersona: v.optional(v.object({
         emoji: v.string(),
@@ -407,5 +410,12 @@ export const clearAllData = mutation({
     return true;
   },
 });
-
-
+export const getGameReplay = query({
+  args: { gameId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("game_replays")
+      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
+      .first();
+  },
+});

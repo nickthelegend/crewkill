@@ -143,6 +143,8 @@ export class GameStateManager {
         totalTasksCompleted: 0,
         totalTasksRequired: 0,
         activeSabotage: 0, // None
+        startedAt: 0,
+        endedAt: 0,
       };
       this.games.set(gameId, state);
       this.internalState.set(gameId, {

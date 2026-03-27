@@ -126,6 +126,15 @@ export class WebSocketRelayServer {
         }
       }
     }, 60000); // Check every minute
+    
+    // Periodic player state persistence (save locations etc. to DB)
+    setInterval(() => {
+      this.rooms.forEach((room, roomId) => {
+        if (room.phase === 'playing' || room.phase === 'discussion' || room.phase === 'voting') {
+          this.updateConvexPlayers(roomId);
+        }
+      });
+    }, 30000); // Sync every 30 seconds
   }
 
   async start(): Promise<void> {
@@ -504,6 +513,9 @@ export class WebSocketRelayServer {
         address: p.address,
         name: client?.name || p.address.slice(0, 8),
         colorId: p.colorId,
+        location: p.location,
+        isAlive: p.isAlive,
+        tasksCompleted: p.tasksCompleted,
         isAIAgent: p.isAIAgent,
         agentPersona: p.agentPersona,
       };
@@ -619,6 +631,25 @@ export class WebSocketRelayServer {
           type: "server:event_history",
           gameId: finalRoomId,
           history: extended.eventHistory,
+        });
+      } else if (activeRoom.phase === "ended") {
+        // Fallback: try to fetch from database for ended games
+        databaseService.getGameReplay(finalRoomId).then((replay) => {
+          if (replay?.logJsonl) {
+            try {
+              const history = JSON.parse(replay.logJsonl);
+              if (Array.isArray(history)) {
+                this.send(client, {
+                  type: "server:event_history",
+                  gameId: finalRoomId,
+                  history: history,
+                });
+                logger.info(`Restored ${history.length} events from database for recap of ${finalRoomId}`);
+              }
+            } catch (e) {
+              logger.error(`Failed to parse history JSONL for ${finalRoomId}:`, e);
+            }
+          }
         });
       }
       return;
@@ -1003,21 +1034,51 @@ export class WebSocketRelayServer {
     let restoredCount = 0;
     try {
       const dbGame = await databaseService.getGameByRoomId(roomId);
-      if (dbGame?.players && dbGame.players.length > 0) {
-        logger.info(`Restoring ${dbGame.players.length} players for room ${roomId} from database...`);
-        room.players = (dbGame.players as any[]).map((p: any) => ({
-          ...p,
-          name: p.name || p.address.slice(0, 8), // Ensure name is restored
-          isAlive: p.isAlive ?? true,
-          tasksCompleted: p.tasksCompleted ?? 0,
-          totalTasks: 30,
-          hasVoted: false,
-        }));
-        restoredCount = room.players.length;
+      if (dbGame) {
+        // Restore Phase
+        if (dbGame.phase && dbGame.phase !== "lobby") {
+          room.phase = dbGame.phase as any;
+          room.startedAt = dbGame.startedAt;
+          room.endedAt = dbGame.endedAt;
+          
+          // Map string phase back to numeric phase for GameStateManager
+          const numericPhase = 
+            room.phase === "playing" ? 2 : 
+            room.phase === "discussion" ? 4 :
+            room.phase === "voting" ? 5 :
+            room.phase === "ejection" ? 6 :
+            room.phase === "ended" ? 7 : 0;
+            
+          // updatePhase(gameId, phase, round, phaseEndTime)
+          this.gameStateManager.updatePhase(roomId, numericPhase, 0, 0);
+          
+          // Also set the startedAt in the actual game snapshot
+          const gs = this.gameStateManager.getGame(roomId);
+          if (gs) {
+            gs.startedAt = dbGame.startedAt;
+            gs.endedAt = dbGame.endedAt;
+          }
+          
+          logger.info(`Restored phase ${room.phase} for room ${roomId}`);
+        }
 
-        // Sync current game state too
-        for (const player of room.players) {
-          this.gameStateManager.updatePlayer(roomId, player);
+        if (dbGame.players && dbGame.players.length > 0) {
+          logger.info(`Restoring ${dbGame.players.length} players for room ${roomId} from database...`);
+          room.players = (dbGame.players as any[]).map((p: any) => ({
+            ...p,
+            name: p.name || p.address.slice(0, 8),
+            isAlive: p.isAlive ?? true,
+            location: p.location ?? 0,
+            tasksCompleted: p.tasksCompleted ?? 0,
+            totalTasks: p.totalTasks ?? 30,
+            hasVoted: p.hasVoted ?? false,
+          }));
+          restoredCount = room.players.length;
+
+          // Sync current game state too
+          for (const player of room.players) {
+            this.gameStateManager.updatePlayer(roomId, player);
+          }
         }
       }
     } catch (err) {

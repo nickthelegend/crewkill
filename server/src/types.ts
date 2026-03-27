@@ -128,6 +128,8 @@ export interface GameStateSnapshot {
   totalTasksCompleted: number;
   totalTasksRequired: number;
   activeSabotage: SabotageType;
+  startedAt?: number;
+  endedAt?: number;
 }
 
 // ============ MESSAGE TYPES ============
@@ -368,6 +370,8 @@ export interface RoomState {
   impostorCount: number;
   phase: "lobby" | "boarding" | "playing" | "discussion" | "voting" | "ejection" | "ended";
   createdAt: number;
+  startedAt?: number;
+  endedAt?: number;
   creator?: string; // wallet address of creator
   wagerAmount?: string; // custom wager amount in wei
   creationDigest?: string; // transaction digest for on-chain game creation
