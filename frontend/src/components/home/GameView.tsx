@@ -162,21 +162,35 @@ export function GameView({
     new Map(stablePlayers.map(p => [p.address, p])).values()
   );
   const activeRoom = stableRoom;
+  const currentPhaseValue = activeRoom?.detailedPhase ?? (activeRoom?.phase === 'boarding' ? 1 : activeRoom?.phase === 'playing' ? 2 : activeRoom?.phase === 'ended' ? 7 : 0);
+  
   const aliveCount = activePlayers.filter(p => p.isAlive).length;
   const deadCount = activePlayers.length - aliveCount;
-  const isEnded = gamePhase === 7;
-  const isBoarding = gamePhase === 1;
+  const isEnded = currentPhaseValue === 7;
+  const isBoarding = currentPhaseValue === 1;
+  const isVoting = currentPhaseValue === 5;
+  const isDiscussion = currentPhaseValue === 4;
+  const isEjection = currentPhaseValue === 6;
 
   // Countdown timer for boarding phase
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!isBoarding || !activeRoom?.startedAt) {
+    if ((!isBoarding && !isVoting && !isDiscussion) || !activeRoom?.startedAt) {
       setTimeLeft(null);
       return;
     }
 
-    const targetTime = activeRoom.startedAt + 180000; // 3 minutes
+    // Boarding is 3 mins, others use 30s based on metadata from useGameServer or hardcoded
+    // For now use a simple check
+    let targetTime = activeRoom.startedAt + 180000; // 3 mins default for boarding
+    
+    if (isVoting || isDiscussion) {
+      // For meetings, try to get time from logs or state if possible
+      // But for a reliable timer we need the server to send phaseEndTime
+      // As a fallback 30s from now
+      targetTime = Date.now() + 30000; 
+    }
     
     const updateTimer = () => {
       const remaining = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
@@ -186,7 +200,7 @@ export function GameView({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [isBoarding, activeRoom?.startedAt]);
+  }, [isBoarding, isVoting, isDiscussion, activeRoom?.startedAt]);
 
   // Convex bets data for the predictions tab
   const convexBets = useQuery(api.bets.getBetsByGame, gameObjectId ? { gameId: gameObjectId } : "skip") || [];
@@ -239,6 +253,71 @@ export function GameView({
                   Placing bets is open. The mission will begin once the timer reaches zero.
                 </p>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Voting Phase Overlay */}
+        {(isVoting || isDiscussion) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none"
+          >
+            <div className="absolute inset-0 bg-red-950/40 backdrop-blur-md" />
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="relative bg-black/90 border border-red-500/50 rounded-3xl p-8 text-center max-w-2xl shadow-[0_0_80px_rgba(239,68,68,0.2)] pointer-events-auto"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                  <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
+                    {isDiscussion ? "Meeting: Discussion" : "Meeting: Voting"}
+                  </h2>
+                </div>
+                <div className="text-3xl font-black text-red-500 font-mono tabular-nums">
+                  {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : "0:00"}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                {activePlayers.map((p) => (
+                  <div 
+                    key={p.address}
+                    className={`relative p-4 rounded-2xl border transition-all ${
+                      p.isAlive 
+                        ? 'bg-white/5 border-white/10' 
+                        : 'bg-black/40 border-white/5 opacity-50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <AmongUsSprite colorId={p.colorId} size={32} isAlive={p.isAlive} />
+                      <p className="text-[10px] font-black text-white/80 uppercase truncate w-full text-center">
+                        {p.name}
+                      </p>
+                      {p.hasVoted && (
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -right-1 bg-green-500 text-black rounded-full p-1"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+              </div>
+
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
+                {isDiscussion ? "Gathering intelligence. Prepare to vote soon." : "Cast your votes now. Majority decides the fate."}
+              </p>
             </motion.div>
           </motion.div>
         )}
