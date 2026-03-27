@@ -40,6 +40,7 @@ export function NavBar() {
     { name: "Rooms", href: "/rooms" },
     { name: "Swap", href: "/swap" },
     { name: "Leaderboard", href: "/leaderboard" },
+    { name: "Payouts", href: "/payouts" },
   ];
 
   return (

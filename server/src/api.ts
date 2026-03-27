@@ -7,6 +7,7 @@ import { databaseService } from "./DatabaseService.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { PayoutService } from "./services/PayoutService.js";
 
 const logger = createLogger("api");
 
@@ -52,6 +53,10 @@ export function createApiServer(
   wsServer: WebSocketRelayServer,
 ): express.Express {
   const app = express();
+  const payoutService = new PayoutService(
+    process.env.ONECHAIN_RPC || "https://rpc-testnet.onelabs.cc:443",
+    process.env.OPERATOR_PRIV_KEY || ""
+  );
 
   // Middleware
   app.use(cors());
@@ -330,6 +335,42 @@ export function createApiServer(
       connections: stats.connections,
       rooms: stats.rooms,
     });
+  });
+
+  // ============ PAYOUTS ============
+
+  app.get("/api/payouts/:address", (_req: Request, res: Response) => {
+    const address = String(_req.params.address).toLowerCase();
+    
+    // Return mock available payouts for the demo
+    res.json([
+      { id: "p1", amount: 100, reason: "Winner: Game #7821", date: Date.now() - 3600000, status: "available" },
+      { id: "p2", amount: 250, reason: "Successful Prediction: Game #7819", date: Date.now() - 7200000, status: "available" },
+      { id: "p3", amount: 50, reason: "Daily Bonus: Referral", date: Date.now() - 86400000, status: "claimed" }
+    ]);
+  });
+
+  app.post("/api/payouts/claim", async (req: Request, res: Response) => {
+    const { address, amount = 100 } = req.body;
+    
+    if (!address) {
+      res.status(400).json({ error: "address required" });
+      return;
+    }
+
+    try {
+      logger.info(`Claim request received for ${address} (${amount} CREW)`);
+      const result = await payoutService.sendPayout(address, amount);
+      
+      if (result.success) {
+        res.json({ success: true, digest: result.digest });
+      } else {
+        res.status(500).json({ error: result.error || "Transfer failed" });
+      }
+    } catch (err) {
+      logger.error("Claim failed:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   return app;
