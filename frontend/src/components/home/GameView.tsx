@@ -165,6 +165,28 @@ export function GameView({
   const aliveCount = activePlayers.filter(p => p.isAlive).length;
   const deadCount = activePlayers.length - aliveCount;
   const isEnded = gamePhase === 7;
+  const isBoarding = gamePhase === 1;
+
+  // Countdown timer for boarding phase
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isBoarding || !activeRoom?.startedAt) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const targetTime = activeRoom.startedAt + 180000; // 3 minutes
+    
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
+      setTimeLeft(remaining);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [isBoarding, activeRoom?.startedAt]);
 
   // Convex bets data for the predictions tab
   const convexBets = useQuery(api.bets.getBetsByGame, gameObjectId ? { gameId: gameObjectId } : "skip") || [];
@@ -172,6 +194,56 @@ export function GameView({
 
   return (
     <div key="game" className="fixed inset-0 bg-black font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Boarding Phase Overlay */}
+      <AnimatePresence>
+        {isBoarding && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none"
+          >
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="relative bg-black/80 border border-cyan-500/30 rounded-3xl p-12 text-center max-w-lg shadow-[0_0_50px_rgba(6,182,212,0.1)] pointer-events-auto"
+            >
+              <div className="flex justify-center gap-4 mb-8">
+                {activePlayers.slice(0, 5).map((p, i) => (
+                  <motion.div
+                    key={p.address}
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
+                  >
+                    <AmongUsSprite colorId={p.colorId} size={40} />
+                  </motion.div>
+                ))}
+              </div>
+              <h2 className="text-4xl font-black text-white mb-2 tracking-tighter italic uppercase">Game Starting Soon</h2>
+              <p className="text-cyan-400/60 text-xs font-black uppercase tracking-[0.4em] mb-8">Boarding Phase Active</p>
+              
+              <div className="flex flex-col items-center">
+                <div className="text-6xl font-black text-white font-mono tabular-nums mb-2">
+                  {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : "0:00"}
+                </div>
+                <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-cyan-500"
+                    initial={{ width: "100%" }}
+                    animate={{ width: timeLeft !== null ? `${(timeLeft / 180) * 100}%` : "0%" }}
+                    transition={{ duration: 1, ease: "linear" }}
+                  />
+                </div>
+                <p className="mt-6 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] max-w-xs">
+                  Placing bets is open. The mission will begin once the timer reaches zero.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Fullscreen Map */}
       <ScrollableMap
         players={activePlayers}

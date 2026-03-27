@@ -22,6 +22,18 @@ const COLOR_NAMES = [
   "Black", "White", "Purple", "Brown", "Cyan", "Lime"
 ];
 
+const STATIC_AGENT_ADDRESSES = [
+  "0xaa1cba9ba129198424795eec3db35f79ae4eaf124389438464ca86b2c80d863d",
+  "0xaa15f15cb0a588d449ea3b9b2466661c0207c1cc37317354a999170725776232",
+  "0xaa1e782b09efc31496aae26319f6b638d5cfc2eaecd63b94bfb940ed13c974f1",
+  "0xaa10fc88e591d8e4b0aa1929e6bd5415e58219dcc9ecc3f445699fad7ed9789f",
+  "0xaa1dbeb8bade54747fca435cfa11a22e10505be69cbbfe643ac916553d8f27cc",
+  "0xaa1aac5f410fd894b99b3a58da2d4ee7d57673fd95ff6554636bf2f1e0e38a23",
+  "0xaa1d286b68703d647d7b5a75810c82f9fbf8e96b41353694b528979e3312016a",
+  "0xaa14eccd4ea00ac461d83d94fe9b349bfc0678745bb2e7b44e9a35ff3c161ab6",
+  "0xaa1d49983e3e8654db0a5d276044055938b1906f78cf5ff4047b9d85c606af35"
+];
+
 interface SimulatedAgent {
   id: string;
   address: string;
@@ -95,7 +107,14 @@ export class AgentSimulator {
     await this.connectControl();
 
     this.isRunning = true;
-    logger.info("Simulator started, waiting for room...");
+
+    if (this.config.roomId) {
+      this.roomId = this.config.roomId;
+      logger.info(`Joining provided room: ${this.roomId}`);
+      this.joinRoomWithAgents(this.roomId);
+    } else {
+      logger.info("Simulator started, waiting for room...");
+    }
   }
 
   /**
@@ -134,9 +153,10 @@ export class AgentSimulator {
     }
 
     for (let i = 0; i < this.config.agentCount; i++) {
+      const address = STATIC_AGENT_ADDRESSES[i] || `0x${(i + 1).toString(16).padStart(40, "0")}`;
       const agent: SimulatedAgent = {
         id: uuidv4(),
-        address: `0x${(i + 1).toString(16).padStart(40, "0")}`,
+        address,
         name: `Agent ${COLOR_NAMES[i % 12]}`,
         colorId: i % 12,
         location: 0,
@@ -339,9 +359,11 @@ export class AgentSimulator {
   private handleRoomUpdate(room: RoomInfo): void {
     if (room.roomId !== this.roomId) return;
 
-    if (room.phase === "playing" && this.intervals.length === 0) {
-      logger.info("Game started! Beginning agent actions...");
-      this.currentPhase = 2; // ActionCommit
+    const isActive = room.phase === "playing" || room.phase === "boarding";
+    if (isActive && this.intervals.length === 0) {
+      logger.info(`Game in room ${this.roomId} entered ${room.phase} phase. Beginning agent loops...`);
+      // Initial internal phase mapping
+      this.currentPhase = room.phase === "boarding" ? 1 : 2; 
       this.startAgentActions();
     }
   }
@@ -403,6 +425,10 @@ export class AgentSimulator {
           if (agent.isImpostor !== wasImpostor) {
             logger.info(`${agent.name} role updated: ${agent.isImpostor ? "IMPOSTOR" : "Crewmate"}`);
           }
+        } else if (message.type === "server:tasks_assigned") {
+          agent.taskLocations = message.taskLocations;
+          agent.totalTasks = message.taskLocations.length;
+          logger.debug(`${agent.name} assigned ${agent.totalTasks} tasks from server`);
         }
       });
 
@@ -421,21 +447,21 @@ export class AgentSimulator {
     const moveInterval = setInterval(() => {
       if (!this.isRunning) return;
       this.simulateMovement();
-    }, this.config.moveInterval);
+    }, 2000); // Faster movement
     this.intervals.push(moveInterval);
 
     // Task loop
     const taskInterval = setInterval(() => {
       if (!this.isRunning) return;
       this.simulateTask();
-    }, this.config.taskInterval);
+    }, 4000); // Slightly faster tasks
     this.intervals.push(taskInterval);
 
     // Kill loop
     const killInterval = setInterval(() => {
       if (!this.isRunning) return;
       this.simulateKill();
-    }, this.config.killInterval);
+    }, 6000); // More aggressive kills
     this.intervals.push(killInterval);
   }
 
@@ -443,34 +469,38 @@ export class AgentSimulator {
    * Simulate agent movement
    */
   private simulateMovement(): void {
-    // Only move during ActionCommit phase
-    if (this.currentPhase !== 2) return;
+    // Only move during ActionCommit (2) or Boarding (1) phases
+    if (this.currentPhase !== 2 && this.currentPhase !== 1) return;
 
     const aliveAgents = this.agents.filter((a) => a.isAlive);
-    if (aliveAgents.length === 0 || Math.random() > 0.6) return;
+    if (aliveAgents.length === 0) return;
 
-    const mover = aliveAgents[Math.floor(Math.random() * aliveAgents.length)];
-    const adjacent = ADJACENT_ROOMS[mover.location] || [];
-    if (adjacent.length === 0) return;
+    // Give each agent a chance to move
+    for (const mover of aliveAgents) {
+      // 40% chance to move each tick
+      if (Math.random() > 0.4) continue;
 
-    const newLocation = adjacent[Math.floor(Math.random() * adjacent.length)];
-    const previousLocation = mover.location;
-    mover.location = newLocation;
+      const adjacent = ADJACENT_ROOMS[mover.location] || [];
+      if (adjacent.length === 0) continue;
 
-    if (mover.ws && mover.ws.readyState === WebSocket.OPEN) {
-      mover.ws.send(JSON.stringify({
-        type: "agent:position_update",
-        gameId: this.roomId,
-        location: newLocation,
-        round: this.round,
-      }));
-    }
+      const newLocation = adjacent[Math.floor(Math.random() * adjacent.length)];
+      mover.location = newLocation;
 
-    logger.debug(`${mover.name} moved to location ${newLocation}`);
+      if (mover.ws && mover.ws.readyState === WebSocket.OPEN) {
+        mover.ws.send(JSON.stringify({
+          type: "agent:position_update",
+          gameId: this.roomId,
+          location: newLocation,
+          round: this.round,
+        }));
+      }
 
-    // Check for dead bodies in new location (crewmates only)
-    if (!mover.isImpostor) {
-      this.checkForBodies(mover);
+      logger.debug(`${mover.name} moved to location ${newLocation}`);
+
+      // Check for dead bodies in new location (crewmates only)
+      if (!mover.isImpostor) {
+        this.checkForBodies(mover);
+      }
     }
   }
 
@@ -502,47 +532,46 @@ export class AgentSimulator {
    * Simulate task completion
    */
   private simulateTask(): void {
-    // Only do tasks during ActionCommit phase
-    if (this.currentPhase !== 2) return;
+    // Only do tasks during ActionCommit (2) or Boarding (1) phases
+    if (this.currentPhase !== 2 && this.currentPhase !== 1) return;
 
-    // Find crewmates who have a task at their current location
-    const workers = this.agents.filter((a) => {
-      if (!a.isAlive || a.isImpostor) return false;
-      if (a.tasksCompleted >= a.totalTasks) return false;
-      // Check if current location is in their task list
-      return a.taskLocations.includes(a.location);
-    });
+    // Give each crewmate a chance to work on tasks
+    const aliveCrew = this.agents.filter(a => a.isAlive && !a.isImpostor && a.tasksCompleted < a.totalTasks);
+    
+    for (const worker of aliveCrew) {
+      // 30% chance to attempt task each tick if at task location
+      if (Math.random() > 0.3) continue;
+      
+      if (worker.taskLocations.includes(worker.location)) {
+        // Remove this location from their task list
+        const taskIndex = worker.taskLocations.indexOf(worker.location);
+        if (taskIndex > -1) {
+          worker.taskLocations.splice(taskIndex, 1);
+        }
 
-    if (workers.length === 0 || Math.random() > 0.5) return;
+        worker.tasksCompleted++;
 
-    const worker = workers[Math.floor(Math.random() * workers.length)];
+        if (worker.ws && worker.ws.readyState === WebSocket.OPEN) {
+          worker.ws.send(JSON.stringify({
+            type: "agent:task_complete",
+            gameId: this.roomId,
+            player: worker.address,
+            tasksCompleted: worker.tasksCompleted,
+            totalTasks: worker.totalTasks,
+            location: worker.location,
+          }));
+        }
 
-    // Remove this location from their task list
-    const taskIndex = worker.taskLocations.indexOf(worker.location);
-    if (taskIndex > -1) {
-      worker.taskLocations.splice(taskIndex, 1);
+        logger.debug(`${worker.name} completed task at location ${worker.location} (${worker.tasksCompleted}/${worker.totalTasks})`);
+      }
     }
-
-    worker.tasksCompleted++;
-
-    if (worker.ws && worker.ws.readyState === WebSocket.OPEN) {
-      worker.ws.send(JSON.stringify({
-        type: "agent:task_complete",
-        gameId: this.roomId,
-        player: worker.address,
-        tasksCompleted: worker.tasksCompleted,
-        totalTasks: worker.totalTasks,
-      }));
-    }
-
-    logger.debug(`${worker.name} completed task at location ${worker.location} (${worker.tasksCompleted}/${worker.totalTasks})`);
   }
 
   /**
    * Simulate impostor kill
    */
   private simulateKill(): void {
-    // Only kill during ActionCommit phase
+    // Only kill during ActionCommit phase (not during boarding)
     if (this.currentPhase !== 2) return;
 
     const impostor = this.agents.find((a) => a.isAlive && a.isImpostor);

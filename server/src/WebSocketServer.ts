@@ -1172,6 +1172,11 @@ export class WebSocketRelayServer {
 
         // Create prediction market on-chain immediately if enough players so betting can begin!
         this.ensureMarketDeployment(roomId);
+        
+        // Mark as started for the UI countdown (boarding phase)
+        room.startedAt = now;
+        room.phase = 'boarding';
+        this.broadcastToRoom(roomId, { type: 'server:room_update', room });
 
         // Start countdown to actual game start
         setTimeout(async () => {
@@ -1199,6 +1204,7 @@ export class WebSocketRelayServer {
         this.ensureMarketDeployment(roomId);
 
         // Start in "boarding" phase so agents stay in cafeteria and UI shows lobby
+        room.startedAt = Date.now();
         this.startGameInternal(roomId, true);
 
         // Start lobby waiting timer
@@ -1232,7 +1238,7 @@ export class WebSocketRelayServer {
 
     // If game has ALREADY started but lobby is not locked, assign role to this late joiner
     // FIXED: Include "boarding" phase as well, since that's the initial state during lobby window
-    if ((room.phase === "playing" || room.phase === "boarding") && !extended.lobbyLocked) {
+    if ((room.phase === "playing" || room.phase === "boarding")) {
       logger.info(`Player ${room.players[room.players.length - 1].address} joined ACTIVE game ${roomId}, assigning role...`);
 
       // Late joiners are always crewmates for now to avoid rebalancing impostors
@@ -1288,9 +1294,8 @@ export class WebSocketRelayServer {
     const phaseValue = isInitialBoarding ? 1 : 2;
     const impostorAddresses: string[] = [];
 
-    // ONLY assign impostors if transitioning to PLAYING (phase 2) OR if we skipped initial boarding
-    // This prevents double/triple role assignment which leads to too many impostors
-    if (!isInitialBoarding && extended.impostors.size === 0) {
+    // Assign roles if not already assigned
+    if (extended.impostors.size === 0) {
       const impostorCount = Math.max(1, Math.min(
         room.impostorCount,
         Math.floor(room.players.length / 3) // Heuristic: ~1/3 impostors max
@@ -1374,8 +1379,8 @@ export class WebSocketRelayServer {
       const isImp = extended.impostors.has(player.address.toLowerCase());
       player.role = isImp ? Role.Impostor : Role.Crewmate;
 
-      // Assign tasks ONLY when moving to playing (phase 2)
-      if (phaseValue === 2 && !isImp) {
+      // Assign tasks when moving to boarding (1) or playing (2)
+      if ((phaseValue === 2 || phaseValue === 1) && !isImp) {
         const taskLocations = this.generateTaskLocations(10);
         this.gameStateManager.assignTasks(roomId, player.address, taskLocations);
       }
@@ -1437,8 +1442,8 @@ export class WebSocketRelayServer {
       this.ensureMarketDeployment(roomId);
     }
 
-    // Role and task assignments are only sent when phase is 2 (final)
-    if (phaseValue === 2) {
+    // Role and task assignments are sent in both boarding (1) and playing (2) phases
+    if (phaseValue === 2 || phaseValue === 1) {
       for (const [clientId, client] of this.clients) {
         if (client.roomId !== roomId || !client.address) continue;
         const isImpostor = extended.impostors.has(client.address.toLowerCase());

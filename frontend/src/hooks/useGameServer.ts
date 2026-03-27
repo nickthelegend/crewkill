@@ -45,6 +45,7 @@ export interface RoomState {
   detailedPhase?: GamePhase; // Added detailed phase
   activeSabotage?: number;    // Added active sabotage
   createdAt: number;
+  startedAt?: number;
   creator?: string;
   wagerAmount?: string;
   creationDigest?: string;
@@ -214,10 +215,18 @@ export function useGameServer(): UseGameServerReturn {
           case "server:room_update":
             setCurrentRoom(message.room);
             currentRoomIdRef.current = message.room.roomId;
-            // Clear dead bodies on room update (fresh state)
-            if (message.room.phase === "lobby") {
+            // Clear dead bodies and logs on room update when fresh game is starting (lobby or boarding)
+            if (message.room.phase === "lobby" || message.room.phase === "boarding") {
               setDeadBodies([]);
-              setLogs([]); // Clear logs when entering a new room lobby
+              setLogs((prev) => {
+                // If it's boarding and we already have some logs since starting, don't clear all
+                // but usually entering boarding is the "fresh start" for a specific room session
+                return [];
+              }); 
+              
+              if (message.room.phase === "boarding") {
+                addLog("start", "Searching for signals... Boarding phase active.", message.room.roomId);
+              }
             }
             break;
 
