@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useCurrentAccount } from "@onelabs/dapp-kit";
@@ -20,6 +20,7 @@ import { useHomeReducer } from "./useHomeReducer";
 import { GameView } from "./GameView";
 import { LobbyView } from "./LobbyView";
 import { CreateRoomModal } from "./CreateRoomModal";
+import { AutomationSuccessModal } from "./AutomationSuccessModal";
 import { useOperatorKey } from "@/hooks/useOperatorKey";
 
 export interface HomeInnerProps {
@@ -41,6 +42,8 @@ export function HomeInner({
   const currentAccount = useCurrentAccount();
   const { operatorKey } = useOperatorKey();
   const router = useRouter();
+  const [successData, setSuccessData] = useState<{ roomId: string; creationDigest?: string } | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // HTTP API for menu/lobby data (rooms, stats, leaderboard)
   const {
@@ -227,7 +230,8 @@ export function HomeInner({
 
       const data = await res.json();
       if (data.success) {
-        router.push(`/game/${data.roomId}`);
+        setSuccessData({ roomId: data.roomId, creationDigest: data.creationDigest });
+        setShowSuccess(true);
       } else {
         alert("Automation Failed: " + (data.error || "Server error"));
       }
@@ -274,6 +278,15 @@ export function HomeInner({
           />
         )}
 
+
+
+        <AutomationSuccessModal
+          isOpen={showSuccess}
+          onClose={() => setShowSuccess(false)}
+          roomId={successData?.roomId || ""}
+          creationDigest={successData?.creationDigest}
+          onEnter={() => router.push(`/game/${successData?.roomId}`)}
+        />
         {state.view === "dashboard" && (
           <UserDashboard
             key="dashboard"
@@ -323,6 +336,17 @@ export function HomeInner({
           />
         )}
       </AnimatePresence>
+
+      <AutomationSuccessModal
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        roomId={successData?.roomId || ""}
+        creationDigest={successData?.creationDigest}
+        onEnter={() => {
+          setShowSuccess(false);
+          router.push(`/game/${successData?.roomId}`);
+        }}
+      />
 
       {/* Event screens */}
       <DeadBodyReportedScreen
