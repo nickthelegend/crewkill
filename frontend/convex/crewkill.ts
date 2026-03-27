@@ -419,3 +419,38 @@ export const getGameReplay = query({
       .first();
   },
 });
+
+export const saveGameReplay = mutation({
+  args: { 
+    gameId: v.string(),
+    logJsonl: v.string(),
+    winnerSide: v.optional(v.number()),
+    players: v.optional(v.array(v.string())),
+    impostors: v.optional(v.array(v.string())),
+    rounds: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("game_replays")
+      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
+      .first();
+    
+    const data = {
+      gameId: args.gameId,
+      logJsonl: args.logJsonl,
+      winnerSide: args.winnerSide ?? 0,
+      players: args.players ?? [],
+      impostors: args.impostors ?? [],
+      rounds: args.rounds ?? 0,
+      blobId: "in-db",
+      timestamp: Date.now(),
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, data);
+      return existing._id;
+    } else {
+      return await ctx.db.insert("game_replays", data);
+    }
+  },
+});

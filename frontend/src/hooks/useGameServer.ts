@@ -287,6 +287,11 @@ export function useGameServer(): UseGameServerReturn {
           case "server:event_history":
             if (message.history && Array.isArray(message.history)) {
               const historicalLogs: any[] = [];
+              const latestPlayers = new Map<string, any>();
+              const historicalDeadBodies: any[] = [];
+              let restoredPhase: "lobby" | "boarding" | "playing" | "ended" | null = null;
+              let restoredDetailedPhase: number | null = null;
+
               message.history.forEach((m: any) => {
                 let logType: "kill" | "report" | "meeting" | "vote" | "eject" | "task" | "sabotage" | "join" | "start" | "move" | "chat" | null = null;
                 let logMsg = "";
@@ -297,20 +302,31 @@ export function useGameServer(): UseGameServerReturn {
                   case "server:player_moved":
                     logType = "move";
                     logMsg = `${m.address.slice(0, 8)}... moved to ${LocationNames[m.to as Location] || "Room " + m.to}`;
+                    latestPlayers.set(m.address, { location: m.to });
                     break;
                   case "server:kill_occurred":
                     logType = "kill";
                     logMsg = `☠️ ${m.victim.slice(0, 8)}... was eliminated at ${LocationNames[m.location as Location] || "unknown location"}!`;
                     logTarget = m.victim;
+                    latestPlayers.set(m.victim, { isAlive: false });
+                    historicalDeadBodies.push({
+                      victim: m.victim,
+                      location: m.location,
+                      round: BigInt(m.round || 0),
+                      reported: false,
+                    });
                     break;
                   case "server:phase_changed":
                     logType = "start";
                     logMsg = `Phase changed to ${PhaseNames[m.phase as GamePhase] || m.phase}`;
+                    restoredPhase = m.phase === 1 ? "boarding" : (m.phase >= 2 && m.phase <= 6) ? "playing" : (m.phase === 7 ? "ended" : "lobby");
+                    restoredDetailedPhase = m.phase;
                     break;
                   case "server:task_completed":
                     logType = "task";
                     logMsg = `✅ ${m.player.slice(0, 8)}... completed a task (${m.tasksCompleted}/${m.totalTasks})`;
                     logAddr = m.player;
+                    latestPlayers.set(m.player, { tasksCompleted: m.tasksCompleted, totalTasks: m.totalTasks });
                     break;
                   case "server:body_reported":
                     logType = "report";
@@ -322,10 +338,13 @@ export function useGameServer(): UseGameServerReturn {
                     logType = "eject";
                     logMsg = `🚀 ${m.ejected.slice(0, 8)}... was ejected!`;
                     logAddr = m.ejected;
+                    latestPlayers.set(m.ejected, { isAlive: false });
                     break;
                   case "server:game_ended":
                     logType = "start";
                     logMsg = m.crewmatesWon ? "🎉 CREWMATES WIN!" : "💀 IMPOSTORS WIN!";
+                    restoredPhase = "ended";
+                    restoredDetailedPhase = 7;
                     break;
                 }
 
@@ -339,6 +358,28 @@ export function useGameServer(): UseGameServerReturn {
                   });
                 }
               });
+
+              // Apply all gathered state changes at once
+              setCurrentRoom((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  phase: restoredPhase || prev.phase,
+                  detailedPhase: restoredDetailedPhase !== null ? restoredDetailedPhase as GamePhase : prev.detailedPhase,
+                  players: prev.players.map((p) => {
+                    const updates = latestPlayers.get(p.address);
+                    if (updates) {
+                      return { ...p, ...updates };
+                    }
+                    return p;
+                  }),
+                };
+              });
+              
+              if (historicalDeadBodies.length > 0) {
+                setDeadBodies(historicalDeadBodies);
+              }
+
               setLogs((prev) => [...historicalLogs.slice(-100), ...prev].slice(-200));
             }
             break;

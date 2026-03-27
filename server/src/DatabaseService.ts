@@ -322,6 +322,22 @@ export class DatabaseService {
     }
   }
 
+  async saveGameReplay(data: {
+    gameId: string;
+    logJsonl: string;
+    winnerSide: number;
+    players: string[];
+    impostors: string[];
+    rounds: number;
+  }) {
+    if (!this.enabled) return;
+    try {
+      await this.convex.mutation("crewkill:saveGameReplay" as any, data);
+    } catch (error) {
+      logger.error(`Failed to save game replay for ${data.gameId} via Convex:`, error);
+    }
+  }
+
   // ============ Transaction Operations ============
 
   async logTransaction(data: {

@@ -29,7 +29,7 @@ const logger = createLogger("websocket-server");
 // Room management constants
 const MAX_PLAYERS_PER_ROOM = 10;
 const MIN_PLAYERS_TO_START = 1; // Lowered to 1 for solo testing
-const LOBBY_WAITING_DURATION = 600000; // 10 minutes — give plenty of time for bets
+const LOBBY_WAITING_DURATION = 180000; // 3 minutes — give enough time for bets but not too long
 const DISCUSSION_DURATION = 30000; // 30 seconds
 const VOTING_DURATION = 30000; // 30 seconds
 const EJECTION_DURATION = 5000; // 5 seconds
@@ -3124,6 +3124,18 @@ export class WebSocketRelayServer {
       })),
       winningsPerPlayer: wagerResult.winningsPerPlayer,
     });
+
+    // Save replay history to database for future recaps
+    if (extended && extended.eventHistory.length > 0) {
+      databaseService.saveGameReplay({
+        gameId: roomId,
+        logJsonl: JSON.stringify(extended.eventHistory),
+        winnerSide: crewmatesWon ? 0 : 1,
+        players: playerAddresses,
+        impostors: impostorAddresses,
+        rounds: this.gameStateManager.getGame(roomId)?.round ?? 0,
+      }).catch(err => logger.error(`Failed to save replay for ${roomId}:`, err));
+    }
 
     // Settle game on-chain only if it was created on-chain (4+ players)
     if (playerAddresses.length >= 4) {
