@@ -298,6 +298,7 @@ function RoomDetailsPageContent() {
                     actualImpostors={[]} // Hidden during lobby
                     gamePhase={wsPhase || (dbGame.status === "COMPLETED" ? 7 : (dbGame.status === "ACTIVE" ? 2 : 0))}
                     creationDigest={currentRoom?.creationDigest}
+                    hidePlayers={true}
                   />
 
                   {/* Market Sentiment Disclaimer */}

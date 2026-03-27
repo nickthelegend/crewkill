@@ -29,6 +29,7 @@ export interface PredictionMarketProps {
   gamePhase: number;
   creationDigest?: string;
   isSidebar?: boolean;
+  hidePlayers?: boolean;
 }
 
 // Kalshi-style Line Chart for Sentiment
@@ -105,7 +106,7 @@ import { getExplorerObjectUrl, getExplorerAccountUrl } from '@/lib/onechain';
 import { TotalSalesChart } from '../ui/total-sales-chart';
 
 export function PredictionMarket({
-  gameId, marketObjectId, gamePlayers, isResolved, gamePhase, isSidebar = false 
+  gameId, marketObjectId, gamePlayers, isResolved, gamePhase, isSidebar = false, hidePlayers = false
 }: PredictionMarketProps) {
   const { selectedSuspect, setSelectedSuspect, totalPot, isOpen } = useMarket();
   const { suspectPools, userBet, convexBets, bettingOpen, handlePlaceBet } = useMarketLogic(gameId, marketObjectId, gamePlayers, gamePhase);
@@ -154,7 +155,8 @@ export function PredictionMarket({
            <TotalSalesChart fullWidth bets={convexBets} players={gamePlayers} />
         </div>
 
-        <div className="divide-y divide-white/5 bg-black/20">
+        { !hidePlayers && (
+          <div className="divide-y divide-white/5 bg-black/20">
           <div className="grid grid-cols-12 p-4 md:p-6 bg-white/[0.02] border-b border-white/5">
              <div className="col-span-12 md:col-span-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space mb-4 md:mb-0">Player</div>
              <div className="hidden md:block md:col-span-2 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-space">Win Probability</div>
@@ -230,6 +232,7 @@ export function PredictionMarket({
             );
           })}
         </div>
+      )}
       </div>
 
       {/* ─── LIVE BET TAPE (APPROACH A) ─── */}
