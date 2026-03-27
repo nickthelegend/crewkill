@@ -111,8 +111,7 @@ function RoomDetailsPageContent() {
               </div>
 
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase text-white leading-[0.9]">
-                Game <span className="text-cyan-400">Arena</span><br />
-                <span className="text-3xl md:text-5xl opacity-50 block mt-2">VERSION_{dbGame._id.slice(-4).toUpperCase()}</span>
+                Game <span className="text-cyan-400">{displayId.slice(0, 6)}...{displayId.slice(-4)}</span><br />
               </h1>
             </motion.div>
 
@@ -121,6 +120,20 @@ function RoomDetailsPageContent() {
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
+              {/* Predict button — available if betting is open */}
+              {isBettingOpen && (
+                <Link
+                  href={`/game/${roomId}/bet`}
+                  className="group relative px-12 py-6 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(8,145,178,0.4)] overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                  <span className="relative z-10 text-lg font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    🔮 Predict
+                  </span>
+                </Link>
+              )}
+
               {/* Watch Live button — available if game is not ended */}
               {!isEnded && (
                 <Link
