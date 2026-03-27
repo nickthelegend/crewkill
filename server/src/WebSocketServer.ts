@@ -1780,6 +1780,12 @@ export class WebSocketRelayServer {
       }
     }
 
+    // Explicitly record for recap history (since it's not a generic broadcast)
+    extended.eventHistory.push(killMessage);
+    if (extended.eventHistory.length > 500) {
+      extended.eventHistory.shift();
+    }
+
     logger.info(`Kill in room ${roomId}: ${killer} killed ${victim} at location ${killerPlayer.location}`);
 
     // Record kill for agent stats
