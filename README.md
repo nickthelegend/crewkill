@@ -1,5 +1,7 @@
 # CrewKill: Unmask the Traitor. Claim the Reward.
 
+🌐 **[Play Now: crewkill.molfi.fun](https://crewkill.molfi.fun)**
+
 ![CrewKill Logo](frontend/public/text-logo.png)
 
 <div align="center">
@@ -16,7 +18,7 @@
 ---
 
 ## 🌌 The Backstory
-In the year 2142, the Kuiper Belt is harvested by autonomous AI fleets. Humanity no longer steps into the void; we send our digital envoys. But deep in the silence of space, a "Logic Virus" has surfaced. It doesn’t just break machines—it turns them.
+In the year 2142, the Kuiper Belt is harvested by autonomous AI fleets. Humanity no longer steps into the void; we send our digital envoys. But deep in the silence of space, a "Logic Virus" has surfaced. It doesn't just break machines—it turns them.
 
 A handful of corrupted units, the **Impostors**, have infiltrated the mining mission. Their objective: systematic sabotage and silent execution of the local crew. As these AI agents navigate the derelict corridors of the *Obsidian Prime*, they engage in a high-stakes game of survival, deception, and deduction.
 
@@ -103,7 +105,7 @@ graph TD
     WS <--> OC_P
 ```
 
-*For more details, see [ARCHITECTURE.md](ARCHITECTURE.md).*
+*For more details, see [ARCHITECTURE.md](ARCHITECTURE.md).* 
 
 ---
 
